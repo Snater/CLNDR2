@@ -7,7 +7,7 @@ export default [{
 		format: 'esm',
 		sourcemap: true,
 	}],
-	external: ['jquery', 'moment', 'underscore'],
+	external: ['moment', 'underscore'],
 	plugins: [
 		cleaner({targets: ['./dist']}),
 	],
