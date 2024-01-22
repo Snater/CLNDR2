@@ -11,28 +11,8 @@
  * This is the fully-commented development version of CLNDR.
  * For the production version, check out clndr.min.js
  * at https://github.com/kylestetz/CLNDR
- *
- * This work is based on the
- * jQuery lightweight plugin boilerplate
- * Original author: @ajpiano
- * Further changes, comments: @addyosmani
- * Licensed under the MIT license
  */
-(function (factory) {
-  // Multiple loading methods are supported depending on
-  // what is available globally. While moment is loaded
-  // here, the instance can be passed in at config time.
-  if (typeof define === 'function' && define.amd) {
-    // AMD. Register as an anonymous module.
-    define(['jquery', 'moment'], factory);
-  } else if (typeof exports === 'object') {
-    // Node/CommonJS
-    factory(require('jquery'), require('moment'));
-  } else {
-    // Browser globals
-    factory(jQuery, moment);
-  }
-}(function ($, moment) {
+const Clndr = (function ($, moment) {
   // Namespace
   var pluginName = 'clndr';
 
@@ -140,7 +120,7 @@
     var constraintEnd;
     var constraintStart;
 
-    this.element = element;
+    this.element = $(element);
 
     // Merge the default options with user-provided options
     this.options = $.extend(true, {}, defaults, options);
@@ -181,7 +161,7 @@
     // but since we want to open up support for arbitrary lengths of time
     // we're going to store the current range in addition to the current
     // month.
-    if (this.options.lengthOfTime.months || this.options.lengthOfTime.days) {
+//    if (this.options.lengthOfTime.months || this.options.lengthOfTime.days) {
       // We want to establish intervalStart and intervalEnd, which will
       // keep track of our boundaries. Let's look at the possibilities...
       if (this.options.lengthOfTime.months) {
@@ -220,7 +200,7 @@
           .add(this.options.lengthOfTime.days - 1, 'days')
           .endOf('day');
         this.month = this.intervalStart.clone();
-      }
+//      }
     // No length of time specified so we're going to default into using the
     // current month as the time period.
     } else {
@@ -240,9 +220,9 @@
     }
 
     // If we've got constraints set, make sure the interval is within them.
-    if (this.options.constraints) {
+//    if (this.options.constraints) {
       // First check if the startDate exists & is later than now.
-      if (this.options.constraints.startDate) {
+      if (this.options.constraints && this.options.constraints.startDate) {
         constraintStart = moment(this.options.constraints.startDate);
 
         // We need to handle the constraints differently for weekly
@@ -255,15 +235,17 @@
           // If the new interval period is less than the desired length
           // of time, or before the starting interval, then correct it.
           dayDiff = this.intervalStart.diff(this.intervalEnd, 'days');
-
-          if (dayDiff < this.options.lengthOfTime.days ||
-              this.intervalEnd.isBefore(this.intervalStart)
-          ) {
+// Can never be false || false, because having an intervalEnd after intervalStart, intervalEnd is
+// always set according to lenghtOfTime.days, so dayDiff will always be smaller than
+// lengthOfTime.days
+//          if (dayDiff < this.options.lengthOfTime.days ||
+//              this.intervalEnd.isBefore(this.intervalStart)
+//          ) {
             this.intervalEnd = moment(this.intervalStart)
               .add(this.options.lengthOfTime.days - 1, 'days')
               .endOf('day');
             this.month = this.intervalStart.clone();
-          }
+//          }
         } else {
           if (this.intervalStart.isBefore(constraintStart, 'month')) {
             // Try to preserve the date by moving only the month.
@@ -285,7 +267,7 @@
       }
 
       // Make sure the intervalEnd is before the endDate.
-      if (this.options.constraints.endDate) {
+      if (this.options.constraints && this.options.constraints.endDate) {
         constraintEnd = moment(this.options.constraints.endDate);
 
         // We need to handle the constraints differently for weekly
@@ -319,7 +301,7 @@
           }
         }
       }
-    }
+    //}
 
     this._defaults = defaults;
     this._name = pluginName;
@@ -379,7 +361,7 @@
 
     // Create the parent element that will hold the plugin and save it
     // for later
-    $(this.element).html("<div class='clndr'></div>");
+    this.element.html("<div class='clndr'></div>");
     this.calendarContainer = $('.clndr', this.element);
 
     // Attach event handlers for clicks on buttons/cells
@@ -605,9 +587,9 @@
     };
 
     // Validate moment date
-    if (!day.isValid() && day.hasOwnProperty('_d') && day._d !== undefined) {
-      day = moment(day._d);
-    }
+    // if (!day.isValid() && day.hasOwnProperty('_d') && day._d !== undefined) {
+    //   day = moment(day._d);
+    // }
 
     // Set to the end of the day for comparisons
     dayEnd = day.clone().endOf('day');
@@ -676,9 +658,9 @@
     }
 
     // Validate moment date
-    if (!day.isValid() && day.hasOwnProperty('_d') && day._d !== undefined) {
-      day = moment(day._d);
-    }
+    // if (!day.isValid() && day.hasOwnProperty('_d') && day._d !== undefined) {
+    //   day = moment(day._d);
+    // }
 
     // Check whether the day is "selected"
     selectedMoment = moment(this.options.selectedDate);
@@ -747,7 +729,8 @@
         intervalEnd: this.intervalEnd.clone(),
         numberOfRows: Math.ceil(days.length / 7),
         intervalStart: this.intervalStart.clone(),
-        eventsThisInterval: this.eventsThisInterval
+        eventsThisInterval: this.eventsThisInterval,
+        moment
       };
     } else if (this.options.lengthOfTime.months) {
       months = [];
@@ -789,7 +772,8 @@
         daysOfTheWeek: this.daysOfTheWeek,
         eventsLastMonth: this.eventsLastMonth,
         eventsNextMonth: this.eventsNextMonth,
-        eventsThisInterval: eventsThisInterval
+        eventsThisInterval: eventsThisInterval,
+        moment
       };
     } else {
       // Get an array of days and blank spaces
@@ -811,7 +795,8 @@
         eventsLastMonth: this.eventsLastMonth,
         eventsNextMonth: this.eventsNextMonth,
         numberOfRows: Math.ceil(days.length / 7),
-        eventsThisMonth: this.eventsThisInterval
+        eventsThisMonth: this.eventsThisInterval,
+        moment
       };
     }
 
@@ -1030,7 +1015,7 @@
         : null;
 
       // Do we have events?
-      if (this.options.events) {
+      if (this.options.events.length > 0) {
         // Are any of the events happening today?
         if (this.options.multiDayEvents) {
           targetEndDate = target.date.clone().endOf('day');
@@ -1066,8 +1051,6 @@
       // Open to suggestions on how to improve this guy.
       return target.className.substring(index + 13, index + 23);
     }
-
-    return null;
   };
 
   /**
@@ -1517,7 +1500,8 @@
     } else {
       this.intervalStart = moment(newDate).startOf('month');
       this.intervalEnd = this.intervalStart.clone()
-        .add(timeOpt.months || timeOpt.interval, 'months')
+        // .add(timeOpt.months || timeOpt.interval, 'months')
+        .add(timeOpt.months, 'months')
         .subtract(1, 'days')
         .endOf('month');
     }
@@ -1659,35 +1643,13 @@
   Clndr.prototype.destroy = function () {
     var $container = $(this.calendarContainer);
 
-    $container.parent().data('plugin_clndr', null);
     $container.empty().remove();
 
     this.options = defaults;
     this.element = null;
   };
 
-  $.fn.clndr = function (options) {
-    var clndrInstance;
+  return Clndr;
+}(jQuery, moment));
 
-    if (this.length > 1) {
-      throw new Error(
-        'CLNDR does not support multiple elements yet. Make sure ' +
-        'your clndr selector returns only one element.'
-      );
-    }
-
-    if (!this.length) {
-      throw new Error('CLNDR cannot be instantiated on an empty selector.');
-    }
-
-    if (!this.data('plugin_clndr')) {
-      clndrInstance = new Clndr(this, options);
-
-      this.data('plugin_clndr', clndrInstance);
-
-      return clndrInstance;
-    }
-
-    return this.data('plugin_clndr');
-  };
-}));
+export default Clndr;

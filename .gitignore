@@ -1,5 +1,6 @@
-/demo/test/
+/.idea
+/coverage
+/dist
 /node_modules
-/bower_components
+/storybook-static
 .DS_Store
-commit_checklist.md
