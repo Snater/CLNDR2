@@ -8,6 +8,7 @@ import {
 	endOfMonth,
 	endOfWeek,
 	format,
+	getMonth,
 	getYear,
 	isAfter,
 	isBefore,
@@ -18,6 +19,7 @@ import {
 	setYear,
 	startOfDay,
 	startOfMonth,
+	startOfWeek,
 	subDays,
 	subMonths,
 	subWeeks,
@@ -274,13 +276,13 @@ const Clndr = (function (moment) {
 		// if (this.options.constraints) {
 		// First check if the startDate exists & is later than now.
 		if (this.options.constraints && this.options.constraints.startDate) {
-			constraintStart = moment(this.options.constraints.startDate);
+			constraintStart = new Date(this.options.constraints.startDate);
 
 			// We need to handle the constraints differently for weekly
 			// calendars vs. monthly calendars.
 			if (this.options.lengthOfTime.days) {
-				if (isBefore(this.intervalStart, subWeeks(new Date(constraintStart.format()), 1))) {
-					this.intervalStart = new Date(constraintStart.startOf('week').format());
+				if (isBefore(this.intervalStart, subWeeks(constraintStart, 1))) {
+					this.intervalStart = startOfWeek(constraintStart);
 				}
 
 				// If the new interval period is less than the desired length
@@ -298,23 +300,23 @@ const Clndr = (function (moment) {
 				this.month = new Date(this.intervalStart);
 				// }
 			} else {
-				if (isBefore(this.intervalStart, subMonths(new Date(constraintStart.format()), 1))) {
+				if (isBefore(this.intervalStart, subMonths(constraintStart, 1))) {
 					// Try to preserve the date by moving only the month.
 					this.intervalStart = setYear(
-						setMonth(this.intervalStart, constraintStart.month()),
-						constraintStart.year(),
+						setMonth(this.intervalStart, getMonth(constraintStart)),
+						getYear(constraintStart),
 					);
 					this.month = setYear(
-						setMonth(this.month, constraintStart.month()),
-						constraintStart.year(),
+						setMonth(this.month, getMonth(constraintStart)),
+						getYear(constraintStart),
 					);
 				}
 
 				// Check if the ending interval is earlier than now.
-				if (isBefore(this.intervalEnd, subMonths(new Date(moment(constraintStart).format()), 1))) {
+				if (isBefore(this.intervalEnd, subMonths(constraintStart, 1))) {
 					this.intervalEnd = setYear(
-						setMonth(this.intervalEnd, constraintStart.month()),
-						constraintStart.year(),
+						setMonth(this.intervalEnd, getMonth(constraintStart)),
+						getYear(constraintStart),
 					);
 				}
 			}
@@ -322,33 +324,36 @@ const Clndr = (function (moment) {
 
 		// Make sure the intervalEnd is before the endDate.
 		if (this.options.constraints && this.options.constraints.endDate) {
-			constraintEnd = moment(this.options.constraints.endDate);
+			constraintEnd = new Date(this.options.constraints.endDate);
 
 			// We need to handle the constraints differently for weekly
 			// calendars vs. monthly calendars.
 			if (this.options.lengthOfTime.days) {
 				// The starting interval is after our ending constraint.
-				if (isAfter(this.intervalStart, addWeeks(new Date(constraintEnd.format()), 1))) {
+				if (isAfter(this.intervalStart, addWeeks(constraintEnd, 1))) {
 					this.intervalStart = startOfDay(
-						subDays(endOfWeek(new Date(constraintEnd.format())), this.options.lengthOfTime.days - 1),
+						subDays(endOfWeek(constraintEnd), this.options.lengthOfTime.days - 1),
 					);
-					this.intervalEnd = endOfWeek(moment(constraintEnd).format());
+					this.intervalEnd = endOfWeek(constraintEnd);
 					this.month = new Date(this.intervalStart);
 				}
 			} else {
-				if (isAfter(this.intervalEnd, addMonths(moment(constraintEnd).format(), 1))) {
+				if (isAfter(this.intervalEnd, addMonths(constraintEnd, 1))) {
 					this.intervalEnd = setYear(
-						setMonth(this.intervalEnd, constraintEnd.month()),
-						constraintEnd.year(),
+						setMonth(this.intervalEnd, getMonth(constraintEnd)),
+						getYear(constraintEnd),
 					);
-					this.month = setYear(setMonth(this.month, constraintEnd.month()), constraintEnd.year());
+					this.month = setYear(
+						setMonth(this.month, getMonth(constraintEnd)),
+						getYear(constraintEnd),
+					);
 				}
 
 				// Check if the starting interval is later than the ending.
-				if (isAfter(this.intervalStart, addMonths(new Date(constraintEnd.format()), 1))) {
+				if (isAfter(this.intervalStart, addMonths(constraintEnd, 1))) {
 					this.intervalStart = setYear(
-						setMonth(this.intervalStart, constraintEnd.month()),
-						constraintEnd.year(),
+						setMonth(this.intervalStart, getMonth(constraintEnd)),
+						getYear(constraintEnd),
 					);
 				}
 			}
@@ -383,11 +388,11 @@ const Clndr = (function (moment) {
 			this.daysOfTheWeek = [];
 
 			formatWeekday = this.options.formatWeekdayHeader || function (day) {
-				return day.format('dd').charAt(0);
+				return format(day, 'cccccc').charAt(0);
 			};
 
 			for (i = 0; i < 7; i++) {
-				this.daysOfTheWeek.push(formatWeekday(moment().weekday(i)));
+				this.daysOfTheWeek.push(formatWeekday(setDay(new Date(), i)));
 			}
 		}
 
