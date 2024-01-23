@@ -28,7 +28,7 @@ const oneWeekTemplate = `
 	<div class="clndr-controls">
 		<div class="clndr-previous-button">&lsaquo;</div>
 		<div class="month">
-			<%= format(intervalStart, 'MM/dd') %> - <%= intervalEnd.format('MM/DD') %>
+			<%= format(intervalStart, 'MM/dd') %> - <%= format(intervalEnd, 'MM/dd') %>
 		</div>
 		<div class="clndr-next-button">&rsaquo;</div>
 	</div>
