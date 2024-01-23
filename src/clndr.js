@@ -8,6 +8,7 @@ import {
 	endOfMonth,
 	endOfWeek,
 	format,
+	getYear,
 	isAfter,
 	isBefore,
 	isSameDay,
@@ -241,7 +242,7 @@ const Clndr = (function (moment) {
 				addMonths(this.intervalStart, this.options.lengthOfTime.months),
 				1,
 			);
-			this.month = moment(this.intervalStart);
+			this.month = new Date(this.intervalStart);
 		} else if (this.options.lengthOfTime.days) {
 			// The length is specified in days. Start date?
 			if (this.options.lengthOfTime.startDate) {
@@ -251,22 +252,22 @@ const Clndr = (function (moment) {
 			}
 
 			this.intervalEnd = endOfDay(addDays(this.intervalStart, this.options.lengthOfTime.days - 1));
-			this.month = moment(this.intervalStart);
+			this.month = new Date(this.intervalStart);
 		// }
 		// No length of time specified so we're going to default into using the
 		// current month as the time period.
 		} else {
-			this.month = moment().startOf('month');
-			this.intervalStart = new Date(this.month.format());
-			this.intervalEnd = endOfMonth(moment(this.month).format());
+			this.month = startOfMonth(new Date());
+			this.intervalStart = new Date(this.month);
+			this.intervalEnd = endOfMonth(this.month);
 		}
 
 		if (this.options.startWithMonth) {
-			this.month = moment(this.options.startWithMonth).startOf('month');
-			this.intervalStart = new Date(this.month.format());
+			this.month = startOfMonth(new Date(this.options.startWithMonth));
+			this.intervalStart = new Date(this.month);
 			this.intervalEnd = this.options.lengthOfTime.days
-				? endOfDay(addDays(moment(this.month).format(), this.options.lengthOfTime.days - 1))
-				: endOfMonth(moment(this.month).format());
+				? endOfDay(addDays(this.month, this.options.lengthOfTime.days - 1))
+				: endOfMonth(this.month);
 		}
 
 		// If we've got constraints set, make sure the interval is within them.
@@ -294,7 +295,7 @@ const Clndr = (function (moment) {
 				this.intervalEnd = endOfDay(
 					addDays(this.intervalStart, this.options.lengthOfTime.days - 1),
 				);
-				this.month = moment(this.intervalStart);
+				this.month = new Date(this.intervalStart);
 				// }
 			} else {
 				if (isBefore(this.intervalStart, subMonths(new Date(constraintStart.format()), 1))) {
@@ -303,9 +304,10 @@ const Clndr = (function (moment) {
 						setMonth(this.intervalStart, constraintStart.month()),
 						constraintStart.year(),
 					);
-					this.month
-						.set('month', constraintStart.month())
-						.set('year', constraintStart.year());
+					this.month = setYear(
+						setMonth(this.month, constraintStart.month()),
+						constraintStart.year(),
+					);
 				}
 
 				// Check if the ending interval is earlier than now.
@@ -331,7 +333,7 @@ const Clndr = (function (moment) {
 						subDays(endOfWeek(new Date(constraintEnd.format())), this.options.lengthOfTime.days - 1),
 					);
 					this.intervalEnd = endOfWeek(moment(constraintEnd).format());
-					this.month = moment(this.intervalStart);
+					this.month = new Date(this.intervalStart);
 				}
 			} else {
 				if (isAfter(this.intervalEnd, addMonths(moment(constraintEnd).format(), 1))) {
@@ -339,14 +341,15 @@ const Clndr = (function (moment) {
 						setMonth(this.intervalEnd, constraintEnd.month()),
 						constraintEnd.year(),
 					);
-					this.month
-						.set('month', constraintEnd.month())
-						.set('year', constraintEnd.year());
+					this.month = setYear(setMonth(this.month, constraintEnd.month()), constraintEnd.year());
 				}
 
 				// Check if the starting interval is later than the ending.
 				if (isAfter(this.intervalStart, addMonths(new Date(constraintEnd.format()), 1))) {
-					this.intervalStart = setYear(setMonth(this.intervalStart, constraintEnd.month()), constraintEnd.year());
+					this.intervalStart = setYear(
+						setMonth(this.intervalStart, constraintEnd.month()),
+						constraintEnd.year(),
+					);
 				}
 			}
 		}
@@ -819,8 +822,8 @@ const Clndr = (function (moment) {
 		} else {
 			// Get an array of days and blank spaces
 			days = this.createDaysObject(
-				this.month.clone().startOf('month'),
-				this.month.clone().endOf('month'),
+				moment(startOfMonth(this.month)),
+				moment(endOfMonth(this.month)),
 			);
 
 			data = {
@@ -828,10 +831,10 @@ const Clndr = (function (moment) {
 				months: [],
 				intervalEnd: null,
 				intervalStart: null,
-				year: this.month.year(),
+				year: getYear(this.month),
 				eventsThisInterval: null,
 				extras: this.options.extras,
-				month: this.month.format('MMMM'),
+				month: format(this.month, 'MMMM'),
 				daysOfTheWeek: this.daysOfTheWeek,
 				eventsLastMonth: this.eventsLastMonth,
 				eventsNextMonth: this.eventsNextMonth,
@@ -1226,14 +1229,14 @@ const Clndr = (function (moment) {
 			ctx.intervalStart = startOfDay(subDays(ctx.intervalStart, timeOpt.interval));
 			ctx.intervalEnd = endOfDay(addDays(ctx.intervalStart, timeOpt.days - 1));
 			// @V2-todo Useless, but consistent with API
-			ctx.month = moment(ctx.intervalStart);
+			ctx.month = new Date(ctx.intervalStart);
 		} else {
 			// Shift the interval by a month (or several months)
 			ctx.intervalStart = startOfMonth(subMonths(ctx.intervalStart, timeOpt.interval));
 			ctx.intervalEnd = endOfMonth(
 				subDays(addMonths(ctx.intervalStart, timeOpt.months || timeOpt.interval), 1),
 			);
-			ctx.month = moment(ctx.intervalStart);
+			ctx.month = new Date(ctx.intervalStart);
 		}
 
 		ctx.render();
@@ -1291,14 +1294,14 @@ const Clndr = (function (moment) {
 			ctx.intervalStart = startOfDay(addDays(ctx.intervalStart, timeOpt.interval));
 			ctx.intervalEnd = endOfDay(addDays(ctx.intervalStart, timeOpt.days - 1));
 			// @V2-todo Useless, but consistent with API
-			ctx.month = moment(ctx.intervalStart);
+			ctx.month = new Date(ctx.intervalStart);
 		} else {
 			// Shift the interval by a month (or several months)
 			ctx.intervalStart = startOfMonth(addMonths(ctx.intervalStart, timeOpt.interval));
 			ctx.intervalEnd = endOfMonth(
 				subDays(addMonths(ctx.intervalStart, timeOpt.months || timeOpt.interval), 1),
 			);
-			ctx.month = moment(ctx.intervalStart);
+			ctx.month = new Date(ctx.intervalStart);
 		}
 
 		ctx.render();
@@ -1348,7 +1351,7 @@ const Clndr = (function (moment) {
 			return ctx;
 		}
 
-		ctx.month.subtract(1, 'year');
+		ctx.month = subYears(ctx.month, 1);
 		ctx.intervalStart = subYears(ctx.intervalStart, 1);
 		ctx.intervalEnd = subYears(ctx.intervalEnd, 1);
 		ctx.render();
@@ -1387,7 +1390,7 @@ const Clndr = (function (moment) {
 			return ctx;
 		}
 
-		ctx.month.add(1, 'year');
+		ctx.month = addYears(ctx.month, 1);
 		ctx.intervalStart = addYears(ctx.intervalStart, 1);
 		ctx.intervalEnd = addYears(ctx.intervalEnd, 1);
 		ctx.render();
@@ -1419,7 +1422,7 @@ const Clndr = (function (moment) {
 		// Extend any options
 		options = mergeDeep({}, defaults, options);
 		// @V2-todo Only used for legacy month view
-		ctx.month = moment().startOf('month');
+		ctx.month = startOfMonth(new Date());
 
 		if (timeOpt.days) {
 			// If there was a startDate specified, we should figure out what
@@ -1482,8 +1485,8 @@ const Clndr = (function (moment) {
 			return this;
 		}
 
-		this.month.month(newMonth);
-		this.intervalStart = new Date(this.month.clone().startOf('month').format());
+		this.month = setMonth(this.month, newMonth);
+		this.intervalStart = new Date(startOfMonth(this.month));
 		this.intervalEnd = endOfMonth(this.intervalStart);
 		this.render();
 
@@ -1500,7 +1503,7 @@ const Clndr = (function (moment) {
 			start: moment(this.intervalStart),
 		};
 
-		this.month.year(newYear);
+		this.month = setYear(this.month, newYear);
 		this.intervalEnd = setYear(this.intervalEnd, newYear);
 		this.intervalStart = setYear(this.intervalStart, newYear);
 		this.render();
@@ -1539,7 +1542,7 @@ const Clndr = (function (moment) {
 			this.intervalEnd = endOfMonth(subDays(addMonths(this.intervalStart, timeOpt.months), 1));
 		}
 
-		this.month = moment(this.intervalStart);
+		this.month = new Date(this.intervalStart);
 		this.render();
 
 		if (options && options.withCallbacks) {
