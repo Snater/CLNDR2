@@ -71,33 +71,32 @@ const multiMonthTemplate = `
 		<div class="clndr-today-button">Today</div>
 	<% }); %>`;
 
-function dateOfCurrentMonth(day) {
-	return `${moment().format('YYYY-MM')}-${day.toString().padStart(2, '0')}`;
-}
-
-let originalWarn;
 let user;
 let container;
 let clndr;
 
-beforeEach(() => {
-	originalWarn = console.warn;
-	console.warn = jest.fn();
-
+beforeAll(() => {
+	jest.spyOn(Date, 'now').mockImplementation(() => new Date('2024-01-18T12:00:00.000Z'));
+	jest.spyOn(console, 'warn').mockImplementation(jest.fn);
 	moment.locale('en');
 	user = userEvent.setup();
+});
+
+afterAll(() => {
+	jest.restoreAllMocks();
+})
+
+beforeEach(() => {
 	container = document.createElement('div');
 	document.body.appendChild(container);
 });
 
 afterEach(() => {
 	if (clndr) {
-		clndr.destroy;
+		clndr.destroy();
 	}
 
 	container.remove();
-
-	console.warn = originalWarn;
 });
 
 describe('Setup', () => {
@@ -114,12 +113,11 @@ describe('Setup', () => {
 
 	test('Provide a custom template', () => {
 		clndr = new Clndr(container, {
-			startWithMonth: '1992-10',
 			template: defaultTemplate,
 		});
 
 		expect(container).not.toBeEmptyDOMElement();
-		expect(screen.getByText('October')).toBeInTheDocument();
+		expect(screen.getByText('January')).toBeInTheDocument();
 
 		clndr.destroy();
 
@@ -129,10 +127,9 @@ describe('Setup', () => {
 	test('Pass in some events', () => {
 		clndr = new Clndr(container, {
 			events: [
-				{date: '1992-10-07'},
-				{date: '1992-10-23'},
+				{date: '2024-01-07'},
+				{date: '2024-01-23'},
 			],
-			startWithMonth: '1992-10',
 		});
 
 		expect(screen.getByText('6').parentNode).not.toHaveClass('event');
@@ -172,10 +169,10 @@ describe('Setup', () => {
 			events: [
 				{
 					title: 'Multi1',
-					startDate: dateOfCurrentMonth(17),
+					startDate: '2024-01-17',
 				}, {
 					title: 'Multi2',
-					endDate: dateOfCurrentMonth(12),
+					endDate: '2024-01-12',
 				},
 			],
 			multiDayEvents: {
@@ -184,11 +181,11 @@ describe('Setup', () => {
 			},
 		});
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(12)}`)).toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(17)}`)).toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(14)}`)).not.toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(25)}`)).not.toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(2)}`)).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-12')).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-17')).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-14')).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-25')).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-02')).not.toHaveClass('event');
 	});
 
 	test('Mixing single-day and multi-day events', () => {
@@ -196,15 +193,15 @@ describe('Setup', () => {
 			events: [
 				{
 					title: 'Multi1',
-					endDate: dateOfCurrentMonth(17),
-					startDate: dateOfCurrentMonth(12),
+					endDate: '2024-01-17',
+					startDate: '2024-01-12',
 				}, {
 					title: 'Multi2',
-					endDate: dateOfCurrentMonth(27),
-					startDate: dateOfCurrentMonth(24),
+					endDate: '2024-01-27',
+					startDate: '2024-01-24',
 				}, {
 					title: 'Single',
-					date: dateOfCurrentMonth(19),
+					date: '2024-01-19',
 				},
 			],
 			multiDayEvents: {
@@ -214,11 +211,11 @@ describe('Setup', () => {
 			},
 		});
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(12)}`)).toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(17)}`)).toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(14)}`)).toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(19)}`)).toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(2)}`)).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-12')).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-17')).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-14')).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-19')).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-02')).not.toHaveClass('event');
 	});
 
 	test('Pass moment instance', () => {
@@ -553,9 +550,7 @@ describe('Navigation', () => {
 
 		clndr.today();
 
-		// FIXME: There appears to be a bug the interval switching the interval one step too far
-		// expect(container.querySelector(`.calendar-day-${moment().format('YYYY-MM-DD')}`)).toBeInTheDocument();
-		expect(container.querySelector(`.calendar-day-${moment().add(7, 'day').format('YYYY-MM-DD')}`)).toBeInTheDocument();
+		expect(container.querySelector(`.calendar-day-${moment().format('YYYY-MM-DD')}`)).toBeInTheDocument();
 	});
 
 	test('Go to today while having a custom interval', () => {
@@ -885,21 +880,21 @@ describe('Data manipulations', () => {
 	test('Add an event', () => {
 		clndr = new Clndr(container);
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(12)}`)).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 
-		clndr.addEvents([{date: dateOfCurrentMonth(12)}]);
+		clndr.addEvents([{date: '2024-01-12'}]);
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(12)}`)).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-12')).toHaveClass('event');
 	});
 
 	test('Add an event with forcing no re-rendering', () => {
 		const clndr = new Clndr(container);
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(12)}`)).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 
-		clndr.addEvents([{date: dateOfCurrentMonth(12)}], false);
+		clndr.addEvents([{date: '2024-01-12'}], false);
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(12)}`)).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 	});
 
 	test('Add a single-day event with multi-day events being configured', () => {
@@ -911,33 +906,33 @@ describe('Data manipulations', () => {
 			},
 		});
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(12)}`)).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 
-		clndr.addEvents([{date: dateOfCurrentMonth(12)}], false);
+		clndr.addEvents([{date: '2024-01-12'}], false);
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(12)}`)).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 	})
 
 	test('Set all events', () => {
 		clndr = new Clndr(container, {
-			events: [{date: dateOfCurrentMonth(7)}],
+			events: [{date: '2024-01-07'}],
 		});
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(7)}`)).toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(12)}`)).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-07')).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 
-		clndr.setEvents([{date: dateOfCurrentMonth(12)}]);
+		clndr.setEvents([{date: '2024-01-12'}]);
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(7)}`)).not.toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(12)}`)).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-07')).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-12')).toHaveClass('event');
 	});
 
 	test('Set all events with multi-day events being configured', () => {
 		clndr = new Clndr(container, {
 			events: [{
 				title: 'Multi',
-				endDate: dateOfCurrentMonth(17),
-				startDate: dateOfCurrentMonth(12),
+				endDate: '2024-01-17',
+				startDate: '2024-01-12',
 			}],
 			multiDayEvents: {
 				singleDay: 'date',
@@ -946,30 +941,30 @@ describe('Data manipulations', () => {
 			},
 		});
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(15)}`)).toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(3)}`)).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-15')).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-03')).not.toHaveClass('event');
 
-		clndr.setEvents([{date: dateOfCurrentMonth(3)}]);
+		clndr.setEvents([{date: '2024-01-03'}]);
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(15)}`)).not.toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(3)}`)).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-15')).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-03')).toHaveClass('event');
 	})
 
 	test('Remove events', () => {
 		clndr = new Clndr(container, {
 			events: [
-				{date: dateOfCurrentMonth(7)},
-				{date: dateOfCurrentMonth(23)},
+				{date: '2024-01-07'},
+				{date: '2024-01-23'},
 			],
 		})
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(7)}`)).toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(23)}`)).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-07')).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-23')).toHaveClass('event');
 
-		clndr.removeEvents(event => event.date === dateOfCurrentMonth(23));
+		clndr.removeEvents(event => event.date === '2024-01-23');
 
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(7)}`)).toHaveClass('event');
-		expect(container.querySelector(`.calendar-day-${dateOfCurrentMonth(23)}`)).not.toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-07')).toHaveClass('event');
+		expect(container.querySelector('.calendar-day-2024-01-23')).not.toHaveClass('event');
 	});
 
 });

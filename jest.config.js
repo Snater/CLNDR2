@@ -1,8 +1,7 @@
 import _ from 'underscore';
-import moment from 'moment';
 
 const config = {
-	globals: {_, moment},
+	globals: {_},
 	testEnvironment: 'jsdom',
 	transform: {
 		'\\.[jt]s$': 'babel-jest',
