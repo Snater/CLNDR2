@@ -28,7 +28,7 @@ const oneWeekTemplate = `
 	<div class="clndr-controls">
 		<div class="clndr-previous-button">&lsaquo;</div>
 		<div class="month">
-			<%= intervalStart.format('MM/DD') %> - <%= intervalEnd.format('MM/DD') %>
+			<%= format(intervalStart, 'MM/dd') %> - <%= intervalEnd.format('MM/DD') %>
 		</div>
 		<div class="clndr-next-button">&rsaquo;</div>
 	</div>
@@ -76,14 +76,16 @@ let container;
 let clndr;
 
 beforeAll(() => {
+	jest.useFakeTimers({now: new Date(2024, 0, 18, 12)});
 	jest.spyOn(Date, 'now').mockImplementation(() => new Date('2024-01-18T12:00:00.000Z'));
 	jest.spyOn(console, 'warn').mockImplementation(jest.fn);
 	moment.locale('en');
-	user = userEvent.setup();
+	user = userEvent.setup({delay: null});
 });
 
 afterAll(() => {
 	jest.restoreAllMocks();
+	jest.useRealTimers();
 })
 
 beforeEach(() => {
@@ -515,7 +517,7 @@ describe('Navigation', () => {
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
 		clndr.today({withCallbacks: true});
-		expect(container.querySelector(`.calendar-day-${moment().format('YYYY-MM-DD')}`)).toBeInTheDocument();
+		expect(container.querySelector('.calendar-day-2024-01-18')).toBeInTheDocument();
 	});
 
 	test('Programmatically trigger today() with callbacks', () => {
@@ -550,7 +552,7 @@ describe('Navigation', () => {
 
 		clndr.today();
 
-		expect(container.querySelector(`.calendar-day-${moment().format('YYYY-MM-DD')}`)).toBeInTheDocument();
+		expect(container.querySelector('.calendar-day-2024-01-18')).toBeInTheDocument();
 	});
 
 	test('Go to today while having a custom interval', () => {
@@ -561,9 +563,9 @@ describe('Navigation', () => {
 			template: oneWeekTemplate,
 		});
 
-		expect(container.querySelector(`.calendar-day-${moment().format('YYYY-MM-DD')}`)).toBeInTheDocument();
+		expect(container.querySelector('.calendar-day-2024-01-18')).toBeInTheDocument();
 		clndr.today();
-		expect(container.querySelector(`.calendar-day-${moment().format('YYYY-MM-DD')}`)).toBeInTheDocument();
+		expect(container.querySelector('.calendar-day-2024-01-18')).toBeInTheDocument();
 	});
 
 	test('Click today button', async () => {
@@ -1038,13 +1040,13 @@ describe('Constraints', () => {
 		});
 
 		expect(container.querySelector('.calendar-day-1992-11-15')).toBeInTheDocument();
-		await userEvent.click(screen.getByText('next'));
+		await user.click(screen.getByText('next'));
 		expect(container.querySelector('.calendar-day-1992-11-15')).toBeInTheDocument();
-		await userEvent.click(screen.getByText('previous'));
+		await user.click(screen.getByText('previous'));
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
-		await userEvent.click(screen.getByText('previous'));
+		await user.click(screen.getByText('previous'));
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
-		await userEvent.click(screen.getByText('next'));
+		await user.click(screen.getByText('next'));
 		expect(container.querySelector('.calendar-day-1992-11-15')).toBeInTheDocument();
 	});
 
@@ -1059,13 +1061,13 @@ describe('Constraints', () => {
 		});
 
 		expect(container.querySelector('.calendar-day-2100-01-01')).toBeInTheDocument();
-		await userEvent.click(screen.getByText('‹'));
+		await user.click(screen.getByText('‹'));
 		expect(container.querySelector('.calendar-day-2100-01-01')).toBeInTheDocument();
-		await userEvent.click(screen.getByText('›'));
+		await user.click(screen.getByText('›'));
 		expect(container.querySelector('.calendar-day-2100-01-06')).toBeInTheDocument();
-		await userEvent.click(screen.getByText('›'));
+		await user.click(screen.getByText('›'));
 		expect(container.querySelector('.calendar-day-2100-01-06')).toBeInTheDocument();
-		await userEvent.click(screen.getByText('‹'));
+		await user.click(screen.getByText('‹'));
 		expect(container.querySelector('.calendar-day-2100-01-01')).toBeInTheDocument();
 	});
 
