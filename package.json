@@ -28,8 +28,7 @@
     "build-storybook": "storybook build"
   },
   "peerDependencies": {
-    "date-fns": "3.x",
-    "ejs": "3.x"
+    "date-fns": "3.x"
   },
   "devDependencies": {
     "@babel/core": "^7.23.7",

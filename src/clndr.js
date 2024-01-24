@@ -44,45 +44,12 @@ import {
 // Namespace
 var pluginName = 'clndr';
 
-// This is the default calendar template. This can be overridden.
-var clndrTemplate =
-	'<div class="clndr-controls">' +
-			'<div class="clndr-control-button">' +
-					'<span class="clndr-previous-button">previous</span>' +
-			'</div>' +
-			'<div class="month"><%= month %> <%= year %></div>' +
-			'<div class="clndr-control-button rightalign">' +
-					'<span class="clndr-next-button">next</span>' +
-			'</div>' +
-	'</div>' +
-	'<table class="clndr-table" border="0" cellspacing="0" cellpadding="0">' +
-			'<thead>' +
-					'<tr class="header-days">' +
-					'<% for(var i = 0; i < daysOfTheWeek.length; i++) { %>' +
-							'<td class="header-day"><%= daysOfTheWeek[i] %></td>' +
-					'<% } %>' +
-					'</tr>' +
-			'</thead>' +
-			'<tbody>' +
-			'<% for(var i = 0; i < numberOfRows; i++){ %>' +
-					'<tr>' +
-					'<% for(var j = 0; j < 7; j++){ %>' +
-					'<% var d = j + i * 7; %>' +
-							'<td class="<%= days[d].classes %>">' +
-									'<div class="day-contents"><%= days[d].day %></div>' +
-							'</td>' +
-					'<% } %>' +
-					'</tr>' +
-			'<% } %>' +
-			'</tbody>' +
-	'</table>';
-
 // Defaults used throughout the application, see docs.
 var defaults = {
+	render: null,
 	events: [],
 	ready: null,
 	extras: null,
-	render: null,
 	locale: null,
 	weekOffset: 0,
 	constraints: null,
@@ -93,7 +60,6 @@ var defaults = {
 	multiDayEvents: null,
 	startWithMonth: null,
 	dateParameter: 'date',
-	template: clndrTemplate,
 	showAdjacentMonths: true,
 	trackSelectedDate: false,
 	formatWeekdayHeader: null,
@@ -398,15 +364,10 @@ Clndr.prototype.init = function () {
 
 	// Quick and dirty test to make sure rendering is possible.
 	if (!(this.options.render instanceof Function)) {
-		this.options.render = null;
-
-		if (typeof ejs === 'undefined') {
-			throw new Error('EJS was not found. Please include EJS OR provide a custom render function.');
-		} else {
-			// We're just going ahead and using EJS here if no
-			// render method has been supplied.
-			this.compiledClndrTemplate = ejs.compile(this.options.template);
-		}
+		throw new Error(
+			'No render function provided per the "render" option. A render function is required for ' +
+			'rendering the calendar, i.e. when using EJS: data => ejs.render(defaultTemplate, data)',
+		);
 	}
 
 	// Create the parent element that will hold the plugin and save it
@@ -797,11 +758,7 @@ Clndr.prototype.render = function () {
 	}
 
 	// Render the calendar with the data above & bind events to its elements
-	if (this.options.render) {
-		this.calendarContainer.innerHTML = this.options.render.apply(this, [data]);
-	} else {
-		this.calendarContainer.innerHTML = this.compiledClndrTemplate(data);
-	}
+	this.calendarContainer.innerHTML = this.options.render.apply(this, [data]);
 
 	// If there are constraints, we need to add the 'inactive' class to
 	// the controls.
@@ -1626,5 +1583,40 @@ Clndr.prototype.destroy = function () {
 	this.options = defaults;
 	this.element = null;
 };
+
+// This is the default calendar template. This can be used in the function provided as render
+// option, i.e: data => ejs.render(defaultTemplate, data);
+export const defaultTemplate = `
+	<div class="clndr-controls">
+		<div class="clndr-control-button">
+			<span class="clndr-previous-button">previous</span>
+		</div>
+		<div class="month"><%= month %> <%= year %></div>
+		<div class="clndr-control-button rightalign">
+			<span class="clndr-next-button">next</span>
+		</div>
+	</div>
+	<table class="clndr-table" border="0" cellspacing="0" cellpadding="0">
+		<thead>
+			<tr class="header-days">
+				<% for(var i = 0; i < daysOfTheWeek.length; i++) { %>
+					<td class="header-day"><%= daysOfTheWeek[i] %></td>
+				<% } %>
+			</tr>
+		</thead>
+		<tbody>
+			<% for(var i = 0; i < numberOfRows; i++){ %>
+				<tr>
+					<% for(var j = 0; j < 7; j++){ %>
+						<% var d = j + i * 7; %>
+						<td class="<%= days[d].classes %>">
+							<div class="day-contents"><%= days[d].day %></div>
+						</td>
+					<% } %>
+				</tr>
+			<% } %>
+		</tbody>
+	</table>
+`;
 
 export default Clndr;

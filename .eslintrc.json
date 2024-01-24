@@ -9,9 +9,6 @@
     "eslint:recommended",
     "plugin:storybook/recommended"
   ],
-  "globals": {
-    "ejs": "readonly"
-  },
   "parserOptions": {
     "sourceType": "module"
   },

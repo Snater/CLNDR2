@@ -1,8 +1,9 @@
 import '@testing-library/jest-dom';
 import {fireEvent, screen} from '@testing-library/dom';
-import Clndr from './clndr';
+import Clndr, {defaultTemplate as clndrDefaultTemplate} from './clndr';
 import {de} from 'date-fns/locale';
 import userEvent from '@testing-library/user-event';
+import ejs from 'ejs';
 
 const defaultTemplate = `
 	<div class="clndr-controls">
@@ -71,6 +72,8 @@ const multiMonthTemplate = `
 		<div class="clndr-today-button">Today</div>
 	<% }); %>`;
 
+const provideRender = template => data => ejs.render(template || clndrDefaultTemplate, data);
+
 let user;
 let container;
 let clndr;
@@ -103,7 +106,7 @@ afterEach(() => {
 describe('Setup', () => {
 
 	test('Default setup', () => {
-		clndr = new Clndr(container);
+		clndr = new Clndr(container, {render: provideRender()});
 
 		expect(container).not.toBeEmptyDOMElement();
 
@@ -112,10 +115,8 @@ describe('Setup', () => {
 		expect(container).toBeEmptyDOMElement();
 	});
 
-	test('Provide a custom template', () => {
-		clndr = new Clndr(container, {
-			template: defaultTemplate,
-		});
+	test('Use a custom template', () => {
+		clndr = new Clndr(container, {render: provideRender(defaultTemplate)});
 
 		expect(container).not.toBeEmptyDOMElement();
 		expect(screen.getByText('January')).toBeInTheDocument();
@@ -127,6 +128,7 @@ describe('Setup', () => {
 
 	test('Pass in some events', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			events: [
 				{date: '2024-01-07'},
 				{date: '2024-01-23'},
@@ -140,6 +142,7 @@ describe('Setup', () => {
 
 	test('Basic multi-day events', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			events: [
 				{
 					title: 'Multi1',
@@ -167,6 +170,7 @@ describe('Setup', () => {
 
 	test('Multi-day events with partial dates', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			events: [
 				{
 					title: 'Multi1',
@@ -191,6 +195,7 @@ describe('Setup', () => {
 
 	test('Mixing single-day and multi-day events', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			events: [
 				{
 					title: 'Multi1',
@@ -220,31 +225,40 @@ describe('Setup', () => {
 	});
 
 	test('Custom week offset', () => {
-		clndr = new Clndr(container, {weekOffset: 1});
+		clndr = new Clndr(container, {render: provideRender(), weekOffset: 1});
 
 		expect(screen.getByText('M')).toBe(container.querySelector('.header-day'));
 	});
 
 	test('Custom week offset bigger than actual week length', () => {
-		clndr = new Clndr(container, {weekOffset: 10});
+		clndr = new Clndr(container, {render: provideRender(), weekOffset: 10});
 
 		expect(screen.queryAllByText('S')[0]).toBe(container.querySelector('.header-day'));
 	});
 
 	test('Custom week offset while not showing adjacent months', () => {
-		clndr = new Clndr(container, {weekOffset: 3, showAdjacentMonths: false});
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			showAdjacentMonths: false,
+			weekOffset: 3,
+		});
 
 		expect(container.querySelectorAll('.empty').length).toBeGreaterThan(0);
 	})
 
 	test('Force six rows', () => {
-		clndr = new Clndr(container, {forceSixRows: true, startWithMonth: '1992-02'});
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			forceSixRows: true,
+			startWithMonth: '1992-02',
+		});
 
 		expect(container.querySelector('.calendar-day-1992-03-07')).toBeInTheDocument();
 	})
 
 	test('Force six rows while not showing adjacent months', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			forceSixRows: true,
 			showAdjacentMonths: false,
 			startWithMonth: '1992-02',
@@ -254,24 +268,22 @@ describe('Setup', () => {
 	})
 
 	test('Selected date', () => {
-		clndr = new Clndr(container, {selectedDate: '1992-10-15', startWithMonth: '1992-10'});
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			selectedDate: '1992-10-15',
+			startWithMonth: '1992-10',
+		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toHaveClass('selected');
 	});
 
-	test('Custom render function', () => {
-		clndr = new Clndr(container, {render: () => '<div>test</div>'});
-
-		expect(screen.getByText('test')).toBeInTheDocument();
-	});
-
 	test('Custom day interval while providing start month', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(oneWeekTemplate),
 			lengthOfTime: {
 				days: 7,
 			},
 			startWithMonth: '1992-10',
-			template: oneWeekTemplate,
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-01')).toBeInTheDocument();
@@ -279,6 +291,7 @@ describe('Setup', () => {
 
 	test('Custom days of the week naming', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			daysOfTheWeek: ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7'],
 		});
 
@@ -287,6 +300,7 @@ describe('Setup', () => {
 
 	test('Do not show adjacent months', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			events: [{date: '1992-10-15'}],
 			showAdjacentMonths: false,
 			startWithMonth: '1992-10',
@@ -298,7 +312,7 @@ describe('Setup', () => {
 
 	test('Pass in locale', () => {
 		clndr = new Clndr(container, {
-			template: multiMonthTemplate,
+			render: provideRender(multiMonthTemplate),
 			clickEvents: {
 				click: jest.fn(),
 			},
@@ -315,6 +329,7 @@ describe('Setup', () => {
 		const handleMonthChange = jest.fn();
 
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			clickEvents: {
 				onMonthChange: handleMonthChange,
 			},
@@ -327,6 +342,7 @@ describe('Setup', () => {
 
 	test('Track selected date while inactive days should be ignored in selection', async() => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			ignoreInactiveDaysInSelection: true,
 			startWithMonth: '1992-06',
 			trackSelectedDate: true,
@@ -342,6 +358,7 @@ describe('Setup', () => {
 
 	test('Track selected date while inactive days should be ignored in selection and adjacent month\'s days change the month', async() => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			adjacentDaysChangeMonth: true,
 			ignoreInactiveDaysInSelection: true,
 			startWithMonth: '1992-06',
@@ -359,6 +376,7 @@ describe('Setup', () => {
 
 	test('Define just a date after the current date', async() => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			events: [{date: '1992-10-15'}],
 			startWithMonth: '1992-09',
 		});
@@ -373,6 +391,7 @@ describe('Navigation', () => {
 
 	test('Navigate between months', async () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			startWithMonth: '1992-10',
 		});
 
@@ -385,6 +404,7 @@ describe('Navigation', () => {
 
 	test('Change month with click on previous month\'s day', async () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			adjacentDaysChangeMonth: true,
 			startWithMonth: '1992-10',
 		});
@@ -396,6 +416,7 @@ describe('Navigation', () => {
 
 	test('Change month by clicking on empty field preceding current month\'s days', async () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			showAdjacentMonths: false,
 			adjacentDaysChangeMonth: true,
 			startWithMonth: '1992-10',
@@ -408,6 +429,7 @@ describe('Navigation', () => {
 
 	test('Change month by clicking on empty field following current month\'s days', async () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			showAdjacentMonths: false,
 			adjacentDaysChangeMonth: true,
 			startWithMonth: '1992-09',
@@ -420,7 +442,7 @@ describe('Navigation', () => {
 
 	test('Click button switching to next year', async () => {
 		clndr = new Clndr(container, {
-			template: multiMonthTemplate,
+			render: provideRender(multiMonthTemplate),
 			clickEvents: {
 				click: jest.fn(),
 			},
@@ -437,7 +459,7 @@ describe('Navigation', () => {
 
 	test('Click button switching to previous year', async () => {
 		clndr = new Clndr(container, {
-			template: multiMonthTemplate,
+			render: provideRender(multiMonthTemplate),
 			clickEvents: {
 				click: jest.fn(),
 			},
@@ -454,6 +476,7 @@ describe('Navigation', () => {
 
 	test('Programmatically change month by calling previous()', async () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			startWithMonth: '1992-10',
 		});
 
@@ -464,6 +487,7 @@ describe('Navigation', () => {
 
 	test('Programmatically change month by calling forward()', async () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			startWithMonth: '1992-09',
 		});
 
@@ -474,6 +498,7 @@ describe('Navigation', () => {
 
 	test('Programmatically change year using previousYear()', async () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			startWithMonth: '1992-10',
 		});
 
@@ -484,6 +509,7 @@ describe('Navigation', () => {
 
 	test('Prevent changing to previous year if constraint prohibits', async () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			constraints: {
 				startDate: '1992-10-15',
 			},
@@ -497,6 +523,7 @@ describe('Navigation', () => {
 
 	test('Programmatically change year using nextYear()', async () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			startWithMonth: '1992-10',
 		});
 
@@ -507,6 +534,7 @@ describe('Navigation', () => {
 
 	test('Prevent changing to next year if constraint prohibits', async () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			constraints: {
 				endDate: '1992-10-15',
 			},
@@ -520,6 +548,7 @@ describe('Navigation', () => {
 
 	test('Programmatically trigger today()', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			startWithMonth: '1992-10',
 		});
 
@@ -533,6 +562,7 @@ describe('Navigation', () => {
 		const handleYearChange = jest.fn();
 
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			clickEvents: {
 				onYearChange: handleYearChange,
 				today: handleToday,
@@ -548,11 +578,11 @@ describe('Navigation', () => {
 
 	test('Go to today while having a custom interval with a start date being set', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(oneWeekTemplate),
 			lengthOfTime: {
 				days: 7,
 				startDate: '1992-10-15',
 			},
-			template: oneWeekTemplate,
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
@@ -564,10 +594,10 @@ describe('Navigation', () => {
 
 	test('Go to today while having a custom interval', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(oneWeekTemplate),
 			lengthOfTime: {
 				days: 7,
 			},
-			template: oneWeekTemplate,
 		});
 
 		expect(container.querySelector('.calendar-day-2024-01-18')).toBeInTheDocument();
@@ -579,7 +609,7 @@ describe('Navigation', () => {
 		const handleToday = jest.fn();
 
 		clndr = new Clndr(container, {
-			template: defaultTemplate,
+			render: provideRender(defaultTemplate),
 			clickEvents: {
 				today: handleToday,
 			},
@@ -594,6 +624,7 @@ describe('Navigation', () => {
 		const handleMonthChange = jest.fn();
 
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			clickEvents: {
 				onMonthChange: handleMonthChange,
 			},
@@ -611,6 +642,7 @@ describe('Navigation', () => {
 		const handleMonthChange = jest.fn();
 
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			clickEvents: {
 				onMonthChange: handleMonthChange,
 			},
@@ -629,7 +661,7 @@ describe('Navigation', () => {
 		console.warn = mockWarn;
 
 		clndr = new Clndr(container, {
-			template: multiMonthTemplate,
+			render: provideRender(multiMonthTemplate),
 			lengthOfTime: {
 				months: 2,
 			},
@@ -644,6 +676,7 @@ describe('Navigation', () => {
 		const handleYearChange = jest.fn();
 
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			clickEvents: {
 				onYearChange: handleYearChange,
 			},
@@ -661,6 +694,7 @@ describe('Navigation', () => {
 		const handleYearChange = jest.fn();
 
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			clickEvents: {
 				onYearChange: handleYearChange,
 			},
@@ -679,6 +713,7 @@ describe('Navigation', () => {
 		console.warn = mockWarn;
 
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			startWithMonth: '1992-10',
 		});
 
@@ -691,6 +726,7 @@ describe('Navigation', () => {
 		const handleIntervalChange = jest.fn();
 
 		clndr = new Clndr(container, {
+			render: provideRender(multiMonthTemplate),
 			clickEvents: {
 				onIntervalChange: handleIntervalChange,
 			},
@@ -698,7 +734,6 @@ describe('Navigation', () => {
 				months: 3,
 			},
 			startWithMonth: '1992-10',
-			template: multiMonthTemplate,
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -709,11 +744,11 @@ describe('Navigation', () => {
 
 	test('Programmatically set new interval with having a custom month interval configured', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(oneWeekTemplate),
 			lengthOfTime: {
 				days: 7,
 			},
 			startWithMonth: '1992-10',
-			template: oneWeekTemplate,
 		});
 
 		expect(screen.getByText('10/01 - 10/07')).toBeInTheDocument();
@@ -730,6 +765,7 @@ describe('Events', () => {
 		const handleReady = jest.fn();
 
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			doneRendering: handleDoneRendering,
 			ready: handleReady,
 		});
@@ -740,6 +776,7 @@ describe('Events', () => {
 
 	test('Change month with click on next month\'s day', async () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			adjacentDaysChangeMonth: true,
 			startWithMonth: '1992-09',
 		});
@@ -751,7 +788,11 @@ describe('Events', () => {
 
 	test('Click handler', async () => {
 		const handleClick = jest.fn();
-		clndr = new Clndr(container, {clickEvents: {click: handleClick}, startMonth: '1992-10-15'});
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			clickEvents: {click: handleClick},
+			startMonth: '1992-10-15',
+		});
 
 		await user.click(screen.getByText('15'));
 
@@ -764,13 +805,13 @@ describe('Events', () => {
 		const handleIntervalChange = jest.fn();
 
 		const clndr = new Clndr(container, {
+			render: provideRender(multiMonthTemplate),
 			clickEvents: {
 				previousInterval: handlePreviousInterval,
 				nextInterval: handleNextInterval,
 				onIntervalChange: handleIntervalChange,
 			},
 			lengthOfTime: {months: 3},
-			template: multiMonthTemplate,
 		});
 
 		clndr.back({withCallbacks: true});
@@ -790,6 +831,7 @@ describe('Events', () => {
 		const handleNextYear = jest.fn();
 
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			clickEvents: {
 				onMonthChange: handleMonthChange,
 				previousMonth: handlePreviousMonth,
@@ -800,7 +842,6 @@ describe('Events', () => {
 			},
 			startWithMonth: '1992-12',
 		});
-
 
 		clndr.next({withCallbacks: true});
 		clndr.back({withCallbacks: true});
@@ -819,6 +860,7 @@ describe('Events', () => {
 		});
 
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			clickEvents: {
 				click: handleClick,
 			},
@@ -839,6 +881,7 @@ describe('Events', () => {
 		});
 
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			clickEvents: {
 				click: handleClick,
 			},
@@ -862,6 +905,7 @@ describe('Events', () => {
 		const handleClick = jest.fn();
 
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			showAdjacentMonths: false,
 			clickEvents: {
 				click: handleClick,
@@ -877,7 +921,7 @@ describe('Events', () => {
 describe('Data manipulations', () => {
 
 	test('Set extras', () => {
-		clndr = new Clndr(container);
+		clndr = new Clndr(container, {render: provideRender()});
 
 		expect(clndr.options.extras).toBeNull();
 
@@ -887,7 +931,7 @@ describe('Data manipulations', () => {
 	});
 
 	test('Add an event with date string', () => {
-		clndr = new Clndr(container);
+		clndr = new Clndr(container, {render: provideRender()});
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 
@@ -897,7 +941,7 @@ describe('Data manipulations', () => {
 	});
 
 	test('Add an event with Date object', () => {
-		clndr = new Clndr(container);
+		clndr = new Clndr(container, {render: provideRender()});
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 
@@ -907,7 +951,7 @@ describe('Data manipulations', () => {
 	});
 
 	test('Add an event with forcing no re-rendering', () => {
-		const clndr = new Clndr(container);
+		const clndr = new Clndr(container, {render: provideRender()});
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 
@@ -918,6 +962,7 @@ describe('Data manipulations', () => {
 
 	test('Add a single-day event with multi-day events being configured', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			multiDayEvents: {
 				singleDay: 'date',
 				endDate: 'endDate',
@@ -934,6 +979,7 @@ describe('Data manipulations', () => {
 
 	test('Set all events', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			events: [{date: '2024-01-07'}],
 		});
 
@@ -948,6 +994,7 @@ describe('Data manipulations', () => {
 
 	test('Set all events with multi-day events being configured', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			events: [{
 				title: 'Multi',
 				endDate: '2024-01-17',
@@ -971,6 +1018,7 @@ describe('Data manipulations', () => {
 
 	test('Remove events', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			events: [
 				{date: '2024-01-07'},
 				{date: '2024-01-23'},
@@ -992,6 +1040,7 @@ describe('Custom interval', () => {
 
 	test('lengthOfTime option', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(multiMonthTemplate),
 			events: [
 				{
 					title: 'Multi1',
@@ -1005,7 +1054,6 @@ describe('Custom interval', () => {
 			],
 			lengthOfTime: {months: 3},
 			startWithMonth: '1992-10',
-			template: multiMonthTemplate,
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-07')).toBeInTheDocument();
@@ -1016,8 +1064,8 @@ describe('Custom interval', () => {
 
 	test('Custom month view interval with custom start date', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(multiMonthTemplate),
 			lengthOfTime: {months: 2, startDate: '1992-10-15'},
-			template: multiMonthTemplate,
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
@@ -1026,9 +1074,9 @@ describe('Custom interval', () => {
 
 	test('Custom month view interval with custom start month', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(multiMonthTemplate),
 			lengthOfTime: {months: 2},
 			startWithMonth: '1992-10',
-			template: multiMonthTemplate,
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
@@ -1037,8 +1085,8 @@ describe('Custom interval', () => {
 
 	test('Custom day view interval', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(oneWeekTemplate),
 			lengthOfTime: {days: 7, startDate: '1992-10-15'},
-			template: oneWeekTemplate,
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
@@ -1050,6 +1098,7 @@ describe('Constraints', () => {
 
 	test('Start and end date constraints in the past', async () => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			constraints: {
 				startDate: '1992-10-15',
 				endDate: '1992-11-15',
@@ -1069,12 +1118,12 @@ describe('Constraints', () => {
 
 	test('Start and end date constraints in the future', async () => {
 		clndr = new Clndr(container, {
+			render: provideRender(oneWeekTemplate),
 			constraints: {
 				startDate: '2100-01-01',
 				endDate: '2100-01-06',
 			},
 			lengthOfTime: {days: 7, interval: 7},
-			template: oneWeekTemplate,
 		});
 
 		expect(container.querySelector('.calendar-day-2100-01-01')).toBeInTheDocument();
@@ -1090,6 +1139,7 @@ describe('Constraints', () => {
 
 	test('Day starting interval is after the ending constraint', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(oneWeekTemplate),
 			lengthOfTime: {
 				days: 7,
 				interval: 7,
@@ -1099,7 +1149,6 @@ describe('Constraints', () => {
 				endDate: '1992-09-15',
 				startDate: '1992-09-01',
 			},
-			template: oneWeekTemplate,
 		});
 
 		expect(container.querySelector('.calendar-day-1992-09-15')).toBeInTheDocument();
@@ -1107,6 +1156,7 @@ describe('Constraints', () => {
 
 	test('End date constraint is before start date constraint', () => {
 		clndr = new Clndr(container, {
+			render: provideRender(multiMonthTemplate),
 			lengthOfTime: {
 				months: 3,
 				interval: 7,
@@ -1116,7 +1166,6 @@ describe('Constraints', () => {
 				endDate: '1992-11-15',
 				startDate: '1993-11-30',
 			},
-			template: multiMonthTemplate,
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).not.toBeInTheDocument();
@@ -1127,20 +1176,13 @@ describe('Constraints', () => {
 
 describe('Forcing errors', () => {
 
-	test('Neither providing EJS, nor a custom render function', () => {
-		const originalEjs = ejs;
-
-		// eslint-disable-next-line no-global-assign
-		ejs = undefined;
-
+	test('Not providing a render function', () => {
 		expect(() => new Clndr(container)).toThrow();
-
-		// eslint-disable-next-line no-global-assign
-		ejs = originalEjs;
 	});
 
 	test('Missing CSS classes to detect month change when not showing adjacent months', async() => {
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			adjacentDaysChangeMonth: true,
 			showAdjacentMonths: false,
 			startWithMonth: '1992-09',
@@ -1157,6 +1199,7 @@ describe('Forcing errors', () => {
 		});
 
 		clndr = new Clndr(container, {
+			render: provideRender(),
 			clickEvents: {
 				click: handleClick,
 			},

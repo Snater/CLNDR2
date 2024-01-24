@@ -1,7 +1,8 @@
-import Clndr from './clndr.js';
-import {action} from '@storybook/addon-actions';
 import './clndr.stories.css';
+import Clndr, {defaultTemplate} from './clndr.js';
+import {action} from '@storybook/addon-actions';
 import {enGB} from 'date-fns/locale';
+import ejs from 'ejs';
 
 export default {
 	title: 'Clndr',
@@ -43,6 +44,7 @@ export const Default = {
 		},
 		showAdjacentMonths: true,
 		adjacentDaysChangeMonth: false,
+		render: data => ejs.render(defaultTemplate, data),
 	},
 	render: ({...args}) => {
 		const container = document.createElement('div');
@@ -74,26 +76,28 @@ export const TwoWeeksIntervalWithOneWeekPagination = {
 			endDate: 'endDate',
 			startDate: 'startDate',
 		},
-		template: `
-			<div class="clndr-controls">
-				<div class="clndr-previous-button">&lsaquo;</div>
-				<div class="month"><%= month %></div>
-				<div class="clndr-next-button">&rsaquo;</div>
-			</div>
-			<div class="clndr-grid">
-				<div class="days-of-the-week">
-					<% daysOfTheWeek.forEach(day => { %>
-						<div class="header-day"><%= day %></div>
-					<% }); %>
-					<div class="days">
-						<% days.forEach(day => { %>
-							<div class="<%= day.classes %>"><%= day.day %></div>
+		render: data => {
+			return ejs.render(`
+				<div class="clndr-controls">
+					<div class="clndr-previous-button">&lsaquo;</div>
+					<div class="month"><%= month %></div>
+					<div class="clndr-next-button">&rsaquo;</div>
+				</div>
+				<div class="clndr-grid">
+					<div class="days-of-the-week">
+						<% daysOfTheWeek.forEach(day => { %>
+							<div class="header-day"><%= day %></div>
 						<% }); %>
+						<div class="days">
+							<% days.forEach(day => { %>
+								<div class="<%= day.classes %>"><%= day.day %></div>
+							<% }); %>
+						</div>
 					</div>
 				</div>
-			</div>
-			<div class="clndr-today-button">Today</div>
-		`,
+				<div class="clndr-today-button">Today</div>
+			`, data);
+		},
 	},
 	render: ({...args}) => {
 		const container = document.createElement('div');
@@ -113,34 +117,36 @@ export const TwoMonthsWithOneMonthPagination = {
 			endDate: 'endDate',
 			startDate: 'startDate',
 		},
-		template: `
-			<div class="clndr-controls top">
-				<div class="clndr-previous-button">&lsaquo;</div>
-				<div class="clndr-next-button">&rsaquo;</div>
-			</div>
-			<div class="clearfix">
-			<% months.forEach(cal => { %>
-					<div class="cal">
-							<div class="clndr-controls">
-									<div class="month"><%= format(cal.month, 'MMMM') %></div>
-							</div>
-							<div class="clndr-grid">
-									<div class="days-of-the-week">
-									<% daysOfTheWeek.forEach(day => { %>
-											<div class="header-day"><%= day %></div>
-									<% }); %>
-											<div class="days">
-											<% cal.days.forEach(day => { %>
-													<div class="<%= day.classes %>"><%= day.day %></div>
-											<% }); %>
-											</div>
-									</div>
-							</div>
-					</div>
-			<% }); %>
-			</div>
-			<div class="clndr-today-button">Today</div>
-		`,
+		render: data => {
+			return ejs.render(`
+				<div class="clndr-controls top">
+					<div class="clndr-previous-button">&lsaquo;</div>
+					<div class="clndr-next-button">&rsaquo;</div>
+				</div>
+				<div class="clearfix">
+				<% months.forEach(cal => { %>
+						<div class="cal">
+								<div class="clndr-controls">
+										<div class="month"><%= format(cal.month, 'MMMM') %></div>
+								</div>
+								<div class="clndr-grid">
+										<div class="days-of-the-week">
+										<% daysOfTheWeek.forEach(day => { %>
+												<div class="header-day"><%= day %></div>
+										<% }); %>
+												<div class="days">
+												<% cal.days.forEach(day => { %>
+														<div class="<%= day.classes %>"><%= day.day %></div>
+												<% }); %>
+												</div>
+										</div>
+								</div>
+						</div>
+				<% }); %>
+				</div>
+				<div class="clndr-today-button">Today</div>
+			`, data);
+		},
 	},
 	render: ({...args}) => {
 		const container = document.createElement('div');
