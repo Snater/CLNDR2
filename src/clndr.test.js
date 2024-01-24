@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom';
-import userEvent from '@testing-library/user-event';
-import Clndr from './clndr';
-import moment from 'moment';
 import {fireEvent, screen} from '@testing-library/dom';
+import Clndr from './clndr';
+import {de} from 'date-fns/locale';
+import userEvent from '@testing-library/user-event';
 
 const defaultTemplate = `
 	<div class="clndr-controls">
@@ -54,7 +54,7 @@ const multiMonthTemplate = `
 	</div>
 	<% months.forEach(oneMonth => { %>
 		<div class="clndr-controls">
-			<div class="month"><%= oneMonth.month.format('MMMM YYYY') %></div>
+			<div class="month"><%= format(oneMonth.month, 'MMMM yyyy') %></div>
 		</div>
 		<div class="clndr-grid">
 			<div class="days-of-the-week">
@@ -79,7 +79,6 @@ beforeAll(() => {
 	jest.useFakeTimers({now: new Date(2024, 0, 18, 12)});
 	jest.spyOn(Date, 'now').mockImplementation(() => new Date('2024-01-18T12:00:00.000Z'));
 	jest.spyOn(console, 'warn').mockImplementation(jest.fn);
-	moment.locale('en');
 	user = userEvent.setup({delay: null});
 });
 
@@ -220,12 +219,6 @@ describe('Setup', () => {
 		expect(container.querySelector('.calendar-day-2024-01-02')).not.toHaveClass('event');
 	});
 
-	test('Pass moment instance', () => {
-		clndr = new Clndr(container, {moment});
-
-		expect(clndr.options.moment).not.toBeNull();
-	});
-
 	test('Custom week offset', () => {
 		clndr = new Clndr(container, {weekOffset: 1});
 
@@ -302,6 +295,21 @@ describe('Setup', () => {
 		expect(screen.queryAllByText('1').length).toBe(1);
 		expect(screen.queryAllByText('30').length).toBe(1);
 	})
+
+	test('Pass in locale', () => {
+		clndr = new Clndr(container, {
+			template: multiMonthTemplate,
+			clickEvents: {
+				click: jest.fn(),
+			},
+			lengthOfTime: {
+				months: 3,
+			},
+			locale: de,
+		});
+
+		expect(screen.getByText('Januar 2024')).toBeInTheDocument();
+	});
 
 	test('Use touch events', () => {
 		const handleMonthChange = jest.fn();
@@ -542,8 +550,7 @@ describe('Navigation', () => {
 		clndr = new Clndr(container, {
 			lengthOfTime: {
 				days: 7,
-				// FIXME: startDate should not require a moment object
-				startDate: moment('1992-10-15'),
+				startDate: '1992-10-15',
 			},
 			template: oneWeekTemplate,
 		});

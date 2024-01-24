@@ -23,7 +23,6 @@ const config = {
 			plugins: [
 				inject({
 					_: 'underscore',
-					moment: 'moment',
 				}),
 				viteCommonjs(),
 			],

@@ -1,11 +1,7 @@
 import Clndr from './clndr.js';
 import {action} from '@storybook/addon-actions';
 import './clndr.stories.css';
-
-// Switch moment locale:
-// import 'moment/dist/locale/de';
-
-const thisMonth = moment().format('YYYY-MM');
+import {enGB} from 'date-fns/locale';
 
 export default {
 	title: 'Clndr',
@@ -26,14 +22,15 @@ export default {
 		events: [
 			{
 				title: 'Multi-Day Event',
-				endDate: thisMonth + '-14',
-				startDate: thisMonth + '-10',
+				endDate: new Date().toISOString().slice(0, 8) + '14',
+				startDate: new Date().toISOString().slice(0, 8) + '10',
 			}, {
-				endDate: thisMonth + '-23',
-				startDate: thisMonth + '-21',
+				endDate: new Date().toISOString().slice(0, 8) + '23',
+				startDate: new Date().toISOString().slice(0, 8) + '21',
 				title: 'Another Multi-Day Event',
 			},
 		],
+		locale: enGB,
 	},
 };
 
@@ -125,7 +122,7 @@ export const TwoMonthsWithOneMonthPagination = {
 			<% months.forEach(cal => { %>
 					<div class="cal">
 							<div class="clndr-controls">
-									<div class="month"><%= cal.month.format('MMMM') %></div>
+									<div class="month"><%= format(cal.month, 'MMMM') %></div>
 							</div>
 							<div class="clndr-grid">
 									<div class="days-of-the-week">

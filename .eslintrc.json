@@ -10,8 +10,7 @@
     "plugin:storybook/recommended"
   ],
   "globals": {
-    "_": "readonly",
-    "moment": "readonly"
+    "_": "readonly"
   },
   "parserOptions": {
     "sourceType": "module"

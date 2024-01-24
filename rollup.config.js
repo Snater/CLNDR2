@@ -7,7 +7,7 @@ export default [{
 		format: 'esm',
 		sourcemap: true,
 	}],
-	external: ['moment', 'underscore'],
+	external: ['date-fns', 'underscore'],
 	plugins: [
 		cleaner({targets: ['./dist']}),
 	],
