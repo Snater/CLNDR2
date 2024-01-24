@@ -8,6 +8,8 @@ import {
 	endOfMonth,
 	endOfWeek,
 	format,
+	getDate,
+	getDay,
 	getMonth,
 	getYear,
 	isAfter,
@@ -470,11 +472,11 @@ const Clndr = (function (moment) {
 		var endOfLastMonth;
 		var startOfNextMonth;
 		var startOfLastMonth;
-		var date = startDate.clone();
+		var date = new Date(startDate);
 
 		// This is a helper object so that days can resolve their classes
 		// correctly. Don't use it for anything please.
-		this._currentIntervalStart = startDate.clone();
+		this._currentIntervalStart = new Date(startDate);
 
 		// Filter the events list (if it exists) to events that are happening
 		// last month, this month and next month (within the current grid view).
@@ -489,8 +491,8 @@ const Clndr = (function (moment) {
 			//   startDate | endDate | e.start   | e.end
 			//   e.start   | e.end   | startDate | endDate
 			this.eventsThisInterval = this.options.events.filter(event => {
-				var afterEnd = event._clndrStartDateObject.isAfter(endDate);
-				var beforeStart = event._clndrEndDateObject.isBefore(startDate);
+				var afterEnd = isAfter(event._clndrStartDateObject, endDate);
+				var beforeStart = isBefore(event._clndrEndDateObject, startDate);
 
 				if (beforeStart || afterEnd) {
 					return false;
@@ -499,29 +501,21 @@ const Clndr = (function (moment) {
 			});
 
 			if (this.options.showAdjacentMonths) {
-				startOfLastMonth = startDate.clone()
-					.subtract(1, 'months')
-					.startOf('month');
-				endOfLastMonth = startOfLastMonth.clone().endOf('month');
-				startOfNextMonth = endDate.clone()
-					.add(1, 'months')
-					.startOf('month');
-				endOfNextMonth = startOfNextMonth.clone().endOf('month');
+				startOfLastMonth = startOfMonth(subMonths(startDate, 1));
+				endOfLastMonth = endOfMonth(startOfLastMonth);
+				startOfNextMonth = startOfMonth(addMonths(endDate, 1));
+				endOfNextMonth = endOfMonth(startOfNextMonth);
 
 				this.eventsLastMonth = this.options.events.filter(event => {
-					var beforeStart = event._clndrEndDateObject
-						.isBefore(startOfLastMonth);
-					var afterEnd = event._clndrStartDateObject
-						.isAfter(endOfLastMonth);
+					var beforeStart = isBefore(event._clndrEndDateObject, startOfLastMonth);
+					var afterEnd = isAfter(event._clndrStartDateObject, endOfLastMonth);
 
 					return !(beforeStart || afterEnd);
 				});
 
 				this.eventsNextMonth = this.options.events.filter(event => {
-					var beforeStart = event._clndrEndDateObject
-						.isBefore(startOfNextMonth);
-					var afterEnd = event._clndrStartDateObject
-						.isAfter(endOfNextMonth);
+					var beforeStart = isBefore(event._clndrEndDateObject, startOfNextMonth);
+					var afterEnd = isAfter(event._clndrStartDateObject, endOfNextMonth);
 
 					return !(beforeStart || afterEnd);
 				});
@@ -534,7 +528,7 @@ const Clndr = (function (moment) {
 		// needs to happen if the interval is being specified in days rather
 		// than months.
 		if (!this.options.lengthOfTime.days) {
-			diff = date.weekday() - this.options.weekOffset;
+			diff = getDay(date) - this.options.weekOffset;
 
 			if (diff < 0) {
 				diff += 7;
@@ -542,16 +536,8 @@ const Clndr = (function (moment) {
 
 			if (this.options.showAdjacentMonths) {
 				for (i = 1; i <= diff; i++) {
-					day = moment([
-						startDate.year(),
-						startDate.month(),
-						i,
-					]).subtract(diff, 'days');
-					daysArray.push(
-						this.createDayObject(
-							day,
-							this.eventsLastMonth,
-						));
+					day = subDays(new Date(getYear(startDate), getMonth(startDate), i), diff);
+					daysArray.push(this.createDayObject(day, this.eventsLastMonth));
 				}
 			} else {
 				for (i = 0; i < diff; i++) {
@@ -565,15 +551,11 @@ const Clndr = (function (moment) {
 		}
 
 		// Now we push all of the days in the interval
-		dateIterator = startDate.clone();
+		dateIterator = new Date(startDate);
 
-		while (dateIterator.isBefore(endDate) || dateIterator.isSame(endDate, 'day')) {
-			daysArray.push(
-				this.createDayObject(
-					dateIterator.clone(),
-					this.eventsThisInterval,
-				));
-			dateIterator.add(1, 'days');
+		while (isBefore(dateIterator, endDate) || isSameDay(dateIterator, endDate)) {
+			daysArray.push(this.createDayObject(dateIterator, this.eventsThisInterval));
+			dateIterator = addDays(dateIterator, 1);
 		}
 
 		// ...and if there are any trailing blank boxes, fill those in with the
@@ -582,11 +564,7 @@ const Clndr = (function (moment) {
 		if (!this.options.lengthOfTime.days) {
 			while (daysArray.length % 7 !== 0) {
 				if (this.options.showAdjacentMonths) {
-					daysArray.push(
-						this.createDayObject(
-							dateIterator.clone(),
-							this.eventsNextMonth,
-						));
+					daysArray.push(this.createDayObject(dateIterator, this.eventsNextMonth));
 				} else {
 					daysArray.push(
 						this.calendarDay({
@@ -594,7 +572,7 @@ const Clndr = (function (moment) {
 								this.options.classes.nextMonth,
 						}));
 				}
-				dateIterator.add(1, 'days');
+				dateIterator = addDays(dateIterator, 1);
 			}
 		}
 
@@ -604,12 +582,8 @@ const Clndr = (function (moment) {
 		if (this.options.forceSixRows && daysArray.length !== 42) {
 			while (daysArray.length < 42) {
 				if (this.options.showAdjacentMonths) {
-					daysArray.push(
-						this.createDayObject(
-							dateIterator.clone(),
-							this.eventsNextMonth,
-						));
-					dateIterator.add(1, 'days');
+					daysArray.push(this.createDayObject(dateIterator, this.eventsNextMonth));
+					dateIterator = addDays(dateIterator, 1);
 				} else {
 					daysArray.push(this.calendarDay({
 						classes: this.options.targets.empty + ' ' +
@@ -630,7 +604,7 @@ const Clndr = (function (moment) {
 		var endMoment;
 		var startMoment;
 		var selectedMoment;
-		var now = moment();
+		var now = new Date();
 		var eventsToday = [];
 		var extraClasses = '';
 		var properties = {
@@ -639,13 +613,8 @@ const Clndr = (function (moment) {
 			isAdjacentMonth: false,
 		};
 
-		// Validate moment date
-		// if (!day.isValid() && day.hasOwnProperty('_d') && day._d !== undefined) {
-		//   day = moment(day._d);
-		// }
-
 		// Set to the end of the day for comparisons
-		dayEnd = day.clone().endOf('day');
+		dayEnd = endOfDay(day);
 
 		for (j; j < monthEvents.length; j++) {
 			// Keep in mind that the events here already passed the month/year
@@ -657,17 +626,17 @@ const Clndr = (function (moment) {
 			// If today is the same day as start or is after the start, and
 			// if today is the same day as the end or before the end ...
 			// woohoo semantics!
-			if (start <= dayEnd && day <= end) {
+			if (!isAfter(start, dayEnd) && !isAfter(day, end)) {
 				eventsToday.push(monthEvents[j]);
 			}
 		}
 
-		if (now.format('YYYY-MM-DD') === day.format('YYYY-MM-DD')) {
+		if (isSameDay(now, day)) {
 			extraClasses += (' ' + this.options.classes.today);
 			properties.isToday = true;
 		}
 
-		if (day.isBefore(now, 'day')) {
+		if (isBefore(day, now)) {
 			extraClasses += (' ' + this.options.classes.past);
 		}
 
@@ -676,18 +645,18 @@ const Clndr = (function (moment) {
 		}
 
 		if (!this.options.lengthOfTime.days) {
-			if (this._currentIntervalStart.month() > day.month()) {
+			if (getMonth(this._currentIntervalStart) > getMonth(day)) {
 				extraClasses += (' ' + this.options.classes.adjacentMonth);
 				properties.isAdjacentMonth = true;
 
-				this._currentIntervalStart.year() === day.year()
+				getYear(this._currentIntervalStart) === getYear(day)
 					? extraClasses += (' ' + this.options.classes.lastMonth)
 					: extraClasses += (' ' + this.options.classes.nextMonth);
-			} else if (this._currentIntervalStart.month() < day.month()) {
+			} else if (getMonth(this._currentIntervalStart) < getMonth(day)) {
 				extraClasses += (' ' + this.options.classes.adjacentMonth);
 				properties.isAdjacentMonth = true;
 
-				this._currentIntervalStart.year() === day.year()
+				getYear(this._currentIntervalStart) === getYear(day)
 					? extraClasses += (' ' + this.options.classes.nextMonth)
 					: extraClasses += (' ' + this.options.classes.lastMonth);
 			}
@@ -696,42 +665,37 @@ const Clndr = (function (moment) {
 		// If there are constraints, we need to add the inactive class to the
 		// days outside of them
 		if (this.options.constraints) {
-			endMoment = moment(this.options.constraints.endDate);
-			startMoment = moment(this.options.constraints.startDate);
+			endMoment = new Date(this.options.constraints.endDate);
+			startMoment = new Date(this.options.constraints.startDate);
 
-			if (this.options.constraints.startDate && day.isBefore(startMoment)) {
+			if (this.options.constraints.startDate && isBefore(day, startMoment)) {
 				extraClasses += (' ' + this.options.classes.inactive);
 				properties.isInactive = true;
 			}
 
-			if (this.options.constraints.endDate && day.isAfter(endMoment)) {
+			if (this.options.constraints.endDate && isAfter(day, endMoment)) {
 				extraClasses += (' ' + this.options.classes.inactive);
 				properties.isInactive = true;
 			}
 		}
 
-		// Validate moment date
-		// if (!day.isValid() && day.hasOwnProperty('_d') && day._d !== undefined) {
-		//   day = moment(day._d);
-		// }
-
 		// Check whether the day is "selected"
-		selectedMoment = moment(this.options.selectedDate);
+		selectedMoment = new Date(this.options.selectedDate);
 
-		if (this.options.selectedDate && day.isSame(selectedMoment, 'day')) {
+		if (this.options.selectedDate && isSameDay(day, selectedMoment)) {
 			extraClasses += (' ' + this.options.classes.selected);
 		}
 
 		// We're moving away from using IDs in favor of classes, since when
 		// using multiple calendars on a page we are technically violating the
 		// uniqueness of IDs.
-		extraClasses += ' calendar-day-' + day.format('YYYY-MM-DD');
+		extraClasses += ' calendar-day-' + format(day, 'yyyy-MM-dd');
 		// Day of week
-		extraClasses += ' calendar-dow-' + day.weekday();
+		extraClasses += ' calendar-dow-' + getDay(day);
 
 		return this.calendarDay({
 			date: day,
-			day: day.date(),
+			day: getDate(day),
 			events: eventsToday,
 			properties: properties,
 			classes: this.options.targets.day + extraClasses,
@@ -761,9 +725,7 @@ const Clndr = (function (moment) {
 		this.calendarContainer.innerHTML = '';
 
 		if (this.options.lengthOfTime.days) {
-			days = this.createDaysObject(
-				moment(this.intervalStart),
-				moment(this.intervalEnd));
+			days = this.createDaysObject(this.intervalStart, this.intervalEnd);
 			data = {
 				days: days,
 				months: [],
@@ -792,7 +754,7 @@ const Clndr = (function (moment) {
 				currentIntervalEnd = currentIntervalStart
 					.clone()
 					.endOf('month');
-				days = this.createDaysObject(currentIntervalStart, currentIntervalEnd);
+				days = this.createDaysObject(new Date(currentIntervalStart.format()), new Date(currentIntervalEnd.format()));
 				// Save events processed for each month into a master array of
 				// events for this interval
 				eventsThisInterval.push(this.eventsThisInterval);
@@ -826,10 +788,7 @@ const Clndr = (function (moment) {
 			};
 		} else {
 			// Get an array of days and blank spaces
-			days = this.createDaysObject(
-				moment(startOfMonth(this.month)),
-				moment(endOfMonth(this.month)),
-			);
+			days = this.createDaysObject(startOfMonth(this.month), endOfMonth(this.month));
 
 			data = {
 				days: days,
@@ -1075,7 +1034,7 @@ const Clndr = (function (moment) {
 		if (targetWasDay) {
 			dateString = this.getTargetDateString(currentTarget);
 			target.date = dateString
-				? moment(dateString)
+				? new Date(dateString)
 				: null;
 
 			// Do we have events?
@@ -1084,12 +1043,12 @@ const Clndr = (function (moment) {
 				if (this.options.multiDayEvents) {
 					targetEndDate = target.date.clone().endOf('day');
 					filterFn = event => {
-						return event._clndrStartDateObject <= targetEndDate &&
-							target.date <= event._clndrEndDateObject;
+						return !isAfter(event._clndrStartDateObject, new Date(targetEndDate.format())) &&
+							!isAfter(new Date(target.date.format()), event._clndrEndDateObject);
 					};
 				} else {
 					filterFn = event => {
-						return dateString === event._clndrStartDateObject.format('YYYY-MM-DD');
+						return dateString === format(event._clndrStartDateObject, 'yyyy-MM-dd');
 					};
 				}
 
@@ -1634,9 +1593,9 @@ const Clndr = (function (moment) {
 			// Add the date as both start and end, since it's a single-day
 			// event by default
 			events[i]._clndrStartDateObject =
-				moment(events[i][self.options.dateParameter]);
+				new Date(events[i][self.options.dateParameter]);
 			events[i]._clndrEndDateObject =
-				moment(events[i][self.options.dateParameter]);
+				new Date(events[i][self.options.dateParameter]);
 		}
 
 		return events;
@@ -1656,13 +1615,13 @@ const Clndr = (function (moment) {
 			// If we don't find the startDate OR endDate fields, look for singleDay
 			if (!end && !start) {
 				events[i]._clndrEndDateObject =
-					moment(events[i][multiEvents.singleDay]);
+					new Date(events[i][multiEvents.singleDay]);
 				events[i]._clndrStartDateObject =
-					moment(events[i][multiEvents.singleDay]);
+					new Date(events[i][multiEvents.singleDay]);
 			} else {
 				// Otherwise use startDate and endDate, or whichever one is present
-				events[i]._clndrEndDateObject = moment(end || start);
-				events[i]._clndrStartDateObject = moment(start || end);
+				events[i]._clndrEndDateObject = new Date(end || start);
+				events[i]._clndrStartDateObject = new Date(start || end);
 			}
 		}
 

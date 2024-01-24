@@ -879,12 +879,22 @@ describe('Data manipulations', () => {
 		expect(clndr.options.extras).toMatchObject({someExtra: 'value'});
 	});
 
-	test('Add an event', () => {
+	test('Add an event with date string', () => {
 		clndr = new Clndr(container);
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 
 		clndr.addEvents([{date: '2024-01-12'}]);
+
+		expect(container.querySelector('.calendar-day-2024-01-12')).toHaveClass('event');
+	});
+
+	test('Add an event with Date object', () => {
+		clndr = new Clndr(container);
+
+		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
+
+		clndr.addEvents([{date: new Date('2024-01-12')}]);
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).toHaveClass('event');
 	});

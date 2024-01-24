@@ -32,9 +32,6 @@ export default {
 				endDate: thisMonth + '-23',
 				startDate: thisMonth + '-21',
 				title: 'Another Multi-Day Event',
-			}, {
-				date: thisMonth + '-27',
-				title: 'Single Day Event',
 			},
 		],
 	},
