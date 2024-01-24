@@ -1127,16 +1127,16 @@ describe('Constraints', () => {
 
 describe('Forcing errors', () => {
 
-	test('Neither providing Underscore, nor a custom render function', () => {
-		const underscore = _;
+	test('Neither providing EJS, nor a custom render function', () => {
+		const originalEjs = ejs;
 
 		// eslint-disable-next-line no-global-assign
-		_ = undefined;
+		ejs = undefined;
 
 		expect(() => new Clndr(container)).toThrow();
 
 		// eslint-disable-next-line no-global-assign
-		_ = underscore;
+		ejs = originalEjs;
 	});
 
 	test('Missing CSS classes to detect month change when not showing adjacent months', async() => {

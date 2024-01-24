@@ -21,9 +21,7 @@ const config = {
 	async viteFinal(config) {
 		return mergeConfig(config, {
 			plugins: [
-				inject({
-					_: 'underscore',
-				}),
+				inject({ejs: 'ejs'}),
 				viteCommonjs(),
 			],
 			define: {

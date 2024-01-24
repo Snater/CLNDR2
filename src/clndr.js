@@ -400,14 +400,12 @@ Clndr.prototype.init = function () {
 	if (!(this.options.render instanceof Function)) {
 		this.options.render = null;
 
-		if (typeof _ === 'undefined') {
-			throw new Error(
-				'Underscore was not found. Please include underscore.js ' +
-				'OR provide a custom render function.');
+		if (typeof ejs === 'undefined') {
+			throw new Error('EJS was not found. Please include EJS OR provide a custom render function.');
 		} else {
-			// We're just going ahead and using underscore here if no
+			// We're just going ahead and using EJS here if no
 			// render method has been supplied.
-			this.compiledClndrTemplate = _.template(this.options.template);
+			this.compiledClndrTemplate = ejs.compile(this.options.template);
 		}
 	}
 

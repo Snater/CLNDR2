@@ -1,7 +1,7 @@
-import _ from 'underscore';
+import ejs from 'ejs';
 
 const config = {
-	globals: {_},
+	globals: {ejs},
 	testEnvironment: 'jsdom',
 	transform: {
 		'\\.[jt]s$': 'babel-jest',
