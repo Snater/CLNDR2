@@ -1,6 +1,6 @@
-/** @type { import('@storybook/html-vite').StorybookConfig } */
+import {StorybookConfig} from '@storybook/html-vite';
 
-const config = {
+const config: StorybookConfig = {
 	stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
 	addons: [
 		'@storybook/addon-links',

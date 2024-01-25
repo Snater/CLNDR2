@@ -1,5 +1,6 @@
-/** @type { import('@storybook/html').Preview } */
-const preview = {
+import {Preview} from '@storybook/html';
+
+const preview: Preview = {
 	parameters: {
 		actions: {argTypesRegex: '^on[A-Z].*'},
 		controls: {

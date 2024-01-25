@@ -1,7 +1,8 @@
 import cleaner from 'rollup-plugin-cleaner';
+import typescript from '@rollup/plugin-typescript';
 
 export default [{
-	input: 'src/clndr.js',
+	input: 'src/clndr.ts',
 	output: [{
 		file: 'dist/index.js',
 		format: 'esm',
@@ -10,5 +11,6 @@ export default [{
 	external: ['date-fns'],
 	plugins: [
 		cleaner({targets: ['./dist']}),
+		typescript(),
 	],
 }];

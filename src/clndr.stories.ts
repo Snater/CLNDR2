@@ -1,12 +1,14 @@
 import './clndr.stories.css';
-import Clndr, {defaultTemplate} from './clndr.js';
+import Clndr, {defaultTemplate, UserOptions} from './clndr.js';
+import {Meta, StoryObj} from '@storybook/html';
 import {action} from '@storybook/addon-actions';
 import {enGB} from 'date-fns/locale';
 import ejs from 'ejs';
 
-export default {
+const meta: Meta<UserOptions> = {
 	title: 'Clndr',
 	args: {
+		render: data => ejs.render(defaultTemplate, data),
 		clickEvents: {
 			click: action('click'),
 			today: action('today'),
@@ -35,7 +37,10 @@ export default {
 	},
 };
 
-export const Default = {
+export default meta;
+type Story = StoryObj<UserOptions>;
+
+export const Default: Story = {
 	args: {
 		multiDayEvents: {
 			singleDay: 'date',
@@ -44,7 +49,6 @@ export const Default = {
 		},
 		showAdjacentMonths: true,
 		adjacentDaysChangeMonth: false,
-		render: data => ejs.render(defaultTemplate, data),
 	},
 	render: ({...args}) => {
 		const container = document.createElement('div');
@@ -65,7 +69,7 @@ export const Default = {
 	},
 };
 
-export const TwoWeeksIntervalWithOneWeekPagination = {
+export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 	args: {
 		lengthOfTime: {
 			days: 14,
@@ -107,7 +111,7 @@ export const TwoWeeksIntervalWithOneWeekPagination = {
 	},
 };
 
-export const TwoMonthsWithOneMonthPagination = {
+export const TwoMonthsWithOneMonthPagination: Story = {
 	args: {
 		lengthOfTime: {
 			months: 2,

@@ -2,8 +2,10 @@ import '@testing-library/jest-dom';
 import {fireEvent, screen} from '@testing-library/dom';
 import Clndr, {defaultTemplate as clndrDefaultTemplate} from './clndr';
 import {de} from 'date-fns/locale';
-import userEvent from '@testing-library/user-event';
+import userEvent, {UserEvent} from '@testing-library/user-event';
 import ejs from 'ejs';
+
+import type {ClndrTemplateData} from './clndr';
 
 const defaultTemplate = `
 	<div class="clndr-controls">
@@ -72,15 +74,17 @@ const multiMonthTemplate = `
 		<div class="clndr-today-button">Today</div>
 	<% }); %>`;
 
-const provideRender = template => data => ejs.render(template || clndrDefaultTemplate, data);
+const provideRender = (template?: string) => (data: ClndrTemplateData) => {
+	return ejs.render(template || clndrDefaultTemplate, data);
+}
 
-let user;
-let container;
-let clndr;
+let user: UserEvent;
+let container: HTMLElement;
+let clndr: Clndr;
 
 beforeAll(() => {
 	jest.useFakeTimers({now: new Date(2024, 0, 18, 12)});
-	jest.spyOn(Date, 'now').mockImplementation(() => new Date('2024-01-18T12:00:00.000Z'));
+	jest.spyOn(Date, 'now').mockImplementation(() => new Date('2024-01-18T12:00:00.000Z').valueOf());
 	jest.spyOn(console, 'warn').mockImplementation(jest.fn);
 	user = userEvent.setup({delay: null});
 });
@@ -191,6 +195,20 @@ describe('Setup', () => {
 		expect(container.querySelector('.calendar-day-2024-01-14')).not.toHaveClass('event');
 		expect(container.querySelector('.calendar-day-2024-01-25')).not.toHaveClass('event');
 		expect(container.querySelector('.calendar-day-2024-01-02')).not.toHaveClass('event');
+	});
+
+	test('Multi-day event with no date', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			events: [{title: 'Multi'}],
+			multiDayEvents: {
+				endDate: 'endDate',
+				startDate: 'startDate',
+			},
+		});
+
+		expect(container.querySelectorAll('.day').length)
+			.toBe(container.querySelectorAll('.event').length);
 	});
 
 	test('Mixing single-day and multi-day events', () => {
@@ -423,7 +441,9 @@ describe('Navigation', () => {
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
-		await user.click(container.querySelector('.empty'));
+		const emptyElement = container.querySelector('.empty');
+		expect(emptyElement).not.toBeNull();
+		await user.click(emptyElement as Element);
 		expect(screen.getByText('September 1992')).toBeInTheDocument();
 	});
 
@@ -485,7 +505,7 @@ describe('Navigation', () => {
 		expect(screen.getByText('September 1992')).toBeInTheDocument();
 	});
 
-	test('Programmatically change month by calling forward()', async () => {
+	test('Programmatically change month by calling forward() and back()', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			startWithMonth: '1992-09',
@@ -494,6 +514,8 @@ describe('Navigation', () => {
 		expect(screen.getByText('September 1992')).toBeInTheDocument();
 		clndr.forward();
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
+		clndr.back();
+		expect(screen.getByText('September 1992')).toBeInTheDocument();
 	});
 
 	test('Programmatically change year using previousYear()', async () => {
@@ -702,7 +724,7 @@ describe('Navigation', () => {
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
-		clndr.setYear(1991, {});
+		clndr.setYear(1991);
 		expect(screen.getByText('October 1991')).toBeInTheDocument();
 
 		expect(handleYearChange).toHaveBeenCalledTimes(0);
@@ -791,7 +813,7 @@ describe('Events', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {click: handleClick},
-			startMonth: '1992-10-15',
+			startWithMonth: '1992-10',
 		});
 
 		await user.click(screen.getByText('15'));
@@ -912,7 +934,9 @@ describe('Events', () => {
 			},
 		});
 
-		await user.click(container.querySelector('.empty'));
+		const emptyElement = container.querySelector('.empty');
+		expect(emptyElement).not.toBeNull();
+		await user.click(emptyElement as Element);
 		expect(handleClick).toHaveBeenCalledTimes(1);
 	});
 
@@ -1177,6 +1201,8 @@ describe('Constraints', () => {
 describe('Forcing errors', () => {
 
 	test('Not providing a render function', () => {
+
+		// @ts-expect-error Intentionally provide no options
 		expect(() => new Clndr(container)).toThrow();
 	});
 
@@ -1188,9 +1214,10 @@ describe('Forcing errors', () => {
 			startWithMonth: '1992-09',
 		});
 
-		const empty = container.querySelector('.empty');
-		empty.classList.remove('last-month');
-		await user.click(empty);
+		const emptyElement = container.querySelector('.empty');
+		expect(emptyElement).not.toBeNull();
+		(emptyElement as Element).classList.remove('last-month');
+		await user.click(emptyElement as Element);
 	});
 
 	test('Click on a day while the day identifier class is unexpectedly not assigned', async() => {
@@ -1206,9 +1233,10 @@ describe('Forcing errors', () => {
 			startWithMonth: '1992-10',
 		});
 
-		const day = screen.getByText('15').parentNode;
-		day.classList.remove('calendar-day-1992-10-15');
-		await user.click(day);
+		const dayElement = screen.getByText('15').parentNode;
+		expect(dayElement instanceof Element).toBeTruthy();
+		(dayElement as Element).classList.remove('calendar-day-1992-10-15');
+		await user.click(dayElement as Element);
 
 		expect(handleClick).toHaveBeenCalledTimes(1);
 	});
