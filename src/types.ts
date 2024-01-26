@@ -63,7 +63,7 @@ export type InternalClndrEvent = {
 	originalEvent: ClndrEvent
 }
 
-type Constraints = {
+export type Constraints = {
 	startDate?: string | Date
 	endDate?: string | Date
 }
@@ -165,3 +165,9 @@ export type NavigationOptions = Partial<Options> & SetterOptions
 
 export type ConstraintCheckSubject = 'next' | 'today' | 'previous' | 'nextYear' | 'previousYear'
 export type ConstraintChecks = {[key in ConstraintCheckSubject]: boolean}
+
+export type Interval = {
+	month: Date
+	start: Date
+	end: Date
+}
