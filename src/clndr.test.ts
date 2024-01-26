@@ -945,13 +945,17 @@ describe('Events', () => {
 describe('Data manipulations', () => {
 
 	test('Set extras', () => {
-		clndr = new Clndr(container, {render: provideRender()});
+		clndr = new Clndr(container, {
+			render: provideRender('<div><%= extras.someExtra %></div>'),
+			extras: {someExtra: 'some extra'},
+		});
 
-		expect(clndr.options.extras).toBeNull();
+		expect(screen.queryAllByText('some extra').length).toBe(1);
 
-		clndr.setExtras({someExtra: 'value'});
+		clndr.setExtras({someExtra: 'updated extra'});
 
-		expect(clndr.options.extras).toMatchObject({someExtra: 'value'});
+		expect(screen.queryAllByText('some extra').length).toBe(0);
+		expect(screen.queryAllByText('updated extra').length).toBe(1);
 	});
 
 	test('Add an event with date string', () => {
