@@ -97,44 +97,56 @@ const defaults: Options = {
 	},
 };
 
-function isObject(item: unknown) {
-	return (item && typeof item === 'object' && !Array.isArray(item));
-}
+class Clndr {
 
-function mergeDeep(target: unknown, ...sources: unknown[]) {
-	if (!sources.length) {
-		return target;
+	static isObject(item: unknown) {
+		return item && typeof item === 'object' && !Array.isArray(item);
 	}
 
-	const source = sources.shift();
+	static mergeDeep<T extends {[key: string]: unknown}, S extends {[key: string]: unknown} = T>(
+		target: T,
+		...sources: [T, S] | [T]
+	): T {
+		const source = sources.shift();
 
-	if (isObject(target) && isObject(source)) {
+		if (!source) {
+			return target;
+		}
+
 		const targetObject = target as {[k: string]: unknown};
-		const sourceObject = source as {[k: string]: unknown};
 
-		for (const key in sourceObject) {
-			if (Array.isArray(sourceObject[key])) {
-				const arrayValue = sourceObject[key] as unknown[];
-				targetObject[key] = arrayValue.map((element: unknown) => {
-					return isObject(element) ? mergeDeep({}, element) : element;
+		for (const key in source) {
+			if (Array.isArray(source[key])) {
+				targetObject[key] = (source[key] as unknown[]).map(element => {
+					return Clndr.isObject(element)
+						? Clndr.mergeDeep({}, element as {[k: string]: unknown})
+						: element;
 				});
-			} else if (sourceObject[key] instanceof Date) {
-				targetObject[key] = new Date(sourceObject[key] as Date);
-			} else if (isObject(sourceObject[key])) {
+			} else if (source[key] instanceof Date) {
+				targetObject[key] = new Date(source[key] as Date);
+			} else if (Clndr.isObject(source[key])) {
 				if (!targetObject[key]) {
 					Object.assign(targetObject, {[key]: {}});
 				}
-				mergeDeep(targetObject[key], sourceObject[key]);
+				Clndr.mergeDeep(
+					targetObject[key] as {[k: string]: unknown},
+					source[key] as {[k: string]: unknown},
+				);
 			} else {
-				Object.assign(targetObject, { [key]: sourceObject[key] });
+				Object.assign(target, {[key]: source[key]});
 			}
 		}
+
+		return Clndr.mergeDeep(target, ...sources);
 	}
 
-	return mergeDeep(target, ...sources);
-}
+	static mergeOptions<T extends {[key: string]: unknown}, S extends {[key: string]: unknown} = T>(
+		target: T,
+		source: S,
+	) {
+		return Clndr.mergeDeep<T, S>({} as T, target, source);
+	}
 
-class Clndr {
 	element: HTMLElement;
 	options: Options;
 	constraints: ConstraintChecks;
@@ -166,7 +178,7 @@ class Clndr {
 		this.eventsThisInterval = [];
 
 		// Merge the default options with user-provided options
-		this.options = mergeDeep({}, defaults, options) as Options;
+		this.options = Clndr.mergeOptions<Options, UserOptions>(defaults, options);
 
 		// Validate any correct options
 		this.validateOptions();
@@ -1128,7 +1140,7 @@ class Clndr {
 		};
 
 		// Extend any options
-		options = mergeDeep({}, defaults, options) as NavigationOptions;
+		options = Clndr.mergeOptions<NavigationOptions>(defaults, options) as NavigationOptions;
 
 		// Before we do anything, check if any constraints are limiting this
 		if (!ctx.constraints.previous) {
@@ -1193,7 +1205,7 @@ class Clndr {
 		};
 
 		// Extend any options
-		options = mergeDeep({}, defaults, options) as NavigationOptions;
+		options = Clndr.mergeOptions<NavigationOptions>(defaults, options);
 
 		// Before we do anything, check if any constraints are limiting this
 		if (!ctx.constraints.next) {
@@ -1255,7 +1267,7 @@ class Clndr {
 		};
 
 		// Extend any options
-		options = mergeDeep({}, defaults, options) as NavigationOptions;
+		options = Clndr.mergeOptions<NavigationOptions>(defaults, options);
 
 		// Before we do anything, check if any constraints are limiting this
 		if (!ctx.constraints.previousYear) {
@@ -1294,7 +1306,7 @@ class Clndr {
 		};
 
 		// Extend any options
-		options = mergeDeep({}, defaults, options) as NavigationOptions;
+		options = Clndr.mergeOptions<NavigationOptions>(defaults, options);
 
 		// Before we do anything, check if any constraints are limiting this
 		if (!ctx.constraints.nextYear) {
@@ -1331,7 +1343,7 @@ class Clndr {
 		};
 
 		// Extend any options
-		options = mergeDeep({}, defaults, options) as NavigationOptions;
+		options = Clndr.mergeOptions<NavigationOptions>(defaults, options);
 		// @V2-todo Only used for legacy month view
 		ctx.month = startOfMonth(new Date());
 
@@ -1581,7 +1593,7 @@ class Clndr {
 			classes: this.options.targets.empty,
 		};
 
-		return mergeDeep({}, defaults, options) as DayOptions;
+		return Clndr.mergeOptions<DayOptions>(defaults, options);
 	}
 
 	destroy() {
