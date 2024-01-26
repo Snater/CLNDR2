@@ -45,7 +45,7 @@ import type {
 	SetterOptions,
 	Target,
 	TargetOption,
-	UserOptions,
+	UserOptions, LengthOfTime,
 } from './types';
 
 // Defaults used throughout the application, see docs.
@@ -202,51 +202,21 @@ class Clndr {
 			? this.addMultiDayDateObjectsToEvents(this.options.events)
 			: this.addDateObjectToEvents(this.options.events);
 
-		// This used to be a place where we'd figure out the current month,
-		// but since we want to open up support for arbitrary lengths of time
-		// we're going to store the current range in addition to the current
-		// month.
-		// if (this.options.lengthOfTime.months || this.options.lengthOfTime.days) {
-		// We want to establish intervalStart and intervalEnd, which will
-		// keep track of our boundaries. Let's look at the possibilities...
+		// Annihilate any chance for bugs by overwriting conflicting options.
 		if (this.options.lengthOfTime.months) {
-			// Gonna go right ahead and annihilate any chance for bugs here
 			this.options.lengthOfTime.days = null;
-
-			// The length is specified in months. Is there a start date?
-			if (this.options.lengthOfTime.startDate) {
-				this.intervalStart = startOfMonth(new Date(this.options.lengthOfTime.startDate));
-			} else if (this.options.startWithMonth) {
-				this.intervalStart = startOfMonth(new Date(this.options.startWithMonth));
-			} else {
-				this.intervalStart = startOfMonth(new Date());
-			}
-
-			// Subtract a day so that we are at the end of the interval. We
-			// always want intervalEnd to be inclusive.
-			this.intervalEnd = subDays(
-				addMonths(this.intervalStart, this.options.lengthOfTime.months),
-				1,
-			);
-			this.month = new Date(this.intervalStart);
-		} else if (this.options.lengthOfTime.days) {
-			// The length is specified in days. Start date?
-			if (this.options.lengthOfTime.startDate) {
-				this.intervalStart = startOfDay(new Date(this.options.lengthOfTime.startDate));
-			} else {
-				this.intervalStart = startOfDay(setDay(new Date(), this.options.weekOffset));
-			}
-
-			this.intervalEnd = endOfDay(addDays(this.intervalStart, this.options.lengthOfTime.days - 1));
-			this.month = new Date(this.intervalStart);
-			// }
-			// No length of time specified so we're going to default into using the
-			// current month as the time period.
-		} else {
-			this.month = startOfMonth(new Date());
-			this.intervalStart = new Date(this.month);
-			this.intervalEnd = endOfMonth(this.month);
 		}
+
+		// To support arbitrary lengths of time we're going to store the current range in addition to
+		// the current month.
+		const {month, start, end} = this.initInterval(
+			this.options.lengthOfTime,
+			this.options.startWithMonth,
+			this.options.weekOffset,
+		);
+		this.month = month;
+		this.intervalStart = start;
+		this.intervalEnd = end;
 
 		if (this.options.startWithMonth) {
 			this.month = startOfMonth(new Date(this.options.startWithMonth));
@@ -348,6 +318,46 @@ class Clndr {
 		// compiling, making and storing some elements we'll need later, and
 		// event handling for the controller.
 		this.init();
+	}
+
+	private initInterval(
+		lengthOfTime: LengthOfTime,
+		startWithMonth: Date | string | null,
+		weekOffset: number,
+	) {
+
+		if (lengthOfTime.months) {
+			const start = startOfMonth(
+				new Date(lengthOfTime.startDate || startWithMonth || Date.now()),
+			);
+
+			// Subtract a day so that we are at the end of the interval. We always want intervalEnd to be
+			// inclusive.
+			const end = subDays(addMonths(start, lengthOfTime.months), 1);
+
+			return {start, end, month: new Date(start)};
+		}
+
+		if (lengthOfTime.days) {
+			const start = startOfDay(lengthOfTime.startDate
+				? new Date(lengthOfTime.startDate)
+				: setDay(new Date(), weekOffset),
+			);
+
+			const end = endOfDay(addDays(start, lengthOfTime.days - 1));
+
+			return {start, end, month: new Date(start)};
+		}
+
+		// No length of time specified, so we're going to default into using the current month as the
+		// time period.
+		const month = startOfMonth(new Date());
+
+		return {
+			month,
+			start: new Date(month),
+			end: endOfMonth(month),
+		};
 	}
 
 	/**

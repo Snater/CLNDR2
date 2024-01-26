@@ -81,7 +81,7 @@ type SingleDayEvent = {
 
 type DateParameter = string
 
-type LengthOfTime = {
+export type LengthOfTime = {
 	days?: number | null
 	interval: number
 	months?: number | null
