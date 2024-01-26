@@ -147,19 +147,20 @@ class Clndr {
 		return Clndr.mergeDeep<T, S>({} as T, target, source);
 	}
 
-	element: HTMLElement;
-	options: Options;
-	constraints: ConstraintChecks;
-	intervalStart: Date;
-	intervalEnd: Date;
-	month: Date;
-	daysOfTheWeek: string[];
-	calendarContainer?: HTMLElement;
-	_currentIntervalStart: Date;
-	eventsLastMonth: ClndrEvent[];
-	eventsNextMonth: ClndrEvent[];
-	eventsThisInterval: ClndrEvent[];
-	eventHandler?: EventListener
+	private readonly element: HTMLElement;
+	private readonly constraints: ConstraintChecks;
+	private options: Options;
+	private intervalStart: Date;
+	private intervalEnd: Date;
+	private month: Date;
+	private daysOfTheWeek: string[];
+	private calendarContainer?: HTMLElement;
+	private _currentIntervalStart: Date;
+	private eventsLastMonth: InternalClndrEvent[];
+	private eventsNextMonth: InternalClndrEvent[];
+	private eventsThisInterval: InternalClndrEvent[];
+	private eventHandler?: EventListener;
+	private events: InternalClndrEvent[];
 
 	/**
 	 * The actual plugin constructor.
@@ -197,15 +198,9 @@ class Clndr {
 		// we can use to make life easier. This is only necessarywhen events
 		// are provided on instantiation, since our setEvents function uses
 		// addDateObjectToEvents.
-		if (this.options.events.length) {
-			if (this.options.multiDayEvents) {
-				this.options.events =
-					this.addMultiDayDateObjectsToEvents(this.options.events);
-			} else {
-				this.options.events =
-					this.addDateObjectToEvents(this.options.events);
-			}
-		}
+		this.events = this.options.multiDayEvents
+			? this.addMultiDayDateObjectsToEvents(this.options.events)
+			: this.addDateObjectToEvents(this.options.events);
 
 		// This used to be a place where we'd figure out the current month,
 		// but since we want to open up support for arbitrary lengths of time
@@ -464,12 +459,12 @@ class Clndr {
 		this.eventsThisInterval = [];
 
 		// Event parsing
-		if (this.options.events.length) {
+		if (this.events.length) {
 			// Here are the only two cases where we don't get an event in our
 			// interval:
 			//   startDate | endDate | e.start   | e.end
 			//   e.start   | e.end   | startDate | endDate
-			this.eventsThisInterval = this.options.events.filter(event => {
+			this.eventsThisInterval = this.events.filter(event => {
 				const afterEnd = isAfter(event._clndrStartDateObject, endDate);
 				const beforeStart = isBefore(event._clndrEndDateObject, startDate);
 
@@ -482,14 +477,14 @@ class Clndr {
 				startOfNextMonth = startOfMonth(addMonths(endDate, 1));
 				endOfNextMonth = endOfMonth(startOfNextMonth);
 
-				this.eventsLastMonth = this.options.events.filter(event => {
+				this.eventsLastMonth = this.events.filter(event => {
 					const beforeStart = isBefore(event._clndrEndDateObject, startOfLastMonth);
 					const afterEnd = isAfter(event._clndrStartDateObject, endOfLastMonth);
 
 					return !(beforeStart || afterEnd);
 				});
 
-				this.eventsNextMonth = this.options.events.filter(event => {
+				this.eventsNextMonth = this.events.filter(event => {
 					const beforeStart = isBefore(event._clndrEndDateObject, startOfNextMonth);
 					const afterEnd = isAfter(event._clndrStartDateObject, endOfNextMonth);
 
@@ -572,7 +567,7 @@ class Clndr {
 		return daysArray;
 	}
 
-	private createDayObject(day: Date, monthEvents: ClndrEvent[]) {
+	private createDayObject(day: Date, monthEvents: InternalClndrEvent[]) {
 		let end;
 		let j = 0;
 		let start;
@@ -714,7 +709,7 @@ class Clndr {
 				intervalEnd: this.intervalEnd,
 				numberOfRows: Math.ceil(days.length / 7),
 				intervalStart: this.intervalStart,
-				eventsThisInterval: this.eventsThisInterval,
+				eventsThisInterval: this.eventsThisInterval.map(event => event.originalEvent),
 				format: formatProxy,
 			};
 		} else if (this.options.lengthOfTime.months) {
@@ -751,9 +746,11 @@ class Clndr {
 				intervalEnd: this.intervalEnd,
 				intervalStart: this.intervalStart,
 				daysOfTheWeek: this.daysOfTheWeek,
-				eventsLastMonth: this.eventsLastMonth,
-				eventsNextMonth: this.eventsNextMonth,
-				eventsThisInterval: eventsThisInterval,
+				eventsLastMonth: this.eventsLastMonth.map(event => event.originalEvent),
+				eventsNextMonth: this.eventsNextMonth.map(event => event.originalEvent),
+				eventsThisInterval: eventsThisInterval.map(
+					events => events.map(event => event.originalEvent),
+				),
 				format: formatProxy,
 			};
 		} else {
@@ -770,10 +767,10 @@ class Clndr {
 				extras: this.options.extras,
 				month: format(this.month, 'MMMM', {locale: this.options.locale || undefined}),
 				daysOfTheWeek: this.daysOfTheWeek,
-				eventsLastMonth: this.eventsLastMonth,
-				eventsNextMonth: this.eventsNextMonth,
+				eventsLastMonth: this.eventsLastMonth.map(event => event.originalEvent),
+				eventsNextMonth: this.eventsNextMonth.map(event => event.originalEvent),
 				numberOfRows: Math.ceil(days.length / 7),
-				eventsThisMonth: this.eventsThisInterval,
+				eventsThisMonth: this.eventsThisInterval.map(event => event.originalEvent),
 				format: formatProxy,
 			};
 		}
@@ -1001,22 +998,22 @@ class Clndr {
 			}
 
 			// Do we have events?
-			if (this.options.events.length > 0) {
+			if (this.events.length > 0) {
 				// Are any of the events happening today?
 				if (this.options.multiDayEvents) {
 					targetEndDate = endOfDay(target.date);
-					filterFn = (event: ClndrEvent) => {
+					filterFn = (event: InternalClndrEvent) => {
 						return target.date && !isAfter(event._clndrStartDateObject, targetEndDate) &&
 							!isAfter(target.date, event._clndrEndDateObject);
 					};
 				} else {
-					filterFn = (event: ClndrEvent) => {
+					filterFn = (event: InternalClndrEvent) => {
 						return dateString === format(event._clndrStartDateObject, 'yyyy-MM-dd');
 					};
 				}
 
 				// Filter the dates down to the ones that match.
-				target.events = this.options.events.filter(filterFn);
+				target.events = this.events.filter(filterFn).map(event => event.originalEvent);
 			}
 		}
 
@@ -1488,12 +1485,9 @@ class Clndr {
 	 * Overwrites events in the calendar and triggers a render.
 	 */
 	setEvents(events: ClndrEvent[]) {
-		// Go through each event and add a Date object
-		if (this.options.multiDayEvents) {
-			this.options.events = this.addMultiDayDateObjectsToEvents(events);
-		} else {
-			this.options.events = this.addDateObjectToEvents(events);
-		}
+		this.events = this.options.multiDayEvents
+			? this.addMultiDayDateObjectsToEvents(events)
+			: this.addDateObjectToEvents(events);
 
 		this.render();
 
@@ -1506,12 +1500,11 @@ class Clndr {
 	addEvents(events: ClndrEvent[], reRender = true) {
 		// Go through each event and add a Date object
 		if (this.options.multiDayEvents) {
-			this.options.events = [
-				...this.options.events,
-				...this.addMultiDayDateObjectsToEvents(events),
-			];
+			this.options.events = [...this.options.events, ...events];
+			this.events = [...this.events, ...this.addMultiDayDateObjectsToEvents(events)];
 		} else {
-			this.options.events = [...this.options.events, ...this.addDateObjectToEvents(events)];
+			this.options.events = [...this.options.events, ...events];
+			this.events = [...this.events, ...this.addDateObjectToEvents(events)];
 		}
 
 		if (reRender) {
@@ -1531,6 +1524,7 @@ class Clndr {
 		for (i = this.options.events.length - 1; i >= 0; i--) {
 			if (matchingFn(this.options.events[i])) {
 				this.options.events.splice(i, 1);
+				this.events.splice(i, 1);
 			}
 		}
 
@@ -1539,50 +1533,43 @@ class Clndr {
 		return this;
 	}
 
-	private addDateObjectToEvents(events: InternalClndrEvent[]) {
-		let i = 0;
-		// eslint-disable-next-line @typescript-eslint/no-this-alias
-		const self = this;
-
-		for (i; i < events.length; i++) {
-			// Add the date as both start and end, since it's a single-day
-			// event by default
-			events[i]._clndrStartDateObject =
-				new Date(events[i][self.options.dateParameter]);
-			events[i]._clndrEndDateObject =
-				new Date(events[i][self.options.dateParameter]);
-		}
-
-		return events;
+	private addDateObjectToEvents(events: ClndrEvent[]) {
+		return events.map(event => {
+			return {
+				// TODO: Resolve "as string"
+				_clndrStartDateObject: new Date(event[this.options.dateParameter] as string),
+				_clndrEndDateObject: new Date(event[this.options.dateParameter] as string),
+				originalEvent: event,
+			}
+		});
 	}
 
-	private addMultiDayDateObjectsToEvents(events: InternalClndrEvent[]) {
-		let end: Date | string | undefined;
-		let start: Date | string | undefined;
-		let i = 0;
-		// eslint-disable-next-line @typescript-eslint/no-this-alias
-		const self = this;
-		const multiEvents = self.options.multiDayEvents as MultiDayEvents;
+	private addMultiDayDateObjectsToEvents(events: ClndrEvent[]) {
+		const multiEvents = this.options.multiDayEvents as MultiDayEvents;
+		const internalEvents: InternalClndrEvent[] = [];
 
-		for (i; i < events.length; i++) {
-			end = multiEvents.endDate && events[i][multiEvents.endDate];
-			start = multiEvents.startDate && events[i][multiEvents.startDate];
+		events.forEach(event => {
+			const start = multiEvents.startDate && event[multiEvents.startDate];
+			const end = multiEvents.endDate && event[multiEvents.endDate];
 
-			// If we don't find the startDate OR endDate fields, look for singleDay
 			if (!end && !start && multiEvents.singleDay) {
-				events[i]._clndrEndDateObject =
-					new Date(events[i][multiEvents.singleDay]);
-				events[i]._clndrStartDateObject =
-					new Date(events[i][multiEvents.singleDay]);
+				internalEvents.push({
+					// TODO: Resolve "as string"
+					_clndrEndDateObject: new Date(event[multiEvents.singleDay] as string),
+					_clndrStartDateObject: new Date(event[multiEvents.singleDay] as string),
+					originalEvent: event,
+				});
 			} else if (end || start) {
-				// Otherwise use startDate and endDate, or whichever one is present
 				// TODO: Check Date/string type
-				events[i]._clndrEndDateObject = new Date((end || start) as Date | string);
-				events[i]._clndrStartDateObject = new Date((start || end) as Date | string);
+				internalEvents.push({
+					_clndrEndDateObject: new Date((end || start) as Date | string),
+					_clndrStartDateObject: new Date((start || end) as Date | string),
+					originalEvent: event,
+				});
 			}
-		}
+		});
 
-		return events;
+		return internalEvents;
 	}
 
 	calendarDay(options: DayOptions) {

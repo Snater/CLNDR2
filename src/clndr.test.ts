@@ -5,7 +5,7 @@ import {de} from 'date-fns/locale';
 import userEvent, {UserEvent} from '@testing-library/user-event';
 import ejs from 'ejs';
 
-import type {ClndrTemplateData} from './clndr';
+import type {ClndrTemplateData} from './types';
 
 const defaultTemplate = `
 	<div class="clndr-controls">
@@ -207,8 +207,7 @@ describe('Setup', () => {
 			},
 		});
 
-		expect(container.querySelectorAll('.day').length)
-			.toBe(container.querySelectorAll('.event').length);
+		expect(container.querySelectorAll('.event').length).toBe(0);
 	});
 
 	test('Mixing single-day and multi-day events', () => {
@@ -410,14 +409,15 @@ describe('Navigation', () => {
 	test('Navigate between months', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			startWithMonth: '1992-10',
+			events: [{date: '1992-10-15'}],
+			startWithMonth: '1992-11',
 		});
 
-		expect(screen.getByText('October 1992')).toBeInTheDocument();
+		expect(screen.getByText('November 1992')).toBeInTheDocument();
 		await user.click(screen.getByText('previous'));
-		expect(screen.getByText('September 1992')).toBeInTheDocument();
-		await user.click(screen.getByText('next'));
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('November 1992')).toBeInTheDocument();
 	});
 
 	test('Change month with click on previous month\'s day', async () => {
@@ -1110,10 +1110,12 @@ describe('Custom interval', () => {
 	test('Custom day view interval', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
+			events: [{date: '1992-10-15'}],
 			lengthOfTime: {days: 7, startDate: '1992-10-15'},
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-day-1992-10-15')).toHaveClass('event');
 		expect(container.querySelector('.calendar-day-1992-10-22')).not.toBeInTheDocument();
 	});
 });

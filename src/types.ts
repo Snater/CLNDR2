@@ -2,8 +2,7 @@ import {FormatOptions, Locale} from 'date-fns';
 import Clndr from './clndr';
 
 export type Options = {
-	// FIXME: Do not overload events
-	events: ClndrEvent[] | InternalClndrEvent[]
+	events: ClndrEvent[]
 	ready: (() => void) | null
 	extras: unknown | null
 	locale: Locale | null
@@ -44,8 +43,9 @@ export type UserOptions = Partial<
 }
 
 export type ClndrEvent = {
-	// FIXME: Value should allowed to be unknown
-	[key: DateParameter]: string | Date
+	[key: DateParameter]: unknown
+	_clndrStartDateObject?: never
+	_clndrEndDateObject?: never
 } & Partial<ClndrMultiEvent & ClndrSingleEvent>
 
 type ClndrMultiEvent = {
@@ -57,10 +57,10 @@ type ClndrSingleEvent = {
 	singleDay: string
 }
 
-// FIXME: Properties should not be optional
-export type InternalClndrEvent = ClndrEvent & {
-	_clndrStartDateObject?: Date
-	_clndrEndDateObject?: Date
+export type InternalClndrEvent = {
+	_clndrStartDateObject: Date
+	_clndrEndDateObject: Date
+	originalEvent: ClndrEvent
 }
 
 type Constraints = {
@@ -136,7 +136,7 @@ export type ClndrTemplateData = {
 export type DayOptions = {
 	day?: number | string
 	date?: Date
-	events?: ClndrEvent[]
+	events?: InternalClndrEvent[]
 	classes: string
 	properties?: DayProperties
 }
