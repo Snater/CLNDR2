@@ -230,10 +230,30 @@ class Clndr {
 			);
 		}
 
-		// Some first-time initialization -> day of the week offset, template
-		// compiling, making and storing some elements we'll need later, and
-		// event handling for the controller.
-		this.init();
+		this.daysOfTheWeek = this.options.daysOfTheWeek
+			? this.options.daysOfTheWeek
+			: this.initDaysOfTheWeek(this.options.formatWeekdayHeader, this.options.locale);
+
+		if (this.options.weekOffset) {
+			this.daysOfTheWeek = this.shiftWeekdayLabels(this.daysOfTheWeek, this.options.weekOffset);
+		}
+
+		// Quick and dirty test to make sure rendering is possible.
+		if (!(this.options as UserOptions).render) {
+			throw new Error(
+				'No render function provided per the "render" option. A render function is required for ' +
+				'rendering the calendar, i.e. when using EJS: data => ejs.render(defaultTemplate, data)',
+			);
+		}
+
+		this.element.innerHTML = '<div class="clndr"></div>';
+		this.calendarContainer = this.element.querySelector('.clndr') as HTMLElement;
+
+		this.bindEvents();
+
+		this.render();
+
+		this.options.ready?.apply(this, []);
 	}
 
 	private initInterval(
@@ -389,63 +409,31 @@ class Clndr {
 		return adjustedInterval;
 	}
 
-	/**
-	 * Calendar initialization.
-	 * Sets up the days of the week, the rendering function, binds all of the
-	 * events to the rendered calendar, and then stores the node locally.
-	 */
-	private init() {
-		let i;
-		let formatWeekday;
+	private initDaysOfTheWeek(
+		formatWeekdayHeader: ((day: Date, locale?: Locale) => string) | null,
+		locale: Locale | null,
+	) {
+		const daysOfTheWeek: string[] = [];
 
-		// Create the days of the week using date-fn's current language setting
-		this.daysOfTheWeek = this.options.daysOfTheWeek || [];
+		formatWeekdayHeader = formatWeekdayHeader || function (day: Date, locale?: Locale) {
+			return format(day, 'cccccc', {locale}).charAt(0);
+		};
 
-		// User can supply an optional function to format the weekday header
-		formatWeekday = this.options.formatWeekdayHeader || formatWeekday;
-
-		if (!this.options.daysOfTheWeek) {
-			this.daysOfTheWeek = [];
-
-			formatWeekday = this.options.formatWeekdayHeader || function (day: Date, locale?: Locale) {
-				return format(day, 'cccccc', {locale}).charAt(0);
-			};
-
-			for (i = 0; i < 7; i++) {
-				this.daysOfTheWeek.push(
-					formatWeekday(setDay(new Date(), i), this.options.locale || undefined),
-				);
-			}
+		for (let i = 0; i < 7; i++) {
+			daysOfTheWeek.push(formatWeekdayHeader(setDay(new Date(), i), locale || undefined));
 		}
 
-		// Shuffle the week if there's an offset
-		if (this.options.weekOffset) {
-			this.daysOfTheWeek = this.shiftWeekdayLabels(this.options.weekOffset);
+		return daysOfTheWeek;
+	}
+
+	private shiftWeekdayLabels(daysOfTheWeek: string[], offset: number) {
+		const adjustedDaysOfTheWeek = [...daysOfTheWeek];
+
+		for (let i = 0; i < offset; i++) {
+			adjustedDaysOfTheWeek.push(adjustedDaysOfTheWeek.shift() as string);
 		}
 
-		// Quick and dirty test to make sure rendering is possible.
-		if (!(this.options as UserOptions).render) {
-			throw new Error(
-				'No render function provided per the "render" option. A render function is required for ' +
-				'rendering the calendar, i.e. when using EJS: data => ejs.render(defaultTemplate, data)',
-			);
-		}
-
-		// Create the parent element that will hold the plugin and save it
-		// for later
-		this.element.innerHTML = '<div class="clndr"></div>';
-		this.calendarContainer = this.element.querySelector('.clndr') as HTMLElement;
-
-		// Attach event handlers for clicks on buttons/cells
-		this.bindEvents();
-
-		// Do a normal render of the calendar template
-		this.render();
-
-		// If a ready callback has been provided, call it.
-		if (this.options.ready) {
-			this.options.ready.apply(this, []);
-		}
+		return adjustedDaysOfTheWeek;
 	}
 
 	private validateOptions() {
@@ -456,17 +444,6 @@ class Clndr {
 				' was provided (must be 0 - 6); using 0 instead.');
 			this.options.weekOffset = 0;
 		}
-	}
-
-	private shiftWeekdayLabels(offset: number) {
-		let i;
-		const days = this.daysOfTheWeek;
-
-		for (i = 0; i < offset; i++) {
-			days.push(days.shift() as string);
-		}
-
-		return days;
 	}
 
 	/**
