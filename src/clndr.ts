@@ -458,56 +458,13 @@ class Clndr {
 		let dateIterator;
 		// This array will hold numbers for the entire grid (even the blank spaces)
 		const daysArray = [];
-		let endOfNextMonth: Date;
-		let endOfLastMonth: Date;
-		let startOfNextMonth: Date;
-		let startOfLastMonth: Date;
 		const date = new Date(startDate);
 
 		// This is a helper object so that days can resolve their classes
 		// correctly. Don't use it for anything please.
 		this._currentIntervalStart = new Date(startDate);
 
-		// Filter the events list (if it exists) to events that are happening
-		// last month, this month and next month (within the current grid view).
-		this.eventsLastMonth = [];
-		this.eventsNextMonth = [];
-		this.eventsThisInterval = [];
-
-		// Event parsing
-		if (this.events.length) {
-			// Here are the only two cases where we don't get an event in our
-			// interval:
-			//   startDate | endDate | e.start   | e.end
-			//   e.start   | e.end   | startDate | endDate
-			this.eventsThisInterval = this.events.filter(event => {
-				const afterEnd = isAfter(event._clndrStartDateObject, endDate);
-				const beforeStart = isBefore(event._clndrEndDateObject, startDate);
-
-				return !(beforeStart || afterEnd);
-			});
-
-			if (this.options.showAdjacentMonths) {
-				startOfLastMonth = startOfMonth(subMonths(startDate, 1));
-				endOfLastMonth = endOfMonth(startOfLastMonth);
-				startOfNextMonth = startOfMonth(addMonths(endDate, 1));
-				endOfNextMonth = endOfMonth(startOfNextMonth);
-
-				this.eventsLastMonth = this.events.filter(event => {
-					const beforeStart = isBefore(event._clndrEndDateObject, startOfLastMonth);
-					const afterEnd = isAfter(event._clndrStartDateObject, endOfLastMonth);
-
-					return !(beforeStart || afterEnd);
-				});
-
-				this.eventsNextMonth = this.events.filter(event => {
-					const beforeStart = isBefore(event._clndrEndDateObject, startOfNextMonth);
-					const afterEnd = isAfter(event._clndrStartDateObject, endOfNextMonth);
-
-					return !(beforeStart || afterEnd);
-				});
-			}
-		}
+		this.parseEvents(startDate, endDate);
 
 		// If diff is greater than 0, we'll have to fill in last days of the
 		// previous month to account for the empty boxes in the grid. We also
@@ -581,6 +538,55 @@ class Clndr {
 		}
 
 		return daysArray;
+	}
+
+	/**
+	 * Filters the events list to events that are happening last month, this month an next month
+	 * (within the current grid view).
+	 */
+	private parseEvents(startDate: Date, endDate: Date) {
+		// Filter the events list (if it exists) to events that are happening last month, this month and
+		// next month (within the current grid view).
+		this.eventsLastMonth = [];
+		this.eventsNextMonth = [];
+		this.eventsThisInterval = [];
+
+		if (!this.events.length) {
+			return;
+		}
+
+		// Here are the only two cases where we don't get an event in our interval:
+		//   startDate | endDate | e.start   | e.end
+		//   e.start   | e.end   | startDate | endDate
+		this.eventsThisInterval = this.events.filter(event => {
+			const afterEnd = isAfter(event._clndrStartDateObject, endDate);
+			const beforeStart = isBefore(event._clndrEndDateObject, startDate);
+
+			return !(beforeStart || afterEnd);
+		});
+
+		if (!this.options.showAdjacentMonths) {
+			return;
+		}
+
+		const startOfLastMonth = startOfMonth(subMonths(startDate, 1));
+		const endOfLastMonth = endOfMonth(startOfLastMonth);
+		const startOfNextMonth = startOfMonth(addMonths(endDate, 1));
+		const endOfNextMonth = endOfMonth(startOfNextMonth);
+
+		this.eventsLastMonth = this.events.filter(event => {
+			const beforeStart = isBefore(event._clndrEndDateObject, startOfLastMonth);
+			const afterEnd = isAfter(event._clndrStartDateObject, endOfLastMonth);
+
+			return !(beforeStart || afterEnd);
+		});
+
+		this.eventsNextMonth = this.events.filter(event => {
+			const beforeStart = isBefore(event._clndrEndDateObject, startOfNextMonth);
+			const afterEnd = isAfter(event._clndrStartDateObject, endOfNextMonth);
+
+			return !(beforeStart || afterEnd);
+		});
 	}
 
 	private createDayObject(day: Date, monthEvents: InternalClndrEvent[]) {
