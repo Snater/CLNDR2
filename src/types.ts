@@ -117,7 +117,7 @@ export type TargetOption = 'day'
 	| 'previousYearButton'
 
 export type ClndrTemplateData = {
-	days: DayOptions[]
+	days: Day[]
 	months: Month[]
 	year: number | null
 	month: string | null
@@ -133,7 +133,7 @@ export type ClndrTemplateData = {
 	format: (date: Date, formatStr: string, options: FormatOptions) => string
 }
 
-export type DayOptions = {
+export type Day = {
 	day?: number | string
 	date?: Date
 	events?: InternalClndrEvent[]
@@ -148,7 +148,7 @@ export type DayProperties = {
 }
 
 export type Month = {
-	days: DayOptions[]
+	days: Day[]
 	month: Date
 }
 

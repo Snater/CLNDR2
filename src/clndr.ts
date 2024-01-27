@@ -36,7 +36,7 @@ import type {
 	ConstraintCheckSubject,
 	ConstraintChecks,
 	Constraints,
-	DayOptions,
+	Day,
 	DayProperties,
 	InternalClndrEvent,
 	Interval,
@@ -487,8 +487,7 @@ class Clndr {
 				for (i = 0; i < diff; i++) {
 					daysArray.push(
 						this.calendarDay({
-							classes: this.options.targets.empty +
-								' ' + this.options.classes.lastMonth,
+							classes: [this.options.targets.empty, this.options.classes.lastMonth].join(' '),
 						}));
 				}
 			}
@@ -512,8 +511,7 @@ class Clndr {
 				} else {
 					daysArray.push(
 						this.calendarDay({
-							classes: this.options.targets.empty + ' ' +
-								this.options.classes.nextMonth,
+							classes: [this.options.targets.empty, this.options.classes.nextMonth].join(' '),
 						}));
 				}
 				dateIterator = addDays(dateIterator, 1);
@@ -530,8 +528,7 @@ class Clndr {
 					dateIterator = addDays(dateIterator, 1);
 				} else {
 					daysArray.push(this.calendarDay({
-						classes: this.options.targets.empty + ' ' +
-							this.options.classes.nextMonth,
+						classes: [this.options.targets.empty, this.options.classes.nextMonth].join(' '),
 					}));
 				}
 			}
@@ -597,7 +594,7 @@ class Clndr {
 		let startDate;
 		const now = new Date();
 		const eventsToday = [];
-		let extraClasses = '';
+		const classes = [this.options.targets.day];
 		const properties: DayProperties = {
 			isToday: false,
 			isInactive: false,
@@ -622,33 +619,33 @@ class Clndr {
 		}
 
 		if (isSameDay(now, day)) {
-			extraClasses += (' ' + this.options.classes.today);
+			classes.push(this.options.classes.today);
 			properties.isToday = true;
 		}
 
 		if (isBefore(day, now)) {
-			extraClasses += (' ' + this.options.classes.past);
+			classes.push(this.options.classes.past);
 		}
 
 		if (eventsToday.length) {
-			extraClasses += (' ' + this.options.classes.event);
+			classes.push(this.options.classes.event);
 		}
 
 		if (!this.options.lengthOfTime.days) {
 			if (getMonth(this._currentIntervalStart) > getMonth(day)) {
-				extraClasses += (' ' + this.options.classes.adjacentMonth);
+				classes.push(this.options.classes.adjacentMonth);
 				properties.isAdjacentMonth = true;
 
 				getYear(this._currentIntervalStart) === getYear(day)
-					? extraClasses += (' ' + this.options.classes.lastMonth)
-					: extraClasses += (' ' + this.options.classes.nextMonth);
+					? classes.push(this.options.classes.lastMonth)
+					: classes.push(this.options.classes.nextMonth);
 			} else if (getMonth(this._currentIntervalStart) < getMonth(day)) {
-				extraClasses += (' ' + this.options.classes.adjacentMonth);
+				classes.push(this.options.classes.adjacentMonth);
 				properties.isAdjacentMonth = true;
 
 				getYear(this._currentIntervalStart) === getYear(day)
-					? extraClasses += (' ' + this.options.classes.nextMonth)
-					: extraClasses += (' ' + this.options.classes.lastMonth);
+					? classes.push(this.options.classes.nextMonth)
+					: classes.push(this.options.classes.lastMonth);
 			}
 		}
 
@@ -659,34 +656,34 @@ class Clndr {
 			startDate = this.options.constraints.startDate && new Date(this.options.constraints.startDate);
 
 			if (startDate && isBefore(day, startDate)) {
-				extraClasses += (' ' + this.options.classes.inactive);
+				classes.push(this.options.classes.inactive);
 				properties.isInactive = true;
 			}
 
 			if (endDate && isAfter(day, endDate)) {
-				extraClasses += (' ' + this.options.classes.inactive);
+				classes.push(this.options.classes.inactive);
 				properties.isInactive = true;
 			}
 		}
 
 		// Check whether the day is "selected"
 		if (this.options.selectedDate && isSameDay(day, new Date(this.options.selectedDate))) {
-			extraClasses += (' ' + this.options.classes.selected);
+			classes.push(this.options.classes.selected);
 		}
 
 		// We're moving away from using IDs in favor of classes, since when
 		// using multiple calendars on a page we are technically violating the
 		// uniqueness of IDs.
-		extraClasses += ' calendar-day-' + format(day, 'yyyy-MM-dd');
+		classes.push(`calendar-day-${format(day, 'yyyy-MM-dd')}`);
 		// Day of week
-		extraClasses += ' calendar-dow-' + getDay(day);
+		classes.push(`calendar-dow-${getDay(day)}`);
 
 		return this.calendarDay({
 			date: day,
 			day: getDate(day),
 			events: eventsToday,
 			properties: properties,
-			classes: this.options.targets.day + extraClasses,
+			classes: classes.join(' '),
 		});
 	}
 
@@ -1597,15 +1594,15 @@ class Clndr {
 		return internalEvents;
 	}
 
-	calendarDay(options: DayOptions) {
-		const defaults: DayOptions = {
+	calendarDay(options: Day) {
+		const defaults: Day = {
 			day: '',
 			date: undefined,
 			events: [],
 			classes: this.options.targets.empty,
 		};
 
-		return Clndr.mergeOptions<DayOptions>(defaults, options);
+		return Clndr.mergeOptions<Day>(defaults, options);
 	}
 
 	destroy() {
