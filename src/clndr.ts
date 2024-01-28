@@ -156,12 +156,15 @@ class Clndr {
 	private options: Options;
 	private daysOfTheWeek: string[];
 	private calendarContainer?: HTMLElement;
-	private _currentIntervalStart: Date;
 	private eventsLastMonth: InternalClndrEvent[];
 	private eventsNextMonth: InternalClndrEvent[];
 	private eventsThisInterval: InternalClndrEvent[];
 	private eventHandler?: EventListener;
 	private events: InternalClndrEvent[];
+	/**
+	 * Helper object for days to be able to resolve their classes correctly.
+	 */
+	private _currentIntervalStart: Date;
 
 	/**
 	 * The actual plugin constructor.
@@ -446,95 +449,55 @@ class Clndr {
 		}
 	}
 
-	/**
-	 * This is where the magic happens. Given a starting date and ending date,
-	 * an array of calendarDay objects is constructed that contains appropriate
-	 * events and classes depending on the circumstance.
-	 */
 	private createDaysObject(startDate: Date, endDate: Date) {
-		let i;
-		let day;
-		let diff;
+		// This array will contain the data of the entire grid (including blank spaces)
+		let days: Day[] = [];
 		let dateIterator;
-		// This array will hold numbers for the entire grid (even the blank spaces)
-		const daysArray = [];
-		const date = new Date(startDate);
 
-		// This is a helper object so that days can resolve their classes
-		// correctly. Don't use it for anything please.
 		this._currentIntervalStart = new Date(startDate);
 
 		this.parseEvents(startDate, endDate);
 
-		// If diff is greater than 0, we'll have to fill in last days of the
-		// previous month to account for the empty boxes in the grid. We also
-		// need to take into account the weekOffset parameter. None of this
-		// needs to happen if the interval is being specified in days rather
-		// than months.
-		if (!this.options.lengthOfTime.days) {
-			diff = getDay(date) - this.options.weekOffset;
+		// If greater than 0, the last days of the previous month have to be filled in to account for
+		// the empty boxes in the grid, also taking the weekOffset into account.
+		let remainingDaysOfPreviousMonth = getDay(startDate) - this.options.weekOffset;
 
-			if (diff < 0) {
-				diff += 7;
-			}
-
-			if (this.options.showAdjacentMonths) {
-				for (i = 1; i <= diff; i++) {
-					day = subDays(new Date(getYear(startDate), getMonth(startDate), i), diff);
-					daysArray.push(this.createDayObject(day, this.eventsLastMonth));
-				}
-			} else {
-				for (i = 0; i < diff; i++) {
-					daysArray.push(
-						this.calendarDay({
-							classes: [this.options.targets.empty, this.options.classes.lastMonth].join(' '),
-						}));
-				}
-			}
+		// The weekOffset points to a day in the previous month
+		if (remainingDaysOfPreviousMonth < 0) {
+			remainingDaysOfPreviousMonth += 7;
 		}
 
-		// Now we push all of the days in the interval
+		if (!this.options.lengthOfTime.days && remainingDaysOfPreviousMonth > 0) {
+			days = [
+				...days,
+				...this.aggregateDaysOfPreviousMonth(startDate, remainingDaysOfPreviousMonth),
+			];
+		}
+
+		// Add the days of the current interval
 		dateIterator = new Date(startDate);
 
 		while (isBefore(dateIterator, endDate) || isSameDay(dateIterator, endDate)) {
-			daysArray.push(this.createDayObject(dateIterator, this.eventsThisInterval));
+			days.push(this.createDayObject(dateIterator, this.eventsThisInterval));
 			dateIterator = addDays(dateIterator, 1);
 		}
 
-		// ...and if there are any trailing blank boxes, fill those in with the
-		// next month first days. Again, we can ignore this if the interval is
-		// specified in days.
-		if (!this.options.lengthOfTime.days) {
-			while (daysArray.length % 7 !== 0) {
-				if (this.options.showAdjacentMonths) {
-					daysArray.push(this.createDayObject(dateIterator, this.eventsNextMonth));
-				} else {
-					daysArray.push(
-						this.calendarDay({
-							classes: [this.options.targets.empty, this.options.classes.nextMonth].join(' '),
-						}));
-				}
-				dateIterator = addDays(dateIterator, 1);
-			}
+		// If there are any trailing blank boxes, fill those in with the next month's first days
+		const remainingDaysOfNextMonth = 7 - days.length % 7;
+
+		if (!this.options.lengthOfTime.days && remainingDaysOfNextMonth < 7) {
+			days = [...days, ...this.aggregateDaysOfNextMonth(dateIterator, remainingDaysOfNextMonth)];
+			dateIterator = addDays(dateIterator, remainingDaysOfNextMonth + 1);
 		}
 
-		// If we want to force six rows of calendar, now's our Last Chance to
-		// add another row. If the 42 seems explicit it's because we're
-		// creating a 7-row grid and 6 rows of 7 is always 42!
-		if (this.options.forceSixRows && daysArray.length !== 42) {
-			while (daysArray.length < 42) {
-				if (this.options.showAdjacentMonths) {
-					daysArray.push(this.createDayObject(dateIterator, this.eventsNextMonth));
-					dateIterator = addDays(dateIterator, 1);
-				} else {
-					daysArray.push(this.calendarDay({
-						classes: [this.options.targets.empty, this.options.classes.nextMonth].join(' '),
-					}));
-				}
-			}
+		// Add another row if needed when forcing six rows (42 is 6 rows of 7 days)
+		const remainingDaysForSixRows = 42 - days.length;
+
+		if (this.options.forceSixRows && remainingDaysForSixRows > 0) {
+			days = [...days, ...this.aggregateDaysOfNextMonth(dateIterator, remainingDaysForSixRows)];
 		}
 
-		return daysArray;
+		return days;
 	}
 
 	/**
@@ -584,6 +547,42 @@ class Clndr {
 
 			return !(beforeStart || afterEnd);
 		});
+	}
+
+	private aggregateDaysOfPreviousMonth(startDate: Date, count: number) {
+		const days: Day[] = [];
+
+		for (let i = 1; i <= count; i++) {
+			if (this.options.showAdjacentMonths) {
+				const day = subDays(new Date(getYear(startDate), getMonth(startDate), i), count);
+				days.push(this.createDayObject(day, this.eventsLastMonth));
+			} else {
+				days.push(
+					this.calendarDay({
+						classes: [this.options.targets.empty, this.options.classes.lastMonth].join(' '),
+					}),
+				);
+			}
+		}
+
+		return days;
+	}
+
+	private aggregateDaysOfNextMonth(startDate: Date, count: number) {
+		const days: Day[] = [];
+
+		for (let i = 0; i < count; i++) {
+			if (this.options.showAdjacentMonths) {
+				days.push(this.createDayObject(addDays(startDate, i), this.eventsNextMonth));
+			} else {
+				days.push(
+					this.calendarDay({
+						classes: [this.options.targets.empty, this.options.classes.nextMonth].join(' '),
+					}));
+			}
+		}
+
+		return days;
 	}
 
 	private createDayObject(day: Date, monthEvents: InternalClndrEvent[]) {
