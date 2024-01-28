@@ -19,17 +19,24 @@
 		"@typescript-eslint"
 	],
 	"rules": {
-		"@stylistic/comma-dangle": [
-			"error",
-			"always-multiline"
-		],
-		"@stylistic/indent": [
-			"error",
-			"tab"
-		],
-		"@stylistic/quotes": [
-			"error",
-			"single"
-		]
+		"@stylistic/arrow-parens": ["error", "as-needed"],
+		"@stylistic/comma-dangle": ["error", {
+			"arrays": "always-multiline",
+			"objects": "always-multiline",
+			"imports": "always-multiline",
+			"exports": "always-multiline",
+			"functions": "never"
+		}],
+		"@stylistic/dot-location": ["error", "property"],
+		"@stylistic/indent": ["error", "tab"],
+		"@stylistic/max-len": ["error", {
+			"code": 100,
+			"tabWidth": 2,
+			"ignoreStrings": true,
+			"ignoreTemplateLiterals": true
+		}],
+		"@stylistic/no-multiple-empty-lines": ["error", {"max": 1}],
+		"@stylistic/operator-linebreak": ["error", "before"],
+		"@stylistic/quotes": ["error", "single"]
 	}
 }

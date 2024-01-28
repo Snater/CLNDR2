@@ -133,7 +133,7 @@ class Clndr {
 				}
 				Clndr.mergeDeep(
 					targetObject[key] as {[k: string]: unknown},
-					source[key] as {[k: string]: unknown},
+					source[key] as {[k: string]: unknown}
 				);
 			} else {
 				Object.assign(target, {[key]: source[key]});
@@ -145,7 +145,7 @@ class Clndr {
 
 	static mergeOptions<T extends {[key: string]: unknown}, S extends {[key: string]: unknown} = T>(
 		target: T,
-		source: S,
+		source: S
 	) {
 		return Clndr.mergeDeep<T, S>({} as T, target, source);
 	}
@@ -213,7 +213,7 @@ class Clndr {
 		this.interval = this.initInterval(
 			this.options.lengthOfTime,
 			this.options.startWithMonth,
-			this.options.weekOffset,
+			this.options.weekOffset
 		);
 
 		if (this.options.startWithMonth) {
@@ -229,7 +229,7 @@ class Clndr {
 			this.interval = this.initConstraints(
 				this.options.constraints,
 				this.options.lengthOfTime,
-				this.interval,
+				this.interval
 			);
 		}
 
@@ -244,8 +244,7 @@ class Clndr {
 		// Quick and dirty test to make sure rendering is possible.
 		if (!(this.options as UserOptions).render) {
 			throw new Error(
-				'No render function provided per the "render" option. A render function is required for ' +
-				'rendering the calendar, i.e. when using EJS: data => ejs.render(defaultTemplate, data)',
+				'No render function provided per the "render" option. A render function is required for rendering the calendar, i.e. when using EJS: data => ejs.render(defaultTemplate, data)'
 			);
 		}
 
@@ -262,12 +261,12 @@ class Clndr {
 	private initInterval(
 		lengthOfTime: LengthOfTime,
 		startWithMonth: Date | string | null,
-		weekOffset: number,
+		weekOffset: number
 	): Interval {
 
 		if (lengthOfTime.months) {
 			const start = startOfMonth(
-				new Date(lengthOfTime.startDate || startWithMonth || Date.now()),
+				new Date(lengthOfTime.startDate || startWithMonth || Date.now())
 			);
 
 			// Subtract a day so that we are at the end of the interval. We always want intervalEnd to be
@@ -280,7 +279,7 @@ class Clndr {
 		if (lengthOfTime.days) {
 			const start = startOfDay(lengthOfTime.startDate
 				? new Date(lengthOfTime.startDate)
-				: setDay(new Date(), weekOffset),
+				: setDay(new Date(), weekOffset)
 			);
 
 			const end = endOfDay(addDays(start, lengthOfTime.days - 1));
@@ -302,7 +301,7 @@ class Clndr {
 	private initConstraints(
 		constraints: Constraints,
 		lengthOfTime: LengthOfTime,
-		interval: Interval,
+		interval: Interval
 	) {
 		let adjustedInterval: Interval = {
 			month: interval.month,
@@ -314,7 +313,7 @@ class Clndr {
 			adjustedInterval = this.initStartConstraint(
 				new Date(constraints.startDate),
 				lengthOfTime,
-				adjustedInterval,
+				adjustedInterval
 			);
 		}
 
@@ -322,7 +321,7 @@ class Clndr {
 			adjustedInterval = this.initEndConstraint(
 				new Date(constraints.endDate),
 				lengthOfTime,
-				adjustedInterval,
+				adjustedInterval
 			);
 		}
 
@@ -332,7 +331,7 @@ class Clndr {
 	private initStartConstraint(
 		constraintStart: Date,
 		lengthOfTime: LengthOfTime,
-		interval: Interval,
+		interval: Interval
 	) {
 		const adjustedInterval: Interval = {
 			month: interval.month,
@@ -351,18 +350,18 @@ class Clndr {
 			if (isBefore(adjustedInterval.start, subMonths(constraintStart, 1))) {
 				adjustedInterval.start = setYear(
 					setMonth(adjustedInterval.start, getMonth(constraintStart)),
-					getYear(constraintStart),
+					getYear(constraintStart)
 				);
 				adjustedInterval.month = setYear(
 					setMonth(adjustedInterval.month, getMonth(constraintStart)),
-					getYear(constraintStart),
+					getYear(constraintStart)
 				);
 			}
 
 			if (isBefore(adjustedInterval.end, subMonths(constraintStart, 1))) {
 				adjustedInterval.end = setYear(
 					setMonth(adjustedInterval.end, getMonth(constraintStart)),
-					getYear(constraintStart),
+					getYear(constraintStart)
 				);
 			}
 		}
@@ -373,7 +372,7 @@ class Clndr {
 	private initEndConstraint(
 		constraintEnd: Date,
 		lengthOfTime: LengthOfTime,
-		interval: Interval,
+		interval: Interval
 	) {
 		const adjustedInterval: Interval = {
 			month: interval.month,
@@ -384,7 +383,7 @@ class Clndr {
 		if (lengthOfTime.days) {
 			if (isAfter(adjustedInterval.start, addWeeks(constraintEnd, 1))) {
 				adjustedInterval.start = startOfDay(
-					subDays(endOfWeek(constraintEnd), lengthOfTime.days - 1),
+					subDays(endOfWeek(constraintEnd), lengthOfTime.days - 1)
 				);
 				adjustedInterval.end = endOfWeek(constraintEnd);
 				adjustedInterval.month = new Date(adjustedInterval.start);
@@ -393,18 +392,18 @@ class Clndr {
 			if (isAfter(adjustedInterval.end, addMonths(constraintEnd, 1))) {
 				adjustedInterval.end = setYear(
 					setMonth(adjustedInterval.end, getMonth(constraintEnd)),
-					getYear(constraintEnd),
+					getYear(constraintEnd)
 				);
 				adjustedInterval.month = setYear(
 					setMonth(adjustedInterval.month, getMonth(constraintEnd)),
-					getYear(constraintEnd),
+					getYear(constraintEnd)
 				);
 			}
 
 			if (isAfter(adjustedInterval.start, addMonths(constraintEnd, 1))) {
 				adjustedInterval.start = setYear(
 					setMonth(adjustedInterval.start, getMonth(constraintEnd)),
-					getYear(constraintEnd),
+					getYear(constraintEnd)
 				);
 			}
 		}
@@ -414,7 +413,7 @@ class Clndr {
 
 	private initDaysOfTheWeek(
 		formatWeekdayHeader: ((day: Date, locale?: Locale) => string) | null,
-		locale: Locale | null,
+		locale: Locale | null
 	) {
 		const daysOfTheWeek: string[] = [];
 
@@ -443,8 +442,8 @@ class Clndr {
 		// Fix the week offset. It must be between 0 (Sunday) and 6 (Saturday)
 		if (this.options.weekOffset > 6 || this.options.weekOffset < 0) {
 			console.warn(
-				'clndr.js: An invalid offset ' + this.options.weekOffset +
-				' was provided (must be 0 - 6); using 0 instead.');
+				`clndr.js: An invalid offset ${this.options.weekOffset} was provided (must be 0 - 6); using 0 instead.`
+			);
 			this.options.weekOffset = 0;
 		}
 	}
@@ -560,7 +559,7 @@ class Clndr {
 				days.push(
 					this.calendarDay({
 						classes: [this.options.targets.empty, this.options.classes.lastMonth].join(' '),
-					}),
+					})
 				);
 			}
 		}
@@ -749,7 +748,7 @@ class Clndr {
 				eventsLastMonth: this.eventsLastMonth.map(event => event.originalEvent),
 				eventsNextMonth: this.eventsNextMonth.map(event => event.originalEvent),
 				eventsThisInterval: eventsThisInterval.map(
-					events => events.map(event => event.originalEvent),
+					events => events.map(event => event.originalEvent)
 				),
 				format: formatProxy,
 			};
@@ -757,7 +756,7 @@ class Clndr {
 			// Get an array of days and blank spaces
 			days = this.createDaysObject(
 				startOfMonth(this.interval.month),
-				endOfMonth(this.interval.month),
+				endOfMonth(this.interval.month)
 			);
 
 			data = {
@@ -843,8 +842,8 @@ class Clndr {
 
 			// Today? We could put this in init(), but we want to support the
 			// user changing the constraints on a living instance.
-			if ((start && isAfter(start, addMonths(new Date(), 1))) ||
-				(end && isBefore(end, subMonths(new Date(), 1)))
+			if (start && isAfter(start, addMonths(new Date(), 1))
+				|| end && isBefore(end, subMonths(new Date(), 1))
 			) {
 				this.element
 					.querySelectorAll('.' + this.options.targets.todayButton)
@@ -895,15 +894,16 @@ class Clndr {
 				// as a string. When render() is called, the selected date will
 				// get the additional classes added. If there is no re-render,
 				// then just add the classes manually.
-				if (self.options.trackSelectedDate &&
-					!(self.options.ignoreInactiveDaysInSelection &&
-						currentTarget.classList.contains(classes.inactive))
+				if (self.options.trackSelectedDate
+					&& !(
+						self.options.ignoreInactiveDaysInSelection
+						&& currentTarget.classList.contains(classes.inactive)
+					)
 				) {
 					// If there was no re-render, manually update classes
 					if (!handleAdjacentDay()) {
 						// Remember new selected date
-						self.options.selectedDate =
-							self.getTargetDateString(currentTarget);
+						self.options.selectedDate = self.getTargetDateString(currentTarget);
 						container.querySelectorAll('.' + classes.selected)
 							.forEach(node => node.classList.remove(classes.selected));
 						currentTarget.classList.add(classes.selected);
@@ -991,8 +991,9 @@ class Clndr {
 
 		target.events = this.events.filter(event => {
 			if (this.options.multiDayEvents) {
-				return target.date && !isAfter(event._clndrStartDateObject, targetEndDate) &&
-					!isAfter(target.date, event._clndrEndDateObject);
+				return target.date
+					&& !isAfter(event._clndrStartDateObject, targetEndDate)
+					&& !isAfter(target.date, event._clndrEndDateObject);
 			} else {
 				return dateString === format(event._clndrStartDateObject, 'yyyy-MM-dd');
 			}
@@ -1036,18 +1037,22 @@ class Clndr {
 
 		// We want to determine if any of the change conditions have been
 		// hit and then trigger our events based off that.
-		const nextMonth = isAfter(newInt.start, orig.start) &&
-			(Math.abs(getMonth(newInt.start) - getMonth(orig.start)) === 1 ||
-				(getMonth(orig.start) === 11 && getMonth(newInt.start) === 0));
-		const prevMonth = isBefore(newInt.start, orig.start) &&
-			(Math.abs(getMonth(orig.start) - getMonth(newInt.start)) === 1 ||
-				(getMonth(orig.start) === 0 && getMonth(newInt.start) === 11));
-		const monthChanged = getMonth(newInt.start) !== getMonth(orig.start) ||
-			getYear(newInt.start) !== getYear(orig.start);
-		const nextYear = getYear(newInt.start) - getYear(orig.start) === 1 ||
-			getYear(newInt.end) - getYear(orig.end) === 1;
-		const prevYear = getYear(orig.start) - getYear(newInt.start) === 1 ||
-			getYear(orig.end) - getYear(newInt.end) === 1;
+		const nextMonth = isAfter(newInt.start, orig.start)
+			&& (
+				Math.abs(getMonth(newInt.start) - getMonth(orig.start)) === 1
+				|| (getMonth(orig.start) === 11 && getMonth(newInt.start) === 0)
+			);
+		const prevMonth = isBefore(newInt.start, orig.start)
+			&& (
+				Math.abs(getMonth(orig.start) - getMonth(newInt.start)) === 1
+				|| (getMonth(orig.start) === 0 && getMonth(newInt.start) === 11)
+			);
+		const monthChanged = getMonth(newInt.start) !== getMonth(orig.start)
+			|| getYear(newInt.start) !== getYear(orig.start);
+		const nextYear = getYear(newInt.start) - getYear(orig.start) === 1
+			|| getYear(newInt.end) - getYear(orig.end) === 1;
+		const prevYear = getYear(orig.start) - getYear(newInt.start) === 1
+			|| getYear(orig.end) - getYear(newInt.end) === 1;
 		const yearChanged = getYear(newInt.start) !== getYear(orig.start);
 
 		// Only configs with a time period will get the interval change event
@@ -1129,7 +1134,7 @@ class Clndr {
 			// Shift the interval by a month (or several months)
 			ctx.interval.start = startOfMonth(subMonths(ctx.interval.start, timeOpt.interval));
 			ctx.interval.end = endOfMonth(
-				subDays(addMonths(ctx.interval.start, timeOpt.months || timeOpt.interval), 1),
+				subDays(addMonths(ctx.interval.start, timeOpt.months || timeOpt.interval), 1)
 			);
 			ctx.interval.month = new Date(ctx.interval.start);
 		}
@@ -1194,7 +1199,7 @@ class Clndr {
 			// Shift the interval by a month (or several months)
 			ctx.interval.start = startOfMonth(addMonths(ctx.interval.start, timeOpt.interval));
 			ctx.interval.end = endOfMonth(
-				subDays(addMonths(ctx.interval.start, timeOpt.months || timeOpt.interval), 1),
+				subDays(addMonths(ctx.interval.start, timeOpt.months || timeOpt.interval), 1)
 			);
 			ctx.interval.month = new Date(ctx.interval.start);
 		}
@@ -1334,14 +1339,12 @@ class Clndr {
 			// Set the intervalStart to this month.
 			ctx.interval.start = startOfMonth(new Date());
 			ctx.interval.end = endOfMonth(
-				subDays(addMonths(ctx.interval.start, timeOpt.months || timeOpt.interval), 1),
+				subDays(addMonths(ctx.interval.start, timeOpt.months || timeOpt.interval), 1)
 			);
 		}
 
 		// No need to re-render if we didn't change months.
-		if (!isSameMonth(ctx.interval.start, orig.start) ||
-			!isSameMonth(ctx.interval.end, orig.end)
-		) {
+		if (!isSameMonth(ctx.interval.start, orig.start) || !isSameMonth(ctx.interval.end, orig.end)) {
 			ctx.render();
 		}
 
@@ -1373,8 +1376,8 @@ class Clndr {
 
 		if (timeOpt.days || timeOpt.months) {
 			console.warn(
-				'clndr.js: You are using a custom date interval. ' +
-				'Use Clndr.setIntervalStart(startDate) instead.');
+				'clndr.js: You are using a custom date interval. Use Clndr.setIntervalStart(startDate) instead.'
+			);
 			return this;
 		}
 
@@ -1421,8 +1424,8 @@ class Clndr {
 
 		if (!timeOpt.days && !timeOpt.months) {
 			console.warn(
-				'clndr.js: You are using a custom date interval. ' +
-				'Use Clndr.setIntervalStart(startDate) instead.');
+				'clndr.js: You are using a custom date interval. Use Clndr.setIntervalStart(startDate) instead.'
+			);
 			return this;
 		}
 
@@ -1432,7 +1435,7 @@ class Clndr {
 		} else {
 			this.interval.start = startOfMonth(new Date(newDate));
 			this.interval.end = endOfMonth(
-				subDays(addMonths(this.interval.start, timeOpt.months as number), 1),
+				subDays(addMonths(this.interval.start, timeOpt.months as number), 1)
 			);
 		}
 
