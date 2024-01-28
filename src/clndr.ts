@@ -971,75 +971,47 @@ class Clndr {
 	}
 
 	/**
-	 * If the user provided a click callback we'd like to give them something
-	 * nice to work with. buildTargetObject takes the DOM element that was
-	 * clicked and returns an object with the DOM element, events, and the date
-	 * (if the latter two exist). Currently it is based on the id, however it'd
-	 * be nice to use a data- attribute in the future.
+	 * Creates the object to be returned along with click events.
 	 */
 	private buildTargetObject(currentTarget: HTMLElement, targetWasDay: boolean): Target {
-		// This is our default target object, assuming we hit an empty day
-		// with no events.
+		const dateString = this.getTargetDateString(currentTarget);
 		const target: Target = {
-			date: null,
+			date: dateString ? new Date(dateString) : null,
 			events: [],
 			element: currentTarget,
 		};
-		let filterFn;
-		let dateString: string | null;
-		let targetEndDate: Date;
 
-		// Did we click on a day or just an empty box?
-		if (targetWasDay) {
-			dateString = this.getTargetDateString(currentTarget);
-			target.date = dateString
-				? new Date(dateString)
-				: null;
-
-			if (!target.date) {
-				return target;
-			}
-
-			// Do we have events?
-			if (this.events.length > 0) {
-				// Are any of the events happening today?
-				if (this.options.multiDayEvents) {
-					targetEndDate = endOfDay(target.date);
-					filterFn = (event: InternalClndrEvent) => {
-						return target.date && !isAfter(event._clndrStartDateObject, targetEndDate) &&
-							!isAfter(target.date, event._clndrEndDateObject);
-					};
-				} else {
-					filterFn = (event: InternalClndrEvent) => {
-						return dateString === format(event._clndrStartDateObject, 'yyyy-MM-dd');
-					};
-				}
-
-				// Filter the dates down to the ones that match.
-				target.events = this.events.filter(filterFn).map(event => event.originalEvent);
-			}
+		// No reason to figure out the target day's event if click was just on an empty box or if there
+		// are no events at all
+		if (!targetWasDay || !target.date || this.events.length === 0) {
+			return target;
 		}
+
+		const targetEndDate = endOfDay(target.date);
+
+		target.events = this.events.filter(event => {
+			if (this.options.multiDayEvents) {
+				return target.date && !isAfter(event._clndrStartDateObject, targetEndDate) &&
+					!isAfter(target.date, event._clndrEndDateObject);
+			} else {
+				return dateString === format(event._clndrStartDateObject, 'yyyy-MM-dd');
+			}
+		}).map(event => event.originalEvent);
 
 		return target;
 	}
 
 	/**
-	 * Get date string associated with the given target.
+	 * Get date string ("YYYY-MM-DD") associated with the given target.
 	 * This method is meant to be called on ".day" elements.
 	 */
-	private getTargetDateString = function (target: HTMLElement) {
-		// Our identifier is in the list of classNames. Find it!
+	private getTargetDateString(target: HTMLElement) {
 		const index = target.className.indexOf('calendar-day-');
 
-		if (index !== -1) {
-			// Our unique identifier is always 23 characters long.
-			// If this feels a little wonky, that's probably because it is.
-			// Open to suggestions on how to improve this guy.
-			return target.className.substring(index + 13, index + 23);
-		}
-
-		return null;
-	};
+		return index === -1
+			? null
+			: target.className.substring(index + 13, index + 23);
+	}
 
 	/**
 	 * Triggers any applicable events given a change in the calendar's start
