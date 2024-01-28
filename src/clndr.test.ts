@@ -306,6 +306,20 @@ describe('Setup', () => {
 		expect(container.querySelector('.calendar-day-1992-10-01')).toBeInTheDocument();
 	});
 
+	test('Day interval not being dividable by 7', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneWeekTemplate),
+			lengthOfTime: {
+				days: 6,
+			},
+			startWithMonth: '1992-10',
+		});
+
+		expect(container.querySelector('.calendar-day-1992-10-01')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-day-1992-10-06')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-day-1992-10-07')).not.toBeInTheDocument();
+	});
+
 	test('Custom days of the week naming', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
