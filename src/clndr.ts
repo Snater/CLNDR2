@@ -587,13 +587,8 @@ class Clndr {
 	}
 
 	private createDayObject(day: Date, monthEvents: InternalClndrEvent[]) {
-		let end;
-		let j = 0;
-		let start;
-		let endDate;
-		let startDate;
 		const now = new Date();
-		const eventsToday = [];
+		const dayEnd = endOfDay(day);
 		const classes = [this.options.targets.day];
 		const properties: DayProperties = {
 			isToday: false,
@@ -601,22 +596,12 @@ class Clndr {
 			isAdjacentMonth: false,
 		};
 
-		// Set to the end of the day for comparisons
-		const dayEnd = endOfDay(day);
+		const eventsToday = monthEvents.filter(event => {
+			const start = event._clndrStartDateObject;
+			const end = event._clndrEndDateObject;
 
-		for (j; j < monthEvents.length; j++) {
-			// Keep in mind that the events here already passed the month/year
-			// test. Now all we have to compare is the day.
-			start = monthEvents[j]._clndrStartDateObject;
-			end = monthEvents[j]._clndrEndDateObject;
-
-			// If today is the same day as start or is after the start, and
-			// if today is the same day as the end or before the end ...
-			// woohoo semantics!
-			if (!isAfter(start, dayEnd) && !isAfter(day, end)) {
-				eventsToday.push(monthEvents[j]);
-			}
-		}
+			return !isAfter(start, dayEnd) && !isAfter(day, end);
+		});
 
 		if (isSameDay(now, day)) {
 			classes.push(this.options.classes.today);
@@ -649,11 +634,12 @@ class Clndr {
 			}
 		}
 
-		// If there are constraints, we need to add the inactive class to the
-		// days outside of them
+		// If there are constraints, we need to add the inactive class to the days outside of them.
 		if (this.options.constraints) {
-			endDate = this.options.constraints.endDate && new Date(this.options.constraints.endDate);
-			startDate = this.options.constraints.startDate && new Date(this.options.constraints.startDate);
+			const endDate = this.options.constraints.endDate
+				&& new Date(this.options.constraints.endDate);
+			const startDate = this.options.constraints.startDate
+				&& new Date(this.options.constraints.startDate);
 
 			if (startDate && isBefore(day, startDate)) {
 				classes.push(this.options.classes.inactive);
@@ -666,14 +652,10 @@ class Clndr {
 			}
 		}
 
-		// Check whether the day is "selected"
 		if (this.options.selectedDate && isSameDay(day, new Date(this.options.selectedDate))) {
 			classes.push(this.options.classes.selected);
 		}
 
-		// We're moving away from using IDs in favor of classes, since when
-		// using multiple calendars on a page we are technically violating the
-		// uniqueness of IDs.
 		classes.push(`calendar-day-${format(day, 'yyyy-MM-dd')}`);
 		// Day of week
 		classes.push(`calendar-dow-${getDay(day)}`);
