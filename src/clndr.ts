@@ -997,28 +997,19 @@ class Clndr {
 	}
 
 	/**
-	 * Triggers any applicable events given a change in the calendar's start
-	 * and end dates. ctx contains the current (changed) start and end date,
-	 * orig contains the original start and end dates.
+	 * Triggers any applicable events given a change in the calendar's start and end dates.
+	 * @param ctx Contains the current (changed) start and end date.
+	 * @param orig Contains the original start and end dates.
 	 */
 	private triggerEvents(ctx: Clndr, orig: ClndrEventOrigin) {
-		let nextInterval;
-		let prevInterval;
-		let intervalChanged;
-		const monthArg: [Date] = [new Date(ctx.interval.month)];
 		const timeOpt = ctx.options.lengthOfTime;
 		const eventsOpt = ctx.options.clickEvents;
 		const newInt = {
 			end: ctx.interval.end,
 			start: ctx.interval.start,
 		};
-		const intervalArg: [Date, Date] = [
-			new Date(ctx.interval.start),
-			new Date(ctx.interval.end),
-		];
 
-		// We want to determine if any of the change conditions have been
-		// hit and then trigger our events based off that.
+		// If any of the change conditions have been hit, trigger the relevant events
 		const nextMonth = isAfter(newInt.start, orig.start)
 			&& (
 				Math.abs(getMonth(newInt.start) - getMonth(orig.start)) === 1
@@ -1039,9 +1030,13 @@ class Clndr {
 
 		// Only configs with a time period will get the interval change event
 		if (timeOpt.days || timeOpt.months) {
-			nextInterval = isAfter(newInt.start, orig.start);
-			prevInterval = isBefore(newInt.start, orig.start);
-			intervalChanged = nextInterval || prevInterval;
+			const nextInterval = isAfter(newInt.start, orig.start);
+			const prevInterval = isBefore(newInt.start, orig.start);
+			const intervalChanged = nextInterval || prevInterval;
+			const intervalArg: [Date, Date] = [
+				new Date(ctx.interval.start),
+				new Date(ctx.interval.end),
+			];
 
 			if (nextInterval && eventsOpt.nextInterval) {
 				eventsOpt.nextInterval.apply(ctx, intervalArg);
@@ -1055,7 +1050,8 @@ class Clndr {
 				eventsOpt.onIntervalChange.apply(ctx, intervalArg);
 			}
 		} else {
-			// @V2-todo see https://github.com/kylestetz/CLNDR/issues/225
+			const monthArg: [Date] = [new Date(ctx.interval.month)];
+
 			if (nextMonth && eventsOpt.nextMonth) {
 				eventsOpt.nextMonth.apply(ctx, monthArg);
 			}
