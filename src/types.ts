@@ -159,9 +159,7 @@ export type ClndrEventOrigin = {
 
 export type ClndrInteractionEvent = Event & {data: {context: Clndr}}
 
-export type SetterOptions = {withCallbacks?: boolean}
-
-export type NavigationOptions = Partial<Options> & SetterOptions
+export type NavigationOptions = {withCallbacks?: boolean}
 
 export type NavigationConstraint = 'next' | 'today' | 'previous' | 'nextYear' | 'previousYear'
 export type NavigationConstraints = {[key in NavigationConstraint]: boolean}

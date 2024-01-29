@@ -45,7 +45,6 @@ import type {
 	NavigationConstraints,
 	NavigationOptions,
 	Options,
-	SetterOptions,
 	Target,
 	TargetOption,
 	UserOptions,
@@ -1079,34 +1078,27 @@ class Clndr {
 	}
 
 	/**
-	 * Main action to go backward one period. Other methods call these, like
-	 * backAction which proxies events, and backActionWithContext which is
-	 * an internal method that this library uses.
+	 * Main action to go backward one or more periods.
 	 */
 	back(options: NavigationOptions = {}, ctx?: Clndr) {
 		ctx = ctx || this;
 		const timeOpt = ctx.options.lengthOfTime;
-		const defaults = {
-			withCallbacks: false,
-		};
+		const defaults: NavigationOptions = {withCallbacks: false};
 		const orig: ClndrEventOrigin = {
 			end: ctx.interval.end,
 			start: ctx.interval.start,
 		};
 
-		// Extend any options
-		options = Clndr.mergeOptions<NavigationOptions>(defaults, options) as NavigationOptions;
+		options = Clndr.mergeOptions<NavigationOptions>(defaults, options);
 
-		// Before we do anything, check if any constraints are limiting this
 		if (!ctx.constraints.previous) {
 			return ctx;
 		}
 
 		if (timeOpt.days && timeOpt.interval) {
-			// Shift the interval in days
+			// Shift the interval by days
 			ctx.interval.start = startOfDay(subDays(ctx.interval.start, timeOpt.interval));
 			ctx.interval.end = endOfDay(addDays(ctx.interval.start, timeOpt.days - 1));
-			// @V2-todo Useless, but consistent with API
 			ctx.interval.month = new Date(ctx.interval.start);
 		} else {
 			// Shift the interval by a month (or several months)
@@ -1129,49 +1121,42 @@ class Clndr {
 	backAction(event: ClndrInteractionEvent) {
 		const ctx = event.data.context;
 
-		ctx.backActionWithContext(ctx);
+		ctx.backActionWithContext(event.data.context);
 	}
 
 	private backActionWithContext(ctx: Clndr) {
-		ctx.back({
-			withCallbacks: true,
-		}, ctx);
+		ctx.back({withCallbacks: true}, ctx);
 	}
 
+	/**
+	 * Alias of Clndr.back().
+	 */
 	previous(options: NavigationOptions = {}) {
-		// Alias
 		return this.back(options);
 	}
 
 	/**
-	 * Main action to go forward one period. Other methods call these, like
-	 * forwardAction which proxies events, and backActionWithContext which
-	 * is an internal method that this library uses.
+	 * Main action to go forward one or more periods.
 	 */
 	forward(options: NavigationOptions = {}, ctx?: Clndr) {
 		ctx = ctx || this;
 		const timeOpt = ctx.options.lengthOfTime;
-		const defaults = {
-			withCallbacks: false,
-		};
+		const defaults: NavigationOptions = {withCallbacks: false};
 		const orig: ClndrEventOrigin = {
 			end: ctx.interval.end,
 			start: ctx.interval.start,
 		};
 
-		// Extend any options
 		options = Clndr.mergeOptions<NavigationOptions>(defaults, options);
 
-		// Before we do anything, check if any constraints are limiting this
 		if (!ctx.constraints.next) {
 			return ctx;
 		}
 
 		if (timeOpt.days && timeOpt.interval) {
-			// Shift the interval in days
+			// Shift the interval by days
 			ctx.interval.start = startOfDay(addDays(ctx.interval.start, timeOpt.interval));
 			ctx.interval.end = endOfDay(addDays(ctx.interval.start, timeOpt.days - 1));
-			// @V2-todo Useless, but consistent with API
 			ctx.interval.month = new Date(ctx.interval.start);
 		} else {
 			// Shift the interval by a month (or several months)
@@ -1198,13 +1183,13 @@ class Clndr {
 	}
 
 	private forwardActionWithContext(ctx: Clndr) {
-		ctx.forward({
-			withCallbacks: true,
-		}, ctx);
+		ctx.forward({withCallbacks: true}, ctx);
 	}
 
+	/**
+	 * Alias of Clndr.forward()
+	 */
 	next(options: NavigationOptions) {
-		// Alias
 		return this.forward(options);
 	}
 
@@ -1213,18 +1198,14 @@ class Clndr {
 	 */
 	previousYear(options: NavigationOptions = {}, ctx?: Clndr) {
 		ctx = ctx || this;
-		const defaults = {
-			withCallbacks: false,
-		};
+		const defaults: NavigationOptions = {	withCallbacks: false};
 		const orig: ClndrEventOrigin = {
 			end: ctx.interval.end,
 			start: ctx.interval.start,
 		};
 
-		// Extend any options
 		options = Clndr.mergeOptions<NavigationOptions>(defaults, options);
 
-		// Before we do anything, check if any constraints are limiting this
 		if (!ctx.constraints.previousYear) {
 			return ctx;
 		}
@@ -1232,6 +1213,7 @@ class Clndr {
 		ctx.interval.month = subYears(ctx.interval.month, 1);
 		ctx.interval.start = subYears(ctx.interval.start, 1);
 		ctx.interval.end = subYears(ctx.interval.end, 1);
+
 		ctx.render();
 
 		if (options.withCallbacks) {
@@ -1242,9 +1224,7 @@ class Clndr {
 	}
 
 	private previousYearAction(event: ClndrInteractionEvent) {
-		event.data.context.previousYear({
-			withCallbacks: true,
-		}, event.data.context);
+		event.data.context.previousYear({withCallbacks: true}, event.data.context);
 	}
 
 	/**
@@ -1252,18 +1232,14 @@ class Clndr {
 	 */
 	nextYear(options: NavigationOptions = {}, ctx?: Clndr) {
 		ctx = ctx || this;
-		const defaults = {
-			withCallbacks: false,
-		};
+		const defaults: NavigationOptions = {withCallbacks: false};
 		const orig: ClndrEventOrigin = {
 			end: ctx.interval.end,
 			start: ctx.interval.start,
 		};
 
-		// Extend any options
 		options = Clndr.mergeOptions<NavigationOptions>(defaults, options);
 
-		// Before we do anything, check if any constraints are limiting this
 		if (!ctx.constraints.nextYear) {
 			return ctx;
 		}
@@ -1271,6 +1247,7 @@ class Clndr {
 		ctx.interval.month = addYears(ctx.interval.month, 1);
 		ctx.interval.start = addYears(ctx.interval.start, 1);
 		ctx.interval.end = addYears(ctx.interval.end, 1);
+
 		ctx.render();
 
 		if (options.withCallbacks) {
@@ -1281,47 +1258,40 @@ class Clndr {
 	}
 
 	private nextYearAction(event: ClndrInteractionEvent) {
-		event.data.context.nextYear({
-			withCallbacks: true,
-		}, event.data.context);
+		event.data.context.nextYear({withCallbacks: true}, event.data.context);
 	}
 
 	today(options: NavigationOptions = {}, ctx?: Clndr) {
 		ctx = ctx || this;
 		const timeOpt = ctx.options.lengthOfTime;
-		const defaults = {
-			withCallbacks: false,
-		};
+		const defaults: NavigationOptions = {withCallbacks: false};
 		const orig: ClndrEventOrigin = {
 			end: ctx.interval.end,
 			start: ctx.interval.start,
 		};
 
-		// Extend any options
 		options = Clndr.mergeOptions<NavigationOptions>(defaults, options);
-		// @V2-todo Only used for legacy month view
+
+		// Only used for legacy month view
 		ctx.interval.month = startOfMonth(new Date());
 
 		if (timeOpt.days) {
-			// If there was a startDate specified, we should figure out what
-			// the weekday is and use that as the starting point of our
-			// interval. If not, go to today.weekday(0).
-			if (timeOpt.startDate) {
-				ctx.interval.start = startOfDay(setDay(new Date(), getDay(new Date(timeOpt.startDate))));
-			} else {
-				ctx.interval.start = startOfDay(setDay(new Date(), 0));
-			}
+			// If there was a startDate specified, its weekday should be figured out to use that as the
+			// starting point of the interval. If not, go to today.weekday(0).
+			ctx.interval.start = startOfDay(setDay(
+				new Date(),
+				timeOpt.startDate ? getDay(new Date(timeOpt.startDate)) : 0
+			));
 
 			ctx.interval.end = endOfDay(addDays(ctx.interval.start, timeOpt.days - 1));
 		} else {
-			// Set the intervalStart to this month.
 			ctx.interval.start = startOfMonth(new Date());
 			ctx.interval.end = endOfMonth(
 				subDays(addMonths(ctx.interval.start, timeOpt.months || timeOpt.interval), 1)
 			);
 		}
 
-		// No need to re-render if we didn't change months.
+		// No need to re-render if the month was not changed
 		if (!isSameMonth(ctx.interval.start, orig.start) || !isSameMonth(ctx.interval.end, orig.end)) {
 			ctx.render();
 		}
@@ -1337,15 +1307,13 @@ class Clndr {
 	}
 
 	todayAction(event: ClndrInteractionEvent) {
-		event.data.context.today({
-			withCallbacks: true,
-		}, event.data.context);
+		event.data.context.today({withCallbacks: true}, event.data.context);
 	}
 
 	/**
-	 * Changes the month. Accepts 0-11.
+	 * Changes the month being provided a value between 0 and 11.
 	 */
-	setMonth(newMonth: number, options: SetterOptions = {}) {
+	setMonth(newMonth: number, options: NavigationOptions = {}) {
 		const timeOpt = this.options.lengthOfTime;
 		const orig: ClndrEventOrigin = {
 			end: this.interval.end,
@@ -1354,7 +1322,7 @@ class Clndr {
 
 		if (timeOpt.days || timeOpt.months) {
 			console.warn(
-				'clndr.js: You are using a custom date interval. Use Clndr.setIntervalStart(startDate) instead.'
+				'You are using a custom date interval. Use Clndr.setIntervalStart(startDate) instead.'
 			);
 			return this;
 		}
@@ -1362,6 +1330,7 @@ class Clndr {
 		this.interval.month = setMonth(this.interval.month, newMonth);
 		this.interval.start = new Date(startOfMonth(this.interval.month));
 		this.interval.end = endOfMonth(this.interval.start);
+
 		this.render();
 
 		if (options && options.withCallbacks) {
@@ -1371,7 +1340,7 @@ class Clndr {
 		return this;
 	}
 
-	setYear(newYear: number, options: SetterOptions = {}) {
+	setYear(newYear: number, options: NavigationOptions = {}) {
 		const orig: ClndrEventOrigin = {
 			end: this.interval.end,
 			start: this.interval.start,
@@ -1380,6 +1349,7 @@ class Clndr {
 		this.interval.month = setYear(this.interval.month, newYear);
 		this.interval.end = setYear(this.interval.end, newYear);
 		this.interval.start = setYear(this.interval.start, newYear);
+
 		this.render();
 
 		if (options && options.withCallbacks) {
@@ -1390,10 +1360,9 @@ class Clndr {
 	}
 
 	/**
-	 * Sets the start of the time period according to newDate.
-	 * newDate can be a string or a Date object.
+	 * Sets the start of the time period.
 	 */
-	setIntervalStart(newDate: Date | string, options: SetterOptions = {}) {
+	setIntervalStart(newDate: Date | string, options: NavigationOptions = {}) {
 		const timeOpt = this.options.lengthOfTime;
 		const orig: ClndrEventOrigin = {
 			end: this.interval.end,
@@ -1402,7 +1371,7 @@ class Clndr {
 
 		if (!timeOpt.days && !timeOpt.months) {
 			console.warn(
-				'clndr.js: You are using a custom date interval. Use Clndr.setIntervalStart(startDate) instead.'
+				'You are not using a custom date interval. Use Clndr.setMonth(new Month) or Clndr.setYear(newYear) instead.'
 			);
 			return this;
 		}
@@ -1418,6 +1387,7 @@ class Clndr {
 		}
 
 		this.interval.month = new Date(this.interval.start);
+
 		this.render();
 
 		if (options && options.withCallbacks) {
