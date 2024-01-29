@@ -34,8 +34,6 @@ import type {
 	ClndrEventOrigin,
 	ClndrInteractionEvent,
 	ClndrTemplateData,
-	ConstraintCheckSubject,
-	ConstraintChecks,
 	Constraints,
 	Day,
 	DayProperties,
@@ -43,6 +41,8 @@ import type {
 	Interval,
 	LengthOfTime,
 	MultiDayEvents,
+	NavigationConstraint,
+	NavigationConstraints,
 	NavigationOptions,
 	Options,
 	SetterOptions,
@@ -151,7 +151,7 @@ class Clndr {
 	}
 
 	private readonly element: HTMLElement;
-	private readonly constraints: ConstraintChecks;
+	private readonly constraints: NavigationConstraints;
 	private readonly interval: Interval;
 	private options: Options;
 	private daysOfTheWeek: string[];
@@ -669,95 +669,15 @@ class Clndr {
 		});
 	}
 
-	/**
-	 * Renders the calendar.
-	 *
-	 * Get rid of the previous set of calendar parts.
-	 */
 	private render() {
-		let i;
-		let target;
-		let end = null;
-		let start = null;
-		const oneYearFromEnd = addYears(this.interval.end, 1);
-		const oneYearAgo = subYears(this.interval.start, 1);
-
 		this.calendarContainer.innerHTML = '';
 
-		// Render the calendar with the data above & bind events to its elements
-		(this.calendarContainer as HTMLElement).innerHTML
-			= (this.options as UserOptions).render.apply(this, [this.aggregateTemplateData()]);
+		this.calendarContainer.innerHTML = (this.options as UserOptions).render.apply(
+			this,
+			[this.aggregateTemplateData()]
+		);
 
-		// If there are constraints, we need to add the 'inactive' class to
-		// the controls.
-		if (this.options.constraints) {
-			// In the interest of clarity we're just going to remove all
-			// inactive classes and re-apply them each render.
-			for (target in this.options.targets) {
-				if (target !== 'day') {
-					this.element
-						.querySelectorAll('.' + this.options.targets[target as TargetOption])
-						.forEach(element => element.classList.remove(this.options.classes.inactive));
-				}
-			}
-
-			// Just like the classes we'll set this internal state to true and
-			// handle the disabling below.
-			for (i in this.constraints) {
-				this.constraints[i as ConstraintCheckSubject] = true;
-			}
-
-			if (this.options.constraints.startDate) {
-				start = new Date(this.options.constraints.startDate);
-			}
-
-			if (this.options.constraints.endDate) {
-				end = new Date(this.options.constraints.endDate);
-			}
-
-			// Deal with the month controls first. Do we have room to go back?
-			if (start && (isAfter(start, this.interval.start) || isSameDay(start, this.interval.start))) {
-				this.element
-					.querySelectorAll('.' + this.options.targets.previousButton)
-					.forEach(element => element.classList.add(this.options.classes.inactive));
-				this.constraints.previous = !this.constraints.previous;
-			}
-
-			// Do we have room to go forward?
-			if (end && (isBefore(end, this.interval.end) || isSameDay(end, this.interval.end))) {
-				this.element
-					.querySelectorAll('.' + this.options.targets.nextButton)
-					.forEach(element => element.classList.add(this.options.classes.inactive));
-				this.constraints.next = !this.constraints.next;
-			}
-
-			// What's last year looking like?
-			if (start && isAfter(start, oneYearAgo)) {
-				this.element
-					.querySelectorAll('.' + this.options.targets.previousYearButton)
-					.forEach(element => element.classList.add(this.options.classes.inactive));
-				this.constraints.previousYear = !this.constraints.previousYear;
-			}
-
-			// How about next year?
-			if (end && isBefore(end, oneYearFromEnd)) {
-				this.element
-					.querySelectorAll('.' + this.options.targets.nextYearButton)
-					.forEach(element => element.classList.add(this.options.classes.inactive));
-				this.constraints.nextYear = !this.constraints.nextYear;
-			}
-
-			// Today? We could put this in init(), but we want to support the
-			// user changing the constraints on a living instance.
-			if (start && isAfter(start, addMonths(new Date(), 1))
-				|| end && isBefore(end, subMonths(new Date(), 1))
-			) {
-				this.element
-					.querySelectorAll('.' + this.options.targets.todayButton)
-					.forEach(element => element.classList.add(this.options.classes.inactive));
-				this.constraints.today = !this.constraints.today;
-			}
-		}
+		this.applyInactiveClasses();
 
 		if (this.options.doneRendering) {
 			this.options.doneRendering.apply(this, []);
@@ -833,6 +753,82 @@ class Clndr {
 		}
 
 		return data;
+	}
+
+	/**
+	 * Adds "inactive" class to controls if needed. This function is called during rendering.
+	 */
+	private applyInactiveClasses() {
+		if (!this.options.constraints) {
+			return;
+		}
+
+		// Remove all "inactive" class assignments to start with a clean state
+		for (const target in this.options.targets) {
+			if (target !== 'day') {
+				this.element
+					.querySelectorAll('.' + this.options.targets[target as TargetOption])
+					.forEach(element => element.classList.remove(this.options.classes.inactive));
+			}
+		}
+
+		// Just like the classes, reset the internal states to true
+		for (const navigationConstraint in this.constraints) {
+			this.constraints[navigationConstraint as NavigationConstraint] = true;
+		}
+
+		const start = this.options.constraints.startDate
+			? new Date(this.options.constraints.startDate)
+			: null;
+		const end = this.options.constraints.endDate
+			? new Date(this.options.constraints.endDate)
+			: null;
+
+		// Month control
+		// Room to go back?
+		if (start && (isAfter(start, this.interval.start) || isSameDay(start, this.interval.start))) {
+			this.element
+				.querySelectorAll('.' + this.options.targets.previousButton)
+				.forEach(element => element.classList.add(this.options.classes.inactive));
+			this.constraints.previous = false;
+		}
+
+		// Room to go forward?
+		if (end && (isBefore(end, this.interval.end) || isSameDay(end, this.interval.end))) {
+			this.element
+				.querySelectorAll('.' + this.options.targets.nextButton)
+				.forEach(element => element.classList.add(this.options.classes.inactive));
+			this.constraints.next = false;
+		}
+
+		// Year control
+		// Room to go back?
+		if (start && isAfter(start, subYears(this.interval.start, 1))) {
+			this.element
+				.querySelectorAll('.' + this.options.targets.previousYearButton)
+				.forEach(element => element.classList.add(this.options.classes.inactive));
+			this.constraints.previousYear = false;
+		}
+
+		// Room to for forward?
+		if (end && isBefore(end, addYears(this.interval.end, 1))) {
+			this.element
+				.querySelectorAll('.' + this.options.targets.nextYearButton)
+				.forEach(element => element.classList.add(this.options.classes.inactive));
+			this.constraints.nextYear = false;
+		}
+
+		// Today
+		// Constraints could be updated programmatically. Therefore, this check cannot be just run on
+		// initialization.
+		if (start && isAfter(start, addMonths(new Date(), 1))
+			|| end && isBefore(end, subMonths(new Date(), 1))
+		) {
+			this.element
+				.querySelectorAll('.' + this.options.targets.todayButton)
+				.forEach(element => element.classList.add(this.options.classes.inactive));
+			this.constraints.today = false;
+		}
 	}
 
 	/**

@@ -163,8 +163,8 @@ export type SetterOptions = {withCallbacks?: boolean}
 
 export type NavigationOptions = Partial<Options> & SetterOptions
 
-export type ConstraintCheckSubject = 'next' | 'today' | 'previous' | 'nextYear' | 'previousYear'
-export type ConstraintChecks = {[key in ConstraintCheckSubject]: boolean}
+export type NavigationConstraint = 'next' | 'today' | 'previous' | 'nextYear' | 'previousYear'
+export type NavigationConstraints = {[key in NavigationConstraint]: boolean}
 
 export type Interval = {
 	month: Date
