@@ -33,6 +33,7 @@ import type {
 	ClndrEvent,
 	ClndrEventOrigin,
 	ClndrInteractionEvent,
+	ClndrTemplateData,
 	ConstraintCheckSubject,
 	ConstraintChecks,
 	Constraints,
@@ -41,7 +42,6 @@ import type {
 	InternalClndrEvent,
 	Interval,
 	LengthOfTime,
-	Month,
 	MultiDayEvents,
 	NavigationOptions,
 	Options,
@@ -155,7 +155,7 @@ class Clndr {
 	private readonly interval: Interval;
 	private options: Options;
 	private daysOfTheWeek: string[];
-	private calendarContainer?: HTMLElement;
+	private calendarContainer: HTMLElement;
 	private eventsLastMonth: InternalClndrEvent[];
 	private eventsNextMonth: InternalClndrEvent[];
 	private eventsThisInterval: InternalClndrEvent[];
@@ -676,112 +676,17 @@ class Clndr {
 	 */
 	private render() {
 		let i;
-		let days;
-		let months: Month[];
 		let target;
-		let data;
 		let end = null;
 		let start = null;
-		let numberOfRows;
-		let eventsThisInterval;
-		let currentIntervalEnd;
-		let currentIntervalStart;
 		const oneYearFromEnd = addYears(this.interval.end, 1);
 		const oneYearAgo = subYears(this.interval.start, 1);
-		const formatProxy = (date: Date, formatStr: string, options: FormatOptions = {}) => {
-			return format(date, formatStr, {locale: this.options.locale || undefined, ...options});
-		};
 
-		// FIXME: Set calendarContainer in constructor
-		(this.calendarContainer as HTMLElement).innerHTML = '';
-
-		if (this.options.lengthOfTime.days) {
-			days = this.createDaysObject(this.interval.start, this.interval.end);
-			data = {
-				days: days,
-				months: [],
-				year: null,
-				month: null,
-				eventsLastMonth: [],
-				eventsNextMonth: [],
-				eventsThisMonth: [],
-				extras: this.options.extras,
-				daysOfTheWeek: this.daysOfTheWeek,
-				intervalEnd: this.interval.end,
-				numberOfRows: Math.ceil(days.length / 7),
-				intervalStart: this.interval.start,
-				eventsThisInterval: this.eventsThisInterval.map(event => event.originalEvent),
-				format: formatProxy,
-			};
-		} else if (this.options.lengthOfTime.months) {
-			months = [];
-			numberOfRows = 0;
-			eventsThisInterval = [];
-
-			for (i = 0; i < this.options.lengthOfTime.months; i++) {
-				currentIntervalStart = addMonths(this.interval.start, i);
-				currentIntervalEnd = endOfMonth(currentIntervalStart);
-				days = this.createDaysObject(currentIntervalStart, currentIntervalEnd);
-				// Save events processed for each month into a master array of
-				// events for this interval
-				eventsThisInterval.push(this.eventsThisInterval);
-				months.push({
-					days: days,
-					month: currentIntervalStart,
-				});
-			}
-
-			// Get the total number of rows across all months
-			for (i = 0; i < months.length; i++) {
-				numberOfRows += Math.ceil(months[i].days.length / 7);
-			}
-
-			data = {
-				days: [],
-				year: null,
-				month: null,
-				months: months,
-				eventsThisMonth: [],
-				numberOfRows: numberOfRows,
-				extras: this.options.extras,
-				intervalEnd: this.interval.end,
-				intervalStart: this.interval.start,
-				daysOfTheWeek: this.daysOfTheWeek,
-				eventsLastMonth: this.eventsLastMonth.map(event => event.originalEvent),
-				eventsNextMonth: this.eventsNextMonth.map(event => event.originalEvent),
-				eventsThisInterval: eventsThisInterval.map(
-					events => events.map(event => event.originalEvent)
-				),
-				format: formatProxy,
-			};
-		} else {
-			// Get an array of days and blank spaces
-			days = this.createDaysObject(
-				startOfMonth(this.interval.month),
-				endOfMonth(this.interval.month)
-			);
-
-			data = {
-				days: days,
-				months: [],
-				intervalEnd: null,
-				intervalStart: null,
-				year: getYear(this.interval.month),
-				eventsThisInterval: null,
-				extras: this.options.extras,
-				month: format(this.interval.month, 'MMMM', {locale: this.options.locale || undefined}),
-				daysOfTheWeek: this.daysOfTheWeek,
-				eventsLastMonth: this.eventsLastMonth.map(event => event.originalEvent),
-				eventsNextMonth: this.eventsNextMonth.map(event => event.originalEvent),
-				numberOfRows: Math.ceil(days.length / 7),
-				eventsThisMonth: this.eventsThisInterval.map(event => event.originalEvent),
-				format: formatProxy,
-			};
-		}
+		this.calendarContainer.innerHTML = '';
 
 		// Render the calendar with the data above & bind events to its elements
 		(this.calendarContainer as HTMLElement).innerHTML
-			= (this.options as UserOptions).render.apply(this, [data]);
+			= (this.options as UserOptions).render.apply(this, [this.aggregateTemplateData()]);
 
 		// If there are constraints, we need to add the 'inactive' class to
 		// the controls.
@@ -857,6 +762,77 @@ class Clndr {
 		if (this.options.doneRendering) {
 			this.options.doneRendering.apply(this, []);
 		}
+	}
+
+	private aggregateTemplateData() {
+		const data: ClndrTemplateData = {
+			days: [],
+			months: [],
+			intervalEnd: null,
+			intervalStart: null,
+			year: null,
+			eventsThisInterval: [],
+			extras: this.options.extras,
+			month: null,
+			daysOfTheWeek: this.daysOfTheWeek,
+			eventsThisMonth: [],
+			eventsLastMonth: [],
+			eventsNextMonth: [],
+			numberOfRows: 0,
+			format: (date: Date, formatStr: string, options: FormatOptions = {}) => {
+				return format(date, formatStr, {locale: this.options.locale || undefined, ...options});
+			},
+		};
+
+		if (this.options.lengthOfTime.days) {
+			data.days = this.createDaysObject(this.interval.start, this.interval.end);
+			data.intervalEnd = this.interval.end;
+			data.numberOfRows = Math.ceil(data.days.length / 7);
+			data.intervalStart = this.interval.start;
+			data.eventsThisInterval = this.eventsThisInterval.map(event => event.originalEvent);
+		} else if (this.options.lengthOfTime.months) {
+			const eventsThisInterval: ClndrEvent[][] = [];
+
+			for (let i = 0; i < this.options.lengthOfTime.months; i++) {
+				const currentIntervalStart = addMonths(this.interval.start, i);
+				const currentIntervalEnd = endOfMonth(currentIntervalStart);
+				const days = this.createDaysObject(currentIntervalStart, currentIntervalEnd);
+
+				// Save events processed for each month into a master array of events for this interval
+				eventsThisInterval.push(this.eventsThisInterval.map(event => event.originalEvent));
+				data.months.push({
+					days: days,
+					month: currentIntervalStart,
+				});
+			}
+
+			data.eventsThisInterval = eventsThisInterval;
+
+			// Get the total number of rows across all months
+			data.months.forEach(month => {
+				data.numberOfRows += Math.ceil(month.days.length / 7);
+			});
+
+			data.intervalEnd = this.interval.end;
+			data.intervalStart = this.interval.start;
+			data.eventsLastMonth = this.eventsLastMonth.map(event => event.originalEvent);
+			data.eventsNextMonth = this.eventsNextMonth.map(event => event.originalEvent);
+		} else {
+			// Get an array of days and blank spaces
+			data.days = this.createDaysObject(
+				startOfMonth(this.interval.month),
+				endOfMonth(this.interval.month)
+			);
+
+			data.year = getYear(this.interval.month);
+			data.month = format(this.interval.month, 'MMMM', {locale: this.options.locale || undefined});
+			data.eventsLastMonth = this.eventsLastMonth.map(event => event.originalEvent);
+			data.eventsNextMonth = this.eventsNextMonth.map(event => event.originalEvent);
+			data.numberOfRows = Math.ceil(data.days.length / 7);
+			data.eventsThisMonth = this.eventsThisInterval.map(event => event.originalEvent);
+		}
+
+		return data;
 	}
 
 	/**

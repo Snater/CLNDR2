@@ -129,7 +129,7 @@ export type ClndrTemplateData = {
 	intervalEnd: Date | null
 	numberOfRows: number
 	intervalStart: Date | null
-	eventsThisInterval: ClndrEvent[] | ClndrEvent[][] | null
+	eventsThisInterval: ClndrEvent[] | ClndrEvent[][]
 	format: (date: Date, formatStr: string, options: FormatOptions) => string
 }
 
