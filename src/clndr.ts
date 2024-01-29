@@ -159,7 +159,6 @@ class Clndr {
 	private eventsLastMonth: InternalClndrEvent[];
 	private eventsNextMonth: InternalClndrEvent[];
 	private eventsThisInterval: InternalClndrEvent[];
-	private eventHandler?: EventListener;
 	private events: InternalClndrEvent[];
 	/**
 	 * Helper object for days to be able to resolve their classes correctly.
@@ -251,7 +250,10 @@ class Clndr {
 		this.element.innerHTML = '<div class="clndr"></div>';
 		this.calendarContainer = this.element.querySelector('.clndr') as HTMLElement;
 
-		this.bindEvents();
+		this.element.addEventListener(
+			this.options.useTouchEvents ? 'touchstart' : 'click',
+			this.handleEvent.bind(this)
+		);
 
 		this.render();
 
@@ -857,117 +859,125 @@ class Clndr {
 		}
 	}
 
-	private bindEvents() {
-		// eslint-disable-next-line @typescript-eslint/no-this-alias
-		const self = this;
-		const container = this.element;
+	/**
+	 * Central event handler handling click event.
+	 */
+	private handleEvent(event: Event) {
 		const targets = this.options.targets;
-		const classes = self.options.classes;
-		const eventType = this.options.useTouchEvents ? 'touchstart' : 'click';
+		const eventTarget = event.target as HTMLElement;
 
-		this.eventHandler = function (event) {
-			const eventTarget = event.target as HTMLElement;
+		this.handleDayEvent(event);
+		this.handleEmptyEvent(event);
 
-			let target;
-			let currentTarget: HTMLElement;
+		// Bind the previous, next and today buttons. The current context is passed along with the
+		// event, so that it can update this instance.
 
-			// Target the day elements and give them click events
-			if (eventTarget.closest('.' + targets.day)) {
-				currentTarget = eventTarget.closest('.' + targets.day) as HTMLElement;
+		const customEvent = event as ClndrInteractionEvent;
 
-				// If adjacentDaysChangeMonth is on, we need to change the
-				// month here. Forward and Back trigger render() to be called.
-				// This is a callback because it can be triggered in two places.
-				const handleAdjacentDay = function () {
-					if (self.options.adjacentDaysChangeMonth) {
-						if (currentTarget.classList.contains(classes.lastMonth)) {
-							self.backActionWithContext(self);
-							return true;
-						} else if (currentTarget.classList.contains(classes.nextMonth)) {
-							self.forwardActionWithContext(self);
-							return true;
-						}
-					}
-				};
+		customEvent.data = {
+			context: this,
+		};
 
-				// If setting is enabled, we want to store the selected date
-				// as a string. When render() is called, the selected date will
-				// get the additional classes added. If there is no re-render,
-				// then just add the classes manually.
-				if (self.options.trackSelectedDate
-					&& !(
-						self.options.ignoreInactiveDaysInSelection
-						&& currentTarget.classList.contains(classes.inactive)
-					)
-				) {
-					// If there was no re-render, manually update classes
-					if (!handleAdjacentDay()) {
-						// Remember new selected date
-						self.options.selectedDate = self.getTargetDateString(currentTarget);
-						container.querySelectorAll('.' + classes.selected)
-							.forEach(node => node.classList.remove(classes.selected));
-						currentTarget.classList.add(classes.selected);
-					}
-				} else {
-					handleAdjacentDay();
-				}
+		if (eventTarget.closest('.' + targets.todayButton)) {
+			this.todayAction(customEvent);
+		}
 
-				// Trigger click events after any selected date updates
-				if (self.options.clickEvents.click) {
-					target = self.buildTargetObject(currentTarget, true);
-					self.options.clickEvents.click.apply(self, [target]);
-				}
+		if (eventTarget.closest('.' + targets.nextButton)) {
+			this.forwardAction(customEvent);
+		}
+
+		if (eventTarget.closest('.' + targets.previousButton)) {
+			this.backAction(customEvent);
+		}
+
+		if (eventTarget.closest('.' + targets.nextYearButton)) {
+			this.nextYearAction(customEvent);
+		}
+
+		if (eventTarget.closest('.' + targets.previousYearButton)) {
+			this.previousYearAction(customEvent);
+		}
+	}
+
+	/**
+	 * Handles click event on day boxes.
+	 */
+	private handleDayEvent(event: Event) {
+		const eventTarget = event.target as HTMLElement;
+		const classes = this.options.classes;
+		const currentTarget = eventTarget.closest('.' + this.options.targets.day)
+
+		if (!currentTarget) {
+			return;
+		}
+
+		// If adjacentDaysChangeMonth is on, the month might need to be changed when clicking on a day.
+		// Forward and Back trigger render() to be called.
+		const handleAdjacentDay = () => {
+			if (!this.options.adjacentDaysChangeMonth) {
+				return;
 			}
 
-			// Target the empty calendar boxes as well
-			if (eventTarget.closest('.' + targets.empty)) {
-				currentTarget = eventTarget.closest('.' + targets.empty) as HTMLElement;
-
-				if (self.options.clickEvents.click) {
-					target = self.buildTargetObject(currentTarget, false);
-					self.options.clickEvents.click.apply(self, [target]);
-				}
-
-				if (self.options.adjacentDaysChangeMonth) {
-					if (currentTarget.classList.contains(classes.lastMonth)) {
-						self.backActionWithContext(self);
-					} else if (currentTarget.classList.contains(classes.nextMonth)) {
-						self.forwardActionWithContext(self);
-					}
-				}
-			}
-
-			// Bind the previous, next and today buttons. We pass the current
-			// context along with the event so that it can update this instance.
-
-			const customEvent = event as ClndrInteractionEvent;
-
-			customEvent.data = {
-				context: self,
-			};
-
-			if (eventTarget.closest('.' + targets.todayButton)) {
-				self.todayAction(customEvent);
-			}
-
-			if (eventTarget.closest('.' + targets.nextButton)) {
-				self.forwardAction(customEvent);
-			}
-
-			if (eventTarget.closest('.' + targets.previousButton)) {
-				self.backAction(customEvent);
-			}
-
-			if (eventTarget.closest('.' + targets.nextYearButton)) {
-				self.nextYearAction(customEvent);
-			}
-
-			if (eventTarget.closest('.' + targets.previousYearButton)) {
-				self.previousYearAction(customEvent);
+			if (currentTarget.classList.contains(classes.lastMonth)) {
+				this.backActionWithContext(this);
+				return true;
+			} else if (currentTarget.classList.contains(classes.nextMonth)) {
+				this.forwardActionWithContext(this);
+				return true;
 			}
 		};
 
-		container.addEventListener(eventType, this.eventHandler);
+		// If trackSelectedDate setting is enabled, the selected date is to be stored as a string. When
+		// render() is called, the selected date will get the additional classes added. If there is no
+		// re-render, the classes need to be added manually.
+		if (this.options.trackSelectedDate
+			&& !(
+				this.options.ignoreInactiveDaysInSelection
+				&& currentTarget.classList.contains(classes.inactive)
+			)
+		) {
+			// If there was no re-render, manually update classes
+			if (!handleAdjacentDay()) {
+				// Remember new selected date
+				this.options.selectedDate = this.getTargetDateString(currentTarget as HTMLElement);
+				this.element.querySelectorAll('.' + classes.selected)
+					.forEach(node => node.classList.remove(classes.selected));
+				currentTarget.classList.add(classes.selected);
+			}
+		} else {
+			handleAdjacentDay();
+		}
+
+		// Trigger click event after any selected date updates
+		if (this.options.clickEvents.click) {
+			const target = this.buildTargetObject(currentTarget as HTMLElement, true);
+			this.options.clickEvents.click.apply(this, [target]);
+		}
+	}
+
+	/**
+	 * Handles click event on empty day boxes.
+	 */
+	private handleEmptyEvent(event: Event) {
+		const eventTarget = event.target as HTMLElement;
+		const currentTarget = eventTarget.closest('.' + this.options.targets.empty);
+
+		if (!currentTarget) {
+			return;
+		}
+
+		if (this.options.clickEvents.click) {
+			const target = this.buildTargetObject(currentTarget as HTMLElement, false);
+			this.options.clickEvents.click.apply(this, [target]);
+		}
+
+		if (this.options.adjacentDaysChangeMonth) {
+			if (currentTarget.classList.contains(this.options.classes.lastMonth)) {
+				this.backActionWithContext(this);
+			} else if (currentTarget.classList.contains(this.options.classes.nextMonth)) {
+				this.forwardActionWithContext(this);
+			}
+		}
 	}
 
 	/**
