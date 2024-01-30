@@ -37,6 +37,7 @@ import type {
 	Constraints,
 	Day,
 	DayProperties,
+	DaysOfTheWeek,
 	InternalClndrEvent,
 	InternalOptions,
 	Interval,
@@ -47,6 +48,7 @@ import type {
 	Options,
 	Target,
 	TargetOption,
+	WeekOffset,
 } from './types';
 
 const defaults: InternalOptions = {
@@ -145,7 +147,7 @@ class Clndr {
 	 * Boolean values used to log whether any constraints are met
 	 */
 	private readonly constraints: NavigationConstraints;
-	private readonly daysOfTheWeek: string[];
+	private readonly daysOfTheWeek: DaysOfTheWeek;
 	private readonly interval: Interval;
 	private options: InternalOptions;
 	private calendarContainer: HTMLElement;
@@ -160,7 +162,6 @@ class Clndr {
 
 	constructor(element: HTMLElement, options: Options) {
 		this.element = element;
-		this.daysOfTheWeek = [];
 		this._currentIntervalStart = new Date();
 		this.eventsLastMonth = [];
 		this.eventsNextMonth = [];
@@ -168,7 +169,12 @@ class Clndr {
 
 		this.options = Clndr.mergeOptions<InternalOptions, Options>(defaults, options);
 
-		this.fixWeekOffset();
+		if (this.options.weekOffset > 6 || this.options.weekOffset < 0) {
+			console.warn(
+				`An invalid offset ${this.options.weekOffset} was provided (must be 0 - 6); using 0 instead`
+			);
+			this.options.weekOffset = 0;
+		}
 
 		this.constraints = {
 			next: true,
@@ -239,7 +245,7 @@ class Clndr {
 	private initInterval(
 		lengthOfTime: LengthOfTime,
 		startWithMonth: Date | string | undefined,
-		weekOffset: number
+		weekOffset: WeekOffset
 	): Interval {
 
 		if (lengthOfTime.months) {
@@ -403,27 +409,17 @@ class Clndr {
 			daysOfTheWeek.push(formatWeekdayHeader(setDay(new Date(), i), locale || undefined));
 		}
 
-		return daysOfTheWeek;
+		return daysOfTheWeek as DaysOfTheWeek;
 	}
 
-	private shiftWeekdayLabels(daysOfTheWeek: string[], offset: number) {
-		const adjustedDaysOfTheWeek = [...daysOfTheWeek];
+	private shiftWeekdayLabels(daysOfTheWeek: DaysOfTheWeek, offset: WeekOffset) {
+		const adjustedDaysOfTheWeek: DaysOfTheWeek = [...daysOfTheWeek];
 
 		for (let i = 0; i < offset; i++) {
 			adjustedDaysOfTheWeek.push(adjustedDaysOfTheWeek.shift() as string);
 		}
 
 		return adjustedDaysOfTheWeek;
-	}
-
-	private fixWeekOffset() {
-		// Fix the week offset. It must be between 0 (Sunday) and 6 (Saturday)
-		if (this.options.weekOffset > 6 || this.options.weekOffset < 0) {
-			console.warn(
-				`An invalid offset ${this.options.weekOffset} was provided (must be 0 - 6); using 0 instead.`
-			);
-			this.options.weekOffset = 0;
-		}
 	}
 
 	private createDaysObject(startDate: Date, endDate: Date) {

@@ -7,12 +7,12 @@ export type InternalOptions = {
 	ready?: (() => void)
 	extras?: unknown
 	locale?: Locale
-	weekOffset: number
+	weekOffset: WeekOffset
 	constraints?: Constraints
 	forceSixRows: boolean
 	selectedDate?: Date | string
 	doneRendering?: (() => void)
-	daysOfTheWeek?: string[]
+	daysOfTheWeek?: DaysOfTheWeek
 	multiDayEvents?: MultiDayEventsDefinition
 	startWithMonth?: Date | string
 	dateParameter: string
@@ -57,10 +57,14 @@ export type InternalClndrEvent = {
 	originalEvent: ClndrEvent
 }
 
+export type WeekOffset = 0 | 1 | 2 | 3 | 4 | 5 | 6
+
 export type Constraints = {
 	startDate?: string | Date
 	endDate?: string | Date
 }
+
+export type DaysOfTheWeek = [string, string, string, string, string, string, string]
 
 type MultiDayEventsDefinition = Partial<MultiDayEventDefinition & SingleDayEventDefinition>
 
