@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import {fireEvent, screen} from '@testing-library/dom';
 import userEvent, {UserEvent} from '@testing-library/user-event';
-import Clndr from './clndr';
+import Clndr from './Clndr';
 import {de} from 'date-fns/locale';
 import ejs from 'ejs';
 
@@ -151,8 +151,9 @@ describe('Setup', () => {
 		expect(container).toBeEmptyDOMElement();
 	});
 
-	test('Use a custom template', () => {
-		clndr = new Clndr(container, {render: provideRender(simpleTemplate)});
+	test('Pass compiled template to render option', () => {
+		const template = ejs.compile(simpleTemplate);
+		clndr = new Clndr(container, {render: data => template(data)});
 
 		expect(container).not.toBeEmptyDOMElement();
 		expect(screen.getByText('January')).toBeInTheDocument();
@@ -446,6 +447,50 @@ describe('Setup', () => {
 
 		await user.click(screen.getByText('next'));
 		expect(screen.getByText('15').parentNode).toHaveClass('event');
+	});
+
+	test('Custom dateParameter', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			events: [{customDateParameter: '1992-10-15'}],
+			dateParameter: 'customDateParameter',
+			startWithMonth: '1992-10',
+		});
+
+		expect(screen.getByText(15).parentNode).toHaveClass('event');
+	});
+
+	test('formatWeekDayHeader option', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			formatWeekdayHeader: day => {
+				return `${day.getDay()}X`;
+			},
+		});
+
+		expect(screen.getByText('3X')).toBeInTheDocument();
+	});
+
+	test('Custom target class', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			targets: {
+				day: 'custom-day-class',
+			},
+		});
+
+		expect(container.querySelectorAll('.custom-day-class').length).toBeGreaterThan(0);
+	});
+
+	test('Custom day status class', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			classes: {
+				today: 'custom-today-class',
+			},
+		});
+
+		expect(container.querySelectorAll('.custom-today-class').length).toBe(1);
 	});
 
 });
@@ -1260,7 +1305,7 @@ describe('Constraints', () => {
 
 });
 
-describe('Forcing errors', () => {
+describe('Handling errors', () => {
 
 	test('Not providing a render function', () => {
 

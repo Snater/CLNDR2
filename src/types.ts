@@ -1,43 +1,39 @@
 import {FormatOptions, Locale} from 'date-fns';
-import Clndr from './clndr';
+import Clndr from './Clndr';
 
-export type Options = {
+export type InternalOptions = {
+	render: (data: ClndrTemplateData) => string
 	events: ClndrEvent[]
-	ready: (() => void) | null
-	extras: unknown | null
-	locale: Locale | null
+	ready?: (() => void)
+	extras?: unknown
+	locale?: Locale
 	weekOffset: number
-	constraints: Constraints | null
+	constraints?: Constraints
 	forceSixRows: boolean
-	selectedDate: Date | string | null
-	doneRendering: (() => void) | null
-	daysOfTheWeek: string[] | null
-	multiDayEvents: MultiDayEventsDefinition | null
-	startWithMonth: Date | string | null
+	selectedDate?: Date | string
+	doneRendering?: (() => void)
+	daysOfTheWeek?: string[]
+	multiDayEvents?: MultiDayEventsDefinition
+	startWithMonth?: Date | string
 	dateParameter: string
 	showAdjacentMonths: boolean
 	trackSelectedDate: boolean
-	formatWeekdayHeader: ((day: Date, locale?: Locale) => string) | null
+	formatWeekdayHeader?: ((day: Date, locale?: Locale) => string)
 	adjacentDaysChangeMonth: boolean
 	ignoreInactiveDaysInSelection: boolean
 	lengthOfTime: LengthOfTime
 	clickEvents: ClickEvents
 	useTouchEvents: boolean
 	targets: {[key in TargetOption]: string}
-	classes: {
-		past: string
-		today: string
-		event: string
-		inactive: string
-		selected: string
-		lastMonth: string
-		nextMonth: string
-		adjacentMonth: string
-	},
+	classes: {[key in DayStatus]: string}
 }
 
-export type UserOptions = Partial<
-	Omit<Options, 'lengthOfTime'> & {lengthOfTime?: Partial<LengthOfTime>}
+export type Options = Partial<
+	Omit<InternalOptions, 'classes' | 'lengthOfTime' | 'render' | 'targets'> & {
+		classes?: {[key in DayStatus]?: string}
+		lengthOfTime?: Partial<LengthOfTime>
+		targets?: {[key in TargetOption]?: string}
+	}
 > & {
 	render: (data: ClndrTemplateData) => string
 }
@@ -66,7 +62,7 @@ export type Constraints = {
 	endDate?: string | Date
 }
 
-export type MultiDayEventsDefinition = Partial<MultiDayEventDefinition & SingleDayEventDefinition>
+type MultiDayEventsDefinition = Partial<MultiDayEventDefinition & SingleDayEventDefinition>
 
 type MultiDayEventDefinition = {
 	startDate: string
@@ -112,6 +108,15 @@ export type TargetOption = 'day'
 	| 'nextYearButton'
 	| 'previousYearButton'
 
+type DayStatus = 'past'
+	| 'today'
+	| 'event'
+	| 'inactive'
+	| 'selected'
+	| 'lastMonth'
+	| 'nextMonth'
+	| 'adjacentMonth'
+
 export type ClndrTemplateData = {
 	days: Day[]
 	months: Month[]
@@ -143,7 +148,7 @@ export type DayProperties = {
 	isAdjacentMonth: boolean
 }
 
-export type Month = {
+type Month = {
 	days: Day[]
 	month: Date
 }

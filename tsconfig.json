@@ -3,7 +3,6 @@
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"declaration": true,
-		"declarationDir": "types",
 		"inlineSources": true,
 		"isolatedModules": true,
 		"lib": [
@@ -21,6 +20,10 @@
 		"strict": true,
 		"target": "es5"
 	},
+	"exclude": [
+		"**/*.stories.*",
+		"**/*.test.ts"
+	],
 	"include": [
 		"src"
 	]

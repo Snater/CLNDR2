@@ -2,7 +2,7 @@ import cleaner from 'rollup-plugin-cleaner';
 import typescript from '@rollup/plugin-typescript';
 
 export default [{
-	input: 'src/clndr.ts',
+	input: 'src/index.ts',
 	output: [{
 		file: 'dist/index.js',
 		format: 'esm',

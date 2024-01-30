@@ -1,13 +1,13 @@
 import './clndr.stories.less';
 import {Meta, StoryObj} from '@storybook/html';
-import Clndr from './clndr.js';
+import Clndr from './Clndr.js';
 import {action} from '@storybook/addon-actions';
 import {enGB} from 'date-fns/locale';
 import ejs from 'ejs';
 
-import type {UserOptions} from './types';
+import type {Options} from './types';
 
-const meta: Meta<UserOptions> = {
+const meta: Meta<Options> = {
 	title: 'Clndr',
 	args: {
 		render: data => ejs.render(`
@@ -70,7 +70,7 @@ const meta: Meta<UserOptions> = {
 };
 
 export default meta;
-type Story = StoryObj<UserOptions>;
+type Story = StoryObj<Options>;
 
 export const Default: Story = {
 	args: {

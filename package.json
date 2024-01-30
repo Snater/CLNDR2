@@ -1,7 +1,7 @@
 {
   "name": "clndr2",
   "version": "0.0.0",
-  "description": "A frontend calendar widget that uses HTML templates.",
+  "description": "A framework-agnostic frontend calendar widget that uses HTML templates with your template engine of choice.",
   "author": "snater.com",
   "license": "MIT",
   "homepage": "https://CLNDR2.snater.com",
@@ -19,7 +19,11 @@
     "widget"
   ],
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c",
     "test": "jest --coverage",

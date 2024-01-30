@@ -38,6 +38,7 @@ import type {
 	Day,
 	DayProperties,
 	InternalClndrEvent,
+	InternalOptions,
 	Interval,
 	LengthOfTime,
 	NavigationConstraint,
@@ -46,27 +47,18 @@ import type {
 	Options,
 	Target,
 	TargetOption,
-	UserOptions,
 } from './types';
 
-// Defaults used throughout the application, see docs.
-const defaults: Options = {
+const defaults: InternalOptions = {
+	render: () => {
+		throw new Error('Missing render function');
+	},
 	events: [],
-	ready: null,
-	extras: null,
-	locale: null,
 	weekOffset: 0,
-	constraints: null,
 	forceSixRows: false,
-	selectedDate: null,
-	doneRendering: null,
-	daysOfTheWeek: null,
-	multiDayEvents: null,
-	startWithMonth: null,
 	dateParameter: 'date',
 	showAdjacentMonths: true,
 	trackSelectedDate: false,
-	formatWeekdayHeader: null,
 	adjacentDaysChangeMonth: false,
 	ignoreInactiveDaysInSelection: false,
 	lengthOfTime: {
@@ -149,10 +141,13 @@ class Clndr {
 	}
 
 	private readonly element: HTMLElement;
+	/**
+	 * Boolean values used to log whether any constraints are met
+	 */
 	private readonly constraints: NavigationConstraints;
+	private readonly daysOfTheWeek: string[];
 	private readonly interval: Interval;
-	private options: Options;
-	private daysOfTheWeek: string[];
+	private options: InternalOptions;
 	private calendarContainer: HTMLElement;
 	private eventsLastMonth: InternalClndrEvent[];
 	private eventsNextMonth: InternalClndrEvent[];
@@ -163,12 +158,7 @@ class Clndr {
 	 */
 	private _currentIntervalStart: Date;
 
-	/**
-	 * The actual plugin constructor.
-	 * Parses the events and lengthOfTime options to build a calendar of day
-	 * objects containing event information from the events array.
-	 */
-	constructor(element: HTMLElement, options: UserOptions) {
+	constructor(element: HTMLElement, options: Options) {
 		this.element = element;
 		this.daysOfTheWeek = [];
 		this._currentIntervalStart = new Date();
@@ -176,13 +166,10 @@ class Clndr {
 		this.eventsNextMonth = [];
 		this.eventsThisInterval = [];
 
-		// Merge the default options with user-provided options
-		this.options = Clndr.mergeOptions<Options, UserOptions>(defaults, options);
+		this.options = Clndr.mergeOptions<InternalOptions, Options>(defaults, options);
 
-		// Validate any correct options
-		this.validateOptions();
+		this.fixWeekOffset();
 
-		// Boolean values used to log if any contraints are met
 		this.constraints = {
 			next: true,
 			today: true,
@@ -191,23 +178,20 @@ class Clndr {
 			previousYear: true,
 		};
 
-		// If there are events, we should run them through our
-		// addDateObjectToEvents function which will add a date object that
-		// we can use to make life easier. This is only necessarywhen events
-		// are provided on instantiation, since our setEvents function uses
-		// addDateObjectToEvents.
+		// Store the events internally with a Day object attached to them. The Day object eases
+		// date comparisons while looping over the event dates
 		this.events = [
 			...this.addMultiDayDateObjectsToEvents(this.options.events),
 			...this.addDateObjectToEvents(this.options.events),
 		];
 
-		// Annihilate any chance for bugs by overwriting conflicting options.
+		// Annihilate any chance for bugs by overwriting conflicting options
 		if (this.options.lengthOfTime.months) {
 			this.options.lengthOfTime.days = null;
 		}
 
-		// To support arbitrary lengths of time we're going to store the current range in addition to
-		// the current month.
+		// To support arbitrary lengths of time, the current range is stored in addition to the current
+		// month
 		this.interval = this.initInterval(
 			this.options.lengthOfTime,
 			this.options.startWithMonth,
@@ -222,7 +206,7 @@ class Clndr {
 				: endOfMonth(this.interval.month);
 		}
 
-		// If we've got constraints set, make sure the interval is within them.
+		// If there are constraints, make sure the interval is within them
 		if (this.options.constraints) {
 			this.interval = this.initConstraints(
 				this.options.constraints,
@@ -237,13 +221,6 @@ class Clndr {
 
 		if (this.options.weekOffset) {
 			this.daysOfTheWeek = this.shiftWeekdayLabels(this.daysOfTheWeek, this.options.weekOffset);
-		}
-
-		// Quick and dirty test to make sure rendering is possible.
-		if (!(this.options as UserOptions).render) {
-			throw new Error(
-				'No render function provided per the "render" option. A render function is required for rendering the calendar, i.e. when using EJS: data => ejs.render(defaultTemplate, data)'
-			);
 		}
 
 		this.element.innerHTML = '<div class="clndr"></div>';
@@ -261,7 +238,7 @@ class Clndr {
 
 	private initInterval(
 		lengthOfTime: LengthOfTime,
-		startWithMonth: Date | string | null,
+		startWithMonth: Date | string | undefined,
 		weekOffset: number
 	): Interval {
 
@@ -413,8 +390,8 @@ class Clndr {
 	}
 
 	private initDaysOfTheWeek(
-		formatWeekdayHeader: ((day: Date, locale?: Locale) => string) | null,
-		locale: Locale | null
+		formatWeekdayHeader?: ((day: Date, locale?: Locale) => string),
+		locale?: Locale
 	) {
 		const daysOfTheWeek: string[] = [];
 
@@ -439,11 +416,11 @@ class Clndr {
 		return adjustedDaysOfTheWeek;
 	}
 
-	private validateOptions() {
+	private fixWeekOffset() {
 		// Fix the week offset. It must be between 0 (Sunday) and 6 (Saturday)
 		if (this.options.weekOffset > 6 || this.options.weekOffset < 0) {
 			console.warn(
-				`clndr.js: An invalid offset ${this.options.weekOffset} was provided (must be 0 - 6); using 0 instead.`
+				`An invalid offset ${this.options.weekOffset} was provided (must be 0 - 6); using 0 instead.`
 			);
 			this.options.weekOffset = 0;
 		}
@@ -515,9 +492,6 @@ class Clndr {
 			return;
 		}
 
-		// Here are the only two cases where we don't get an event in our interval:
-		//   startDate | endDate | e.start   | e.end
-		//   e.start   | e.end   | startDate | endDate
 		this.eventsThisInterval = this.events.filter(event => {
 			const afterEnd = isAfter(event._clndrStartDateObject, endDate);
 			const beforeStart = isBefore(event._clndrEndDateObject, startDate);
@@ -633,7 +607,7 @@ class Clndr {
 			}
 		}
 
-		// If there are constraints, we need to add the inactive class to the days outside of them.
+		// If there are constraints, the inactive class needs to be added to the days outside of them
 		if (this.options.constraints) {
 			const endDate = this.options.constraints.endDate
 				&& new Date(this.options.constraints.endDate);
@@ -671,7 +645,7 @@ class Clndr {
 	private render() {
 		this.calendarContainer.innerHTML = '';
 
-		this.calendarContainer.innerHTML = (this.options as UserOptions).render.apply(
+		this.calendarContainer.innerHTML = this.options.render.apply(
 			this,
 			[this.aggregateTemplateData()]
 		);
@@ -991,7 +965,7 @@ class Clndr {
 		const index = target.className.indexOf('calendar-day-');
 
 		return index === -1
-			? null
+			? undefined
 			: target.className.substring(index + 13, index + 23);
 	}
 
@@ -1077,6 +1051,118 @@ class Clndr {
 		}
 	}
 
+	private addDateObjectToEvents(events: ClndrEvent[]) {
+		if (this.options.multiDayEvents) {
+			return [];
+		}
+
+		return events.map((event): InternalClndrEvent => {
+			if (!(event[this.options.dateParameter] instanceof Date)
+				&& typeof event[this.options.dateParameter] !== 'string'
+			) {
+				throw new Error(
+					`event['${this.options.dateParameter}'] is required to be a Date or a string, while ${typeof event[this.options.dateParameter]} was provided`
+				);
+			}
+
+			return {
+				_clndrStartDateObject: new Date(event[this.options.dateParameter] as Date | string),
+				_clndrEndDateObject: new Date(event[this.options.dateParameter] as Date | string),
+				originalEvent: event,
+			}
+		});
+	}
+
+	private addMultiDayDateObjectsToEvents(events: ClndrEvent[]) {
+		if (!this.options.multiDayEvents) {
+			return [];
+		}
+
+		const multiEvents = this.options.multiDayEvents;
+		const internalEvents: InternalClndrEvent[] = [];
+
+		events.forEach(event => {
+			const start = multiEvents.startDate && event[multiEvents.startDate];
+			const end = multiEvents.endDate && event[multiEvents.endDate];
+
+			if (!end && !start && multiEvents.singleDay) {
+				if (!(event[multiEvents.singleDay] instanceof Date)
+					&& typeof event[multiEvents.singleDay] !== 'string'
+				) {
+					throw new Error(
+						`event['${multiEvents.singleDay}'] is required to be a Date or a string, while ${typeof event[multiEvents.singleDay]} was provided`
+					);
+				}
+
+				internalEvents.push({
+					_clndrEndDateObject: new Date(event[multiEvents.singleDay] as Date | string),
+					_clndrStartDateObject: new Date(event[multiEvents.singleDay] as Date | string),
+					originalEvent: event,
+				});
+			} else if (end || start) {
+				if (
+					start && !(start instanceof Date) && typeof start !== 'string'
+					|| end && !(end instanceof Date) && typeof end !== 'string'
+				) {
+					throw new Error(
+						`event['${multiEvents.startDate}'] and event['${multiEvents.endDate}'] are required to be a Date or a string`
+					);
+				}
+
+				internalEvents.push({
+					_clndrEndDateObject: new Date((end || start) as Date | string),
+					_clndrStartDateObject: new Date((start || end) as Date | string),
+					originalEvent: event,
+				});
+			}
+		});
+
+		return internalEvents;
+	}
+
+	private calendarDay(options: Day) {
+		const defaults: Day = {
+			day: '',
+			date: undefined,
+			events: [],
+			classes: this.options.targets.empty,
+		};
+
+		return Clndr.mergeOptions<Day>(defaults, options);
+	}
+
+	private backAction(event: ClndrInteractionEvent) {
+		const ctx = event.data.context;
+
+		ctx.backActionWithContext(event.data.context);
+	}
+
+	private backActionWithContext(ctx: Clndr) {
+		ctx.back({withCallbacks: true}, ctx);
+	}
+
+	private forwardAction(event: ClndrInteractionEvent) {
+		const ctx = event.data.context;
+
+		ctx.forwardActionWithContext(ctx);
+	}
+
+	private forwardActionWithContext(ctx: Clndr) {
+		ctx.forward({withCallbacks: true}, ctx);
+	}
+
+	private previousYearAction(event: ClndrInteractionEvent) {
+		event.data.context.previousYear({withCallbacks: true}, event.data.context);
+	}
+
+	private nextYearAction(event: ClndrInteractionEvent) {
+		event.data.context.nextYear({withCallbacks: true}, event.data.context);
+	}
+
+	private todayAction(event: ClndrInteractionEvent) {
+		event.data.context.today({withCallbacks: true}, event.data.context);
+	}
+
 	/**
 	 * Main action to go backward one or more periods.
 	 */
@@ -1116,16 +1202,6 @@ class Clndr {
 		}
 
 		return ctx;
-	}
-
-	backAction(event: ClndrInteractionEvent) {
-		const ctx = event.data.context;
-
-		ctx.backActionWithContext(event.data.context);
-	}
-
-	private backActionWithContext(ctx: Clndr) {
-		ctx.back({withCallbacks: true}, ctx);
 	}
 
 	/**
@@ -1176,16 +1252,6 @@ class Clndr {
 		return ctx;
 	}
 
-	private forwardAction(event: ClndrInteractionEvent) {
-		const ctx = event.data.context;
-
-		ctx.forwardActionWithContext(ctx);
-	}
-
-	private forwardActionWithContext(ctx: Clndr) {
-		ctx.forward({withCallbacks: true}, ctx);
-	}
-
 	/**
 	 * Alias of Clndr.forward()
 	 */
@@ -1223,10 +1289,6 @@ class Clndr {
 		return ctx;
 	}
 
-	private previousYearAction(event: ClndrInteractionEvent) {
-		event.data.context.previousYear({withCallbacks: true}, event.data.context);
-	}
-
 	/**
 	 * Main action to go forward one year.
 	 */
@@ -1255,10 +1317,6 @@ class Clndr {
 		}
 
 		return ctx;
-	}
-
-	private nextYearAction(event: ClndrInteractionEvent) {
-		event.data.context.nextYear({withCallbacks: true}, event.data.context);
 	}
 
 	today(options: NavigationOptions = {}, ctx?: Clndr) {
@@ -1304,10 +1362,6 @@ class Clndr {
 
 			ctx.triggerEvents(ctx, orig);
 		}
-	}
-
-	todayAction(event: ClndrInteractionEvent) {
-		event.data.context.today({withCallbacks: true}, event.data.context);
 	}
 
 	/**
@@ -1453,86 +1507,6 @@ class Clndr {
 		this.render();
 
 		return this;
-	}
-
-	private addDateObjectToEvents(events: ClndrEvent[]) {
-		if (this.options.multiDayEvents) {
-			return [];
-		}
-
-		return events.map((event): InternalClndrEvent => {
-			if (!(event[this.options.dateParameter] instanceof Date)
-				&& typeof event[this.options.dateParameter] !== 'string'
-			) {
-				throw new Error(
-					`event['${this.options.dateParameter}'] is required to be a Date or a string, while ${typeof event[this.options.dateParameter]} was provided`
-				);
-			}
-
-			return {
-				_clndrStartDateObject: new Date(event[this.options.dateParameter] as Date | string),
-				_clndrEndDateObject: new Date(event[this.options.dateParameter] as Date | string),
-				originalEvent: event,
-			}
-		});
-	}
-
-	private addMultiDayDateObjectsToEvents(events: ClndrEvent[]) {
-		if (!this.options.multiDayEvents) {
-			return [];
-		}
-
-		const multiEvents = this.options.multiDayEvents;
-		const internalEvents: InternalClndrEvent[] = [];
-
-		events.forEach(event => {
-			const start = multiEvents.startDate && event[multiEvents.startDate];
-			const end = multiEvents.endDate && event[multiEvents.endDate];
-
-			if (!end && !start && multiEvents.singleDay) {
-				if (!(event[multiEvents.singleDay] instanceof Date)
-					&& typeof event[multiEvents.singleDay] !== 'string'
-				) {
-					throw new Error(
-						`event['${multiEvents.singleDay}'] is required to be a Date or a string, while ${typeof event[multiEvents.singleDay]} was provided`
-					);
-				}
-
-				internalEvents.push({
-					_clndrEndDateObject: new Date(event[multiEvents.singleDay] as Date | string),
-					_clndrStartDateObject: new Date(event[multiEvents.singleDay] as Date | string),
-					originalEvent: event,
-				});
-			} else if (end || start) {
-				if (
-					start && !(start instanceof Date) && typeof start !== 'string'
-					|| end && !(end instanceof Date) && typeof end !== 'string'
-				) {
-					throw new Error(
-						`event['${multiEvents.startDate}'] and event['${multiEvents.endDate}'] are required to be a Date or a string`
-					);
-				}
-
-				internalEvents.push({
-					_clndrEndDateObject: new Date((end || start) as Date | string),
-					_clndrStartDateObject: new Date((start || end) as Date | string),
-					originalEvent: event,
-				});
-			}
-		});
-
-		return internalEvents;
-	}
-
-	calendarDay(options: Day) {
-		const defaults: Day = {
-			day: '',
-			date: undefined,
-			events: [],
-			classes: this.options.targets.empty,
-		};
-
-		return Clndr.mergeOptions<Day>(defaults, options);
 	}
 
 	destroy() {
