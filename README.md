@@ -2,6 +2,8 @@
 
 [Work in progress]
 
+[![Test Status][github-action-image]][github-action-url]
+
 CLNDR2 is a slim and straightforward front-end calendar widget offering smooth design
 customizations.<br />
 It is the unofficial successor to [CLNDR](https://github.com/kylestetz/CLNDR).
@@ -16,3 +18,6 @@ Demos: https://CLNDR2.snater.com
 Documentation specific to CLNDR2 will be added at a later point. For now, please refer to the
 [CLNDR](https://github.com/kylestetz/CLNDR) readme for additional information and configuration
 options.
+
+[github-action-image]: https://github.com/Snater/CLNDR2/actions/workflows/test.yml/badge.svg
+[github-action-url]: https://github.com/Snater/CLNDR2/actions/workflows/test.yml
