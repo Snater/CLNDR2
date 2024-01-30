@@ -1,461 +1,468 @@
-@font-face {
-  font-family: 'Droid Sans Mono';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Droid Sans Mono Regular'), local('DroidSansMono-Regular'), url('/DroidSansMono.ttf') format('truetype');
-}
+@grey: #EAEAEA;
+@dark-gray: #414141;
+@white: #FFFFFF;
 
-.clearfix:after {
-  content: ".";
-  display: block;
-  clear: both;
-  visibility: hidden;
-  line-height: 0;
-  height: 0;
-}
-
-.clearfix {
-  display: inline-block;
-}
-
-html[xmlns] .clearfix {
-  display: block;
-}
-
-* html .clearfix {
-  height: 1%;
-}
-
-.noselect {
-  -webkit-user-select: none; /* Chrome/Safari */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* IE10+ */
-}
-
-h4 {
-  width: 75%;
-  text-align: center;
-  font-family: 'Droid Sans Mono';
-  font-weight: normal;
-  color: white;
-  font-size: 14px;
-  margin: 0 auto 1em auto;
-  padding: 1em;
-  background: #b63642;
-}
-
-h5 {
-  font-size: 1em;
-  font-weight: bold;
-}
-
-p {
-  text-align: center;
-  font-family: 'Droid Sans Mono';
-  margin: 3em auto 1em auto;
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
-  border-top: 2px solid #414141;
-  background: #f4f4f4;
-}
-
-.left-align {
-  text-align: left;
-}
-
-.right-align {
-  text-align: right;
-}
-
-//////////////////////////////////
-
-@clndr-border: 1px solid #000;
-
-.cal1 {
-  margin: 30px auto;
-  max-width: 600px;
-  font-family: 'Droid Sans Mono';
-  font-size: 14px;
-
-  .clndr {
-    .clndr-controls {
-      .clearfix;
-      width: 100%;
-      position: relative;
-      margin-bottom: 10px;
-
-      .month {
-        float: left;
-        width: 33%;
-        text-align: center;
-      }
-
-      .clndr-control-button {
-        float: left;
-        width: 33%;
-
-        &.rightalign {
-          text-align: right;
-          width: 34%;
-        }
-        .clndr-next-button {
-          cursor: pointer;
-          .noselect;
-          &:hover { background: #ddd; }
-          &.inactive {
-            opacity: 0.5;
-            &:hover {
-              background: none;
-              cursor: default;
-            }
-          }
-        }
-        .clndr-previous-button {
-          cursor: pointer;
-          .noselect;
-          &:hover { background: #ddd; }
-          &.inactive {
-            opacity: 0.5;
-            &:hover {
-              background: none;
-              cursor: default;
-            }
-          }
-        }
-      }
-    }
-
-    .clndr-table {
-      table-layout: fixed;
-      width: 100%;
-
-      .header-days {
-        height: 30px;
-        font-size: 10px;
-        background: #0D70A6;
-
-        .header-day {
-          vertical-align: middle;
-          text-align: center;
-          border-left: @clndr-border;
-          border-top: @clndr-border;
-
-          color: #fff;
-
-          &:last-child {
-            border-right: @clndr-border;
-          }
-        }
-      }
-
-      tr {
-        height: 85px;
-
-        td {
-          vertical-align: top;
-        }
-
-        .day {
-          border-left: @clndr-border;
-          border-top: @clndr-border;
-          width: 100%;
-          height: inherit;
-
-          &:hover { background: #eee; }
-
-          &.today, &.my-today {
-            background: #9AD6E3;
-            &:hover { background: darken(#9AD6E3, 10%); }
-            &.event
-            {
-              background: mix(#B4E09F, #9AD6E3);
-            }
-          }
-
-          &.event, &.my-event {
-            background: #B4E09F;
-            &:hover
-            {
-              background: darken(#B4E09F, 10%);
-            }
-          }
-
-          &.inactive, &.my-inactive {
-            background: #ddd;
-          }
-
-          &:last-child {
-            border-right: @clndr-border;
-          }
-
-          .day-contents {
-            box-sizing: border-box;
-            // width: 100%;
-            // height: 100%;
-            padding: 8px;
-            font-size: 12px;
-            text-align: right;
-          }
-        }
-
-        .empty, .adjacent-month, .my-empty, .my-adjacent-month {
-          border-left: @clndr-border;
-          border-top: @clndr-border;
-          width: 100%;
-          height: inherit;
-          background: #eee;
-
-          &:hover { background: #ddd; }
-
-          &:last-child {
-            border-right: @clndr-border;
-          }
-        }
-
-        &:last-child {
-          .day, .my-day {
-            border-bottom: @clndr-border;
-          }
-
-          .empty, .my-empty {
-            border-bottom: @clndr-border;
-          }
-        }
-      }
-    }
-  }
-
-}
+@green: #71EBA5;
+@red: #EB7A71;
+@violet: #686599;
+@yellow: #EBD771;
 
 @box-size: 25px;
 
-.cal2 {
-  max-width: 177px;
-  margin: 30px auto;
-
-  font-family: 'Droid Sans Mono';
-
-  .clndr {
-    .clndr-controls {
-      display: block;
-      .clearfix;
-      width: 100%;
-      margin-bottom: 3px;
-
-      .clndr-previous-button {
-        float: left;
-        width: 10%;
-        text-align: left;
-        cursor: pointer;
-        .noselect;
-        &:hover {
-          background-color: #f4f4f4;
-        }
-      }
-      .month {
-        float: left;
-        width: 80%;
-        text-align: center;
-      }
-      .clndr-next-button {
-        float: left;
-        width: 10%;
-        text-align: right;
-        cursor: pointer;
-        .noselect;
-        &:hover {
-          background-color: #f4f4f4;
-        }
-      }
-    }
-
-    .clndr-grid {
-      text-align: center;
-      border: 1px solid #FF4545;
-      .clearfix;
-
-      .header-day {
-        float: left;
-        width: @box-size;
-        height: @box-size;
-        // padding-top: 5px;
-        background: #FF4545;
-      }
-
-      .day,
-      .my-day {
-        float: left;
-        width: @box-size;
-        height: @box-size;
-
-        &.event {
-          background-color: #B4E09F;
-        }
-
-        &.today {
-          background-color: #E3C57F;
-        }
-        &.selected {
-          background-color: #E37FD6;
-        }
-        &.inactive{
-          color: gray;
-        }
-      }
-
-      .empty, .adjacent-month {
-        float: left;
-        width: @box-size;
-        height: @box-size;
-        background: #ddd;
-      }
-    }
-
-    .clndr-today-button {
-      width: 100%;
-      text-align: center;
-      cursor: pointer;
-      &:hover {
-        background-color: #ddd;
-      }
-    }
-  }
-
-  .multi-month-controls {
-    .quarter-button {
-      display: inline-block;
-      width: 25%;
-
-      &:hover {
-        cursor: pointer;
-        background-color: #f4f4f4;
-      }
-    }
-  }
+@font-face {
+	font-family: 'Droid Sans Mono';
+	font-style: normal;
+	font-weight: 400;
+	src: local('Droid Sans Mono Regular'), local('DroidSansMono-Regular'), url('/DroidSansMono.ttf') format('truetype');
 }
 
-.cal2 .day.inactive {
-  background-color: #aaa;
+.cal1 {
+	margin: 30px auto;
+	max-width: 600px;
+	font-family: 'Droid Sans Mono', monospace;
+	font-size: 14px;
+
+	.clndr {
+		.clndr-controls {
+			display: flex;
+			margin-bottom: 10px;
+			justify-content: space-between;
+			position: relative;
+			width: 100%;
+
+			.clndr-control-button {
+				[role="button"] {
+					user-select: none;
+
+					cursor: pointer;
+
+					&:hover {
+						background: #ddd;
+					}
+
+					&.inactive {
+						opacity: 0.5;
+
+						&:hover {
+							background: none;
+							cursor: default;
+						}
+					}
+				}
+			}
+		}
+
+		.clndr-table {
+			border-collapse: collapse;
+			table-layout: fixed;
+			width: 100%;
+
+			.header-days {
+				background: @violet;
+				font-size: 14px;
+				height: 30px;
+
+				.header-day {
+					border: 1px solid @violet;
+					color: @white;
+					text-align: center;
+					vertical-align: middle;
+				}
+			}
+
+			tr {
+				height: 85px;
+
+				td {
+					vertical-align: top;
+				}
+
+				.day {
+					border: 1px solid @violet;
+					height: inherit;
+					width: 100%;
+
+					&:hover {
+						background: @grey;
+					}
+
+					&.today {
+						background: @yellow;
+
+						&:hover {
+							background: darken(@yellow, 10%);
+						}
+
+						&.event {
+							background: @green;
+						}
+					}
+
+					&.event {
+						background: @green;
+
+						&:hover {
+							background: darken(@green, 10%);
+						}
+					}
+
+					&.inactive {
+						background: @grey;
+					}
+
+					.day-contents {
+						box-sizing: border-box;
+						font-size: 12px;
+						padding: 8px;
+						text-align: right;
+					}
+				}
+
+				.empty,
+				.adjacent-month {
+					width: 100%;
+					height: inherit;
+					background: @grey;
+
+					&:hover {
+						background: darken(@grey, 10%);
+					}
+				}
+			}
+		}
+	}
+}
+
+.full-clndr {
+	-moz-box-shadow: 0 4px 0 darken(@dark-gray, 5%);
+	-webkit-box-shadow: 0 4px 0 darken(@dark-gray, 5%);
+	background-color: @grey;
+	font-family: 'Droid Sans Mono', monospace;
+	font-weight: 700;
+	width: 100%;
+
+	.clndr {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+
+		.clndr-controls {
+			align-items: baseline;
+			background-color: @dark-gray;
+			color: white;
+			display: flex;
+			justify-content: space-between;
+			width: 100%;
+
+			.clndr-previous-button, .clndr-next-button {
+				cursor: pointer;
+				padding: 14px;
+				text-align: center;
+				width: 30px;
+				user-select: none;
+
+				&:hover {
+					opacity: 0.5;
+				}
+			}
+		}
+
+		.clndr-content {
+			display: flex;
+			flex-direction: column;
+
+			.clndr-grid {
+				display: flex;
+				flex-direction: column;
+				width: 100%;
+
+				.days-of-the-week {
+					display: grid;
+					grid-template-columns: repeat(7, 1fr);
+					width: 100%;
+					background-color: @violet;
+
+					.header-day {
+						padding: 14px;
+						text-align: center;
+						color: white;
+					}
+				}
+
+				.days {
+					display: grid;
+					grid-template-columns: repeat(7, 1fr);
+					width: 100%;
+
+					.day, .empty {
+						height: 66px;
+						padding: 24px 0;
+
+						text-align: center;
+						color: #4f4f4f;
+						background-color: @grey;
+						border-bottom: 2px solid white;
+
+						background-image: url('/triangle.svg');
+						background-size: cover;
+						background-position: center;
+
+						&.event {
+							.day-number {
+								padding-bottom: 4px;
+								border-bottom: 2px solid @violet;
+							}
+						}
+
+						&.adjacent-month {
+							.day-number {
+								opacity: 0.3;
+							}
+						}
+					}
+
+					.today {
+						background-color: white;
+						background-image: none;
+					}
+
+				}
+			}
+
+			.event-listing {
+				display: flex;
+				flex-direction: column;
+				width: 100%;
+
+				.event-listing-title {
+					padding: 14px;
+					background-color: @red;
+					text-align: center;
+					color: white;
+					letter-spacing: 1px;
+				}
+
+				.event-item {
+					padding: 14px;
+					color: #4f4f4f;
+				}
+
+				.event-item-location {
+					font-weight: 400;
+				}
+			}
+		}
+
+		@media all and (min-width: 769px) {
+			.clndr-content {
+				flex-direction: row;
+
+				.clndr-grid {
+					width: 65%;
+					border-right: 2px solid white;
+				}
+
+				.event-listing {
+					width: 35%;
+				}
+			}
+
+			.event-listing {
+				display: none;
+			}
+		}
+	}
+}
+
+.cal2 {
+	max-width: 177px;
+	margin: 30px auto;
+
+	font-family: 'Droid Sans Mono', monospace;
+
+	.clndr {
+		.clndr-controls {
+			align-items: baseline;
+			display: flex;
+			justify-content: space-between;
+			margin-bottom: 3px;
+			width: 100%;
+
+			[role="button"] {
+				cursor: pointer;
+				padding: 3px 6px;
+				text-align: center;
+				user-select: none;
+
+				&:hover {
+					background-color: @grey;
+				}
+			}
+		}
+
+		.clndr-grid {
+			border: 1px solid @violet;
+			display: flex;
+			flex-direction: column;
+			text-align: center;
+
+			.days-of-the-week {
+				display: flex;
+				width: 100%;
+
+				.header-day {
+					background: @violet;
+					color: @white;
+					height: @box-size;
+					width: @box-size;
+				}
+			}
+
+			.day,
+			.my-day {
+				float: left;
+				height: @box-size;
+				width: @box-size;
+
+				&.event {
+					background-color: @green;
+				}
+
+				&.today {
+					background-color: @yellow;
+				}
+			}
+		}
+
+		.clndr-today-button {
+			cursor: pointer;
+			display: flex;
+			justify-content: center;
+			width: 100%;
+
+			&:hover {
+				background-color: @grey;
+			}
+		}
+	}
 }
 
 .cal3 {
-  max-width: 354px;
-  margin: 0 auto;
+	max-width: 354px;
+	margin: 0 auto;
 
-  font-family: 'Droid Sans Mono';
+	font-family: 'Droid Sans Mono', monospace;
 
-  .cal {
-    float: left;
-    width: 177px;
-  }
+	.cal {
+		float: left;
+		width: 177px;
+	}
 
-  .clndr {
-    .clndr-controls {
-      display: block;
-      .clearfix;
-      width: 100%;
-      margin-bottom: 8px;
+	.clndr {
+		.clndr-controls {
+			display: flex;
+			justify-content: space-between;
+			width: 100%;
+			margin-bottom: 8px;
 
-      &.top {
-        margin-bottom: -22px;
-        position: relative;
-        z-index: 1;
-      }
+			&.top {
+				margin-bottom: -22px;
+				position: relative;
+				z-index: 1;
+			}
 
-      .clndr-previous-button {
-        float: left;
-        width: 10%;
-        text-align: left;
-        cursor: pointer;
-        .noselect;
-        &:hover {
-          background-color: #f4f4f4;
-        }
-      }
-      .month {
-        text-align: center;
-        width: 80%;
-        margin: 0 auto;
-      }
-      .clndr-next-button {
-        float: right;
-        width: 10%;
-        text-align: right;
-        cursor: pointer;
-        .noselect;
-        &:hover
-        {
-          background-color: #f4f4f4;
-        }
-      }
-    }
+			[role="button"] {
+				cursor: pointer;
+				padding: 3px;
+				user-select: none;
 
-    .clndr-grid {
-      text-align: center;
-      border: 1px solid #FF4545;
-      .clearfix;
+				&:hover {
+					background-color: @grey;
+				}
+			}
+		}
 
-      .header-day {
-        float: left;
-        width: @box-size;
-        height: @box-size;
-        // padding-top: 5px;
-        background: #FF4545;
-      }
+		.month {
+			display: flex;
+			justify-content: center;
+			margin-bottom: 3px;
+		}
 
-      .day {
-        float: left;
-        width: @box-size;
-        height: @box-size;
+		.clndr-grid {
+			border: 1px solid @violet;
+			display: flex;
+			flex-direction: column;
+			text-align: center;
 
-        &.event {
-          background-color: #B4E09F;
-        }
+			.days-of-the-week {
+				display: flex;
+				width: 100%;
 
-        &.today {
-          background-color: #E3C57F;
-        }
-      }
+				.header-day {
+					align-items: center;
+					background: @violet;
+					color: @white;
+					display: flex;
+					height: @box-size;
+					justify-content: center;
+					width: @box-size;
+				}
+			}
 
-      .empty, .adjacent-month {
-        float: left;
-        width: @box-size;
-        height: @box-size;
-        background: #ddd;
-      }
-    }
+			.days {
+				display: grid;
+				grid-template-columns: repeat(7, 1fr);
+				width: 100%;
 
-    .clndr-today-button {
-      width: 100%;
-      text-align: center;
-      cursor: pointer;
-      &:hover {
-        background-color: #ddd;
-      }
-    }
-  }
+				> * {
+					align-items: center;
+					display: flex;
+					justify-content: center;
+				}
 
-  .multi-month-controls {
-    .quarter-button {
-      display: inline-block;
-      width: 25%;
+				.day {
+					height: @box-size;
+					width: @box-size;
 
-      &:hover {
-        cursor: pointer;
-        background-color: #f4f4f4;
-      }
-    }
-  }
+					&.event {
+						background-color: @green;
+					}
+
+					&.today {
+						background-color: @yellow;
+					}
+				}
+
+				.empty,
+				.adjacent-month {
+					background: @grey;
+					height: @box-size;
+					width: @box-size;
+				}
+			}
+		}
+
+		.clndr-today-button {
+			cursor: pointer;
+			display: flex;
+			justify-content: center;
+			width: 100%;
+
+			&:hover {
+				background-color: @grey;
+			}
+		}
+	}
 }
 
 .clndr-next-button,
 .clndr-previous-button,
 .clndr-next-year-button,
 .clndr-previous-year-button {
-  .noselect;
+	user-select: none;
 
-  &.inactive {
-    opacity: 0.5;
-    cursor: default;
-  }
+	&.inactive {
+		opacity: 0.5;
+		cursor: default;
+	}
 }

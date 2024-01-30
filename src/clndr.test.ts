@@ -1,13 +1,45 @@
 import '@testing-library/jest-dom';
 import {fireEvent, screen} from '@testing-library/dom';
-import Clndr, {defaultTemplate as clndrDefaultTemplate} from './clndr';
-import {de} from 'date-fns/locale';
 import userEvent, {UserEvent} from '@testing-library/user-event';
+import Clndr from './clndr';
+import {de} from 'date-fns/locale';
 import ejs from 'ejs';
 
 import type {ClndrTemplateData} from './types';
 
 const defaultTemplate = `
+	<div class="clndr-controls">
+		<div class="clndr-control-button">
+			<span class="clndr-previous-button" role="button">previous</span>
+		</div>
+		<div class="month"><%= month %> <%= year %></div>
+		<div class="clndr-control-button">
+			<span class="clndr-next-button" role="button">next</span>
+		</div>
+	</div>
+	<table class="clndr-table">
+		<thead>
+			<tr class="header-days">
+				<% for(var i = 0; i < daysOfTheWeek.length; i++) { %>
+					<td class="header-day"><%= daysOfTheWeek[i] %></td>
+				<% } %>
+			</tr>
+		</thead>
+		<tbody>
+			<% for(var i = 0; i < numberOfRows; i++){ %>
+				<tr>
+					<% for(var j = 0; j < 7; j++){ %>
+						<% var d = j + i * 7; %>
+						<td class="<%= days[d].classes %>">
+							<div class="day-contents"><%= days[d].day %></div>
+						</td>
+					<% } %>
+				</tr>
+			<% } %>
+		</tbody>
+	</table>`;
+
+const simpleTemplate = `
 	<div class="clndr-controls">
 		<div class="clndr-previous-button">&lsaquo;</div>
 		<div class="month"><%= month %></div>
@@ -75,7 +107,7 @@ const multiMonthTemplate = `
 	<% }); %>`;
 
 const provideRender = (template?: string) => (data: ClndrTemplateData) => {
-	return ejs.render(template || clndrDefaultTemplate, data);
+	return ejs.render(template || defaultTemplate, data);
 }
 
 let user: UserEvent;
@@ -120,7 +152,7 @@ describe('Setup', () => {
 	});
 
 	test('Use a custom template', () => {
-		clndr = new Clndr(container, {render: provideRender(defaultTemplate)});
+		clndr = new Clndr(container, {render: provideRender(simpleTemplate)});
 
 		expect(container).not.toBeEmptyDOMElement();
 		expect(screen.getByText('January')).toBeInTheDocument();
@@ -645,7 +677,7 @@ describe('Navigation', () => {
 		const handleToday = jest.fn();
 
 		clndr = new Clndr(container, {
-			render: provideRender(defaultTemplate),
+			render: provideRender(simpleTemplate),
 			clickEvents: {
 				today: handleToday,
 			},
