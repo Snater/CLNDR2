@@ -12,9 +12,9 @@ export type Options = {
 	selectedDate: Date | string | null
 	doneRendering: (() => void) | null
 	daysOfTheWeek: string[] | null
-	multiDayEvents: MultiDayEvents | null
+	multiDayEvents: MultiDayEventsDefinition | null
 	startWithMonth: Date | string | null
-	dateParameter: DateParameter
+	dateParameter: string
 	showAdjacentMonths: boolean
 	trackSelectedDate: boolean
 	formatWeekdayHeader: ((day: Date, locale?: Locale) => string) | null
@@ -43,18 +43,16 @@ export type UserOptions = Partial<
 }
 
 export type ClndrEvent = {
-	[key: DateParameter]: unknown
 	_clndrStartDateObject?: never
 	_clndrEndDateObject?: never
-} & Partial<ClndrMultiEvent & ClndrSingleEvent>
+} & Partial<ClndrMultiDayEvent & ClndrSingleDayEvent>
 
-type ClndrMultiEvent = {
-	startDate?: string
-	endDate?: string
+type ClndrMultiDayEvent = {
+	[key: string]: unknown
 }
 
-type ClndrSingleEvent = {
-	singleDay: string
+type ClndrSingleDayEvent = {
+	[key: string]: unknown
 }
 
 export type InternalClndrEvent = {
@@ -68,18 +66,16 @@ export type Constraints = {
 	endDate?: string | Date
 }
 
-export type MultiDayEvents = Partial<MultiDayEvent & SingleDayEvent>
+export type MultiDayEventsDefinition = Partial<MultiDayEventDefinition & SingleDayEventDefinition>
 
-export type MultiDayEvent = {
+type MultiDayEventDefinition = {
 	startDate: string
 	endDate: string
 }
 
-type SingleDayEvent = {
+type SingleDayEventDefinition = {
 	singleDay: string
 }
-
-type DateParameter = string
 
 export type LengthOfTime = {
 	days?: number | null

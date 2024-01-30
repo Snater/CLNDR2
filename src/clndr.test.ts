@@ -1083,18 +1083,28 @@ describe('Custom interval', () => {
 	test('lengthOfTime option', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			events: [
-				{
-					title: 'Multi1',
-					endDate: '1992-10-17',
-					startDate: '1992-10-12',
-				}, {
-					title: 'Multi2',
-					endDate: '1992-10-27',
-					startDate: '1992-10-24',
-				},
-			],
+			events: [{
+				title: 'Event in previous month',
+				endDate: '1992-09-27',
+				startDate: '1992-09-24',
+			}, {
+				title: 'Event in this month',
+				endDate: '1992-10-27',
+				startDate: '1992-10-24',
+			}, {
+				title: 'Event in next month',
+				endDate: '1992-11-27',
+				startDate: '1992-11-24',
+			}, {
+				title: 'Event in next month interval',
+				endDate: '1993-01-27',
+				startDate: '1993-01-24',
+			}],
 			lengthOfTime: {months: 3},
+			multiDayEvents: {
+				endDate: 'endDate',
+				startDate: 'startDate',
+			},
 			startWithMonth: '1992-10',
 		});
 
@@ -1259,6 +1269,50 @@ describe('Forcing errors', () => {
 		await user.click(dayElement as Element);
 
 		expect(handleClick).toHaveBeenCalledTimes(1);
+	});
+
+	test('Specifying wrong dateParameter option', () => {
+		expect(() => new Clndr(container, {
+			render: provideRender(multiMonthTemplate),
+			dateParameter: 'wrong',
+			events: [{date: '2024-02-19'}],
+		})).toThrow();
+	});
+
+	test('Specifying multi-day events without multiDayEvents option', () => {
+		expect(() => new Clndr(container, {
+			render: provideRender(multiMonthTemplate),
+			dateParameter: 'wrong',
+			events: [{date: '2024-02-19'}],
+		})).toThrow();
+	});
+
+	test('Invalid date parameter on multi-day event', () => {
+		expect(() => new Clndr(container, {
+			render: provideRender(multiMonthTemplate),
+			dateParameter: 'wrong',
+			events: [{
+				title: 'Multi1',
+				endDate: '1992-10-17',
+				startDate: {year: 1992},
+			}],
+			multiDayEvents: {
+				endDate: 'endDate',
+				startDate: 'startDate',
+			},
+			startWithMonth: '1992-10',
+		})).toThrow();
+	});
+
+	test('Invalid date parameter on single-day event when having set up multi-day event', () => {
+		expect(() => new Clndr(container, {
+			render: provideRender(multiMonthTemplate),
+			events: [{singleDay: '1992-10-15'}],
+			multiDayEvents: {
+				singleDay: 'wrong',
+			},
+			startWithMonth: '1992-10',
+		})).toThrow();
 	});
 
 });
