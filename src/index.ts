@@ -4,8 +4,8 @@ export default Clndr;
 
 export type {
 	ClndrEvent,
-	NavigationOptions as ClndrNavigationOptions,
-	Options as ClndrOptions,
-	Target as ClndrTarget,
+	ClndrNavigationOptions,
+	ClndrOptions,
+	ClndrTarget,
 	ClndrTemplateData,
 } from './types';

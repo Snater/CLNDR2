@@ -2,13 +2,299 @@ import './clndr.stories.less';
 import {Meta, StoryObj} from '@storybook/html';
 import Clndr from './Clndr.js';
 import {action} from '@storybook/addon-actions';
-import {enGB} from 'date-fns/locale';
+import {de, enUS, es, fr} from 'date-fns/locale';
 import ejs from 'ejs';
 
-import type {Options} from './types';
+import type {ClndrOptions} from './types';
 
-const meta: Meta<Options> = {
+// To allow selecting a locale, fake the locale option to be string and pick the actual date-fns
+// locale in the stories
+type OptionsForStory = Omit<ClndrOptions, 'locale'> & {locale: string}
+
+const meta: Meta<OptionsForStory> = {
 	title: 'Clndr',
+	argTypes: {
+		render: {
+			control: false,
+			description: '**(REQUIRED)** Function rendering a template being passed ClndrTemplateData as parameter.',
+			table: {
+				defaultValue: {
+					summary: 'undefined',
+				},
+				type: '(data: ClndrTemplateData) => string',
+			},
+		},
+		adjacentDaysChangeMonth: {
+			description: 'Whether clicking the day of the preceding or following month navigates to that month.',
+			table: {
+				defaultValue: {
+					summary: 'false',
+				},
+				type: {
+					summary: 'boolean',
+				},
+			},
+		},
+		classes: {
+			control: false,
+			description: 'Custom CSS class names to apply to the calendar elements to be used for styling.',
+			table: {
+				defaultValue: {
+					summary: '{past: \'past\', today: \'today\', event: \'event\', inactive: \'inactive\', selected: \'selected\', lastMonth: \'last-month\', nextMonth: \'next-month\', adjacentMonth: \'adjacent-month\'}',
+				},
+				type: {
+					summary: '{past?: string, today?: string, event?: string, inactive?: string, selected?: string, lastMonth?: string, nextMonth?: string, adjacentMonth?: string}',
+				},
+			},
+		},
+		clickEvents: {
+			description: 'Callbacks to be triggered when clicking particular elements.',
+			table: {
+				defaultValue: {
+					summary: 'undefined',
+				},
+				type: {
+					summary: '{click?: (target: ClndrTarget) => void, today?: (month: Date) => void, nextYear?: (month: Date) => void, nextMonth?: (month: Date) => void, nextInterval?: (intervalStart: Date, intervalEnd: Date) => void, previousYear?: (month: Date) => void, onYearChange?: (month: Date) => void, previousMonth?: (month: Date) => void, onMonthChange?: (month: Date) => void, previousInterval?: (intervalStart: Date, intervalEnd: Date) => void, onIntervalChange?: (intervalStart: Date, intervalEnd: Date) => void}',
+				},
+			},
+		},
+		constraints: {
+			control: 'object',
+			description: 'Restrict calendar navigation specifying the calendar\'s boundaries.',
+			table: {
+				defaultValue: {
+					summary: 'undefined',
+				},
+				type: {
+					summary: '{startDate: Date | string, endDate: Date | string}',
+				},
+			},
+		},
+		dateParameter: {
+			description: 'The key of the date in an event object when setting up the calendar for *single-day* events, i.e. setting this option to `\'dateParam\'`, the events array should be `{dateParam: Date | string, ...}[]`.',
+			control: 'text',
+			table: {
+				defaultValue: {
+					summary: '\'date\'',
+				},
+				type: {
+					summary: 'string',
+				},
+			},
+		},
+		daysOfTheWeek: {
+			description: 'Labels for each day of the week.',
+			control: 'object',
+			table: {
+				defaultValue: {
+					summary: 'undefined',
+					detail: 'By default, the labels are acquired from date-fns using the `locale`, if provided.',
+				},
+				type: {
+					summary: '[string, string, string, string, string, string, string]',
+					detail: 'An array of seven strings, one per day of the week.',
+				},
+			},
+		},
+		doneRendering: {
+			description: 'A callback triggered each time the calendar is (re-)rendered.',
+			control: false,
+			table: {
+				defaultValue: {
+					summary: 'undefined',
+				},
+				type: {
+					summary: '() => void',
+				},
+			},
+		},
+		events: {
+			description: 'Array of event objects. When setting up the calendar for using single-day events, each event object should contain a "date" field (the name can be customized per `dateParameter`). When setting up the calendar for multi-day events, start and end date have to be provided per keys set per multiDayEvents option.',
+			table: {
+				defaultValue: {
+					summary: '[]',
+				},
+				type: {
+					summary: 'ClndrEvent[]',
+				},
+			},
+		},
+		extras: {
+			control: false,
+			description: 'Any extra data to be passed into the template. For example, use this to inject date-fns functions into your template.',
+			table: {
+				defaultValue: {
+					summary: 'undefined',
+				},
+				type: {
+					summary: 'unknown',
+				},
+			},
+		},
+		forceSixRows: {
+			description: 'Forces the calendar to always display six rows.',
+			table: {
+				defaultValue: {
+					summary: 'false',
+				},
+				type: {
+					summary: 'boolean',
+				},
+			},
+		},
+		formatWeekdayHeader: {
+			description: 'A function to format the day labels in the header row.',
+			table: {
+				defaultValue: {
+					summary: 'undefined',
+					detail: '`format` of date-fns is used by default: `format(day, \'cccccc\', {locale}).charAt(0)`',
+				},
+				type: {
+					summary: '(day: Date, locale?: Locale) => string',
+				},
+			},
+		},
+		ignoreInactiveDaysInSelection: {
+			description: 'Whether days that are out the the calendar\'s boundaries (defined by `constraints`) should be considered for selection if `trackSelectedDate` is activated.',
+			table: {
+				defaultValue: {
+					summary: 'false',
+				},
+				type: {
+					summary: 'boolean',
+				},
+			},
+		},
+		lengthOfTime: {
+			description: 'Specify a custom interval the calendar should display, i.e. more than one month or two weeks. You can also define the pagination step.',
+			table: {
+				defaultValue: {
+					summary: '{interval: 1}',
+				},
+				type: {
+					summary: '{days?: number, interval: number, months?: number, startDate?: Date | string}',
+				},
+			},
+		},
+		locale: {
+			control: 'select',
+			options: ['enUS', 'de', 'es', 'fr'],
+			description: 'A date-fns locale used for formatting Date strings.',
+			table: {
+				defaultValue: {
+					summary: 'undefined',
+				},
+				type: {
+					summary: 'Locale',
+					detail: 'date-fns locale object',
+				},
+			},
+		},
+		multiDayEvents: {
+			description: 'Set up the calender for *multi-day* events. The values specify the keys used in the `events` array, i.e. setting `{startDate: \'start\', endDate: \'end\'}`, the events array should be `{start: Date | string, end: Date | string, ...}[]`. Use the `singleDay` field to also enable single-day events in a multi-day calendar.',
+			control: 'object',
+			table: {
+				defaultValue: {
+					summary: 'undefined',
+				},
+				type: {
+					summary: 'Partial<{startDate: string, endDate: string} & {singleDay: string}',
+				},
+			},
+		},
+		ready: {
+			control: false,
+			description: 'Callback triggered after the calendar has finished initialization and rendered for the first time.',
+			table: {
+				defaultValue: {
+					summary: 'undefined',
+				},
+				type: {
+					summary: '() => void',
+				},
+			},
+		},
+		selectedDate: {
+			description: 'A date that should receive a CSS class marking it selected. by default, the CSS class is "selected", it can be customized per the `classes` option.',
+			control: 'date',
+			table: {
+				defaultValue: {
+					summary: 'undefined',
+				},
+				type: {
+					summary: 'Date | string',
+				},
+			},
+		},
+		showAdjacentMonths: {
+			description: 'Whether days of the preceding and following month should be displayed.',
+			table: {
+				defaultValue: {
+					summary: 'true',
+				},
+				type: {
+					summary: 'boolean',
+				},
+			},
+		},
+		startWithMonth: {
+			description: 'Set up the calendar to initially display a particular month.',
+			control: 'date',
+			table: {
+				defaultValue: {
+					summary: 'undefined',
+				},
+				type: {
+					summary: 'Date | string',
+				},
+			},
+		},
+		targets: {
+			description: 'Override the CSS class names applied to the calendar elements for binding the `clickEvents` to.',
+			table: {
+				defaultValue: {
+					summary: '{day: \'day\', empty: \'empty\', nextButton: \'clndr-next-button\', todayButton: \'clndr-today-button\', previousButton: \'clndr-previous-button\', nextYearButton: \'clndr-next-year-button\', previousYearButton: \'clndr-previous-year-button\'}',
+				},
+				type: {
+					summary: '{day?: string, empty?: string, nextButton?: string, todayButton?: string, previousButton?: string, nextYearButton?: string, previousYearButton?: string}',
+				},
+			},
+		},
+		trackSelectedDate: {
+			description: 'Whether the selected date should remain selected (that is the CSS class `classes.selected` applied) across re-renderings of the calendar, i.e. when navigating the calendar.',
+			table: {
+				defaultValue: {
+					summary: 'false',
+				},
+				type: {
+					summary: 'boolean',
+				},
+			},
+		},
+		useTouchEvents: {
+			description: 'Whether to use `touchstart` instead of `click` for triggering the `clickEvents` handlers.',
+			table: {
+				defaultValue: {
+					summary: 'false',
+				},
+				type: {
+					summary: 'boolean',
+				},
+			},
+		},
+		weekOffset: {
+			control: {
+				type: 'range',
+				min: 0,
+				max: 6,
+			},
+			description: 'Adjust the weekday that a week starts with, i.e. set to 1 to start a week with Monday.',
+			table: {
+				defaultValue: 0,
+				type: 'number',
+			},
+		},
+	},
 	args: {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
@@ -41,6 +327,7 @@ const meta: Meta<Options> = {
 					<% } %>
 				</tbody>
 			</table>`, data),
+		adjacentDaysChangeMonth: false,
 		clickEvents: {
 			click: action('click'),
 			today: action('today'),
@@ -54,6 +341,8 @@ const meta: Meta<Options> = {
 			previousInterval: action('previousInterval'),
 			onIntervalChange: action('onIntervalChange'),
 		},
+		dateParameter: 'date',
+		doneRendering: action('doneRendering'),
 		events: [
 			{
 				title: 'Multi-Day Event',
@@ -65,12 +354,35 @@ const meta: Meta<Options> = {
 				title: 'Another Multi-Day Event',
 			},
 		],
-		locale: enGB,
+		forceSixRows: false,
+		ignoreInactiveDaysInSelection: false,
+		locale: 'enUS',
+		ready: action('ready'),
+		useTouchEvents: false,
+		weekOffset: 0,
 	},
+	tags: ['autodocs'],
 };
 
 export default meta;
-type Story = StoryObj<Options>;
+type Story = StoryObj<OptionsForStory>;
+
+function getLocale(id?: string) {
+	if (!id) {
+		return undefined;
+	}
+
+	return[
+		{id: 'de', value: de},
+		{id: 'enUS', value: enUS},
+		{id: 'es', value: es},
+		{id: 'fr', value: fr},
+	].find(locale => locale.id === id)?.value;
+}
+
+function getDateOfCurrentMonth(day: number) {
+	return new Date(new Date().getFullYear(), new Date().getMonth(), day).toISOString().slice(0, 10);
+}
 
 export const Default: Story = {
 	args: {
@@ -82,11 +394,11 @@ export const Default: Story = {
 		showAdjacentMonths: true,
 		adjacentDaysChangeMonth: false,
 	},
-	render: ({...args}) => {
+	render: ({locale, ...args}) => {
 		const container = document.createElement('div');
 		container.classList.add('cal1');
 
-		const clndr = new Clndr(container, {...args});
+		const clndr = new Clndr(container, {locale: getLocale(locale), ...args});
 
 		document.addEventListener('keydown', event => {
 			if (event.key === 'ArrowLeft') {
@@ -100,10 +412,6 @@ export const Default: Story = {
 		return container;
 	},
 };
-
-function getDateOfCurrentMonth(day: number) {
-	return new Date(new Date().getFullYear(), new Date().getMonth(), day).toISOString().slice(0, 10);
-}
 
 export const FullCalendar: Story = {
 	args: {
@@ -158,10 +466,10 @@ export const FullCalendar: Story = {
 			`, data);
 		},
 	},
-	render: ({...args}) => {
+	render: ({locale, ...args}) => {
 		const container = document.createElement('div');
 		container.classList.add('full-clndr');
-		new Clndr(container, {...args});
+		new Clndr(container, {locale: getLocale(locale), ...args});
 		return container;
 	},
 }
@@ -200,10 +508,10 @@ export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 			`, data);
 		},
 	},
-	render: ({...args}) => {
+	render: ({locale, ...args}) => {
 		const container = document.createElement('div');
 		container.classList.add('cal2');
-		new Clndr(container, {...args});
+		new Clndr(container, {locale: getLocale(locale), ...args});
 		return container;
 	},
 };
@@ -245,10 +553,10 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 			`, data);
 		},
 	},
-	render: ({...args}) => {
+	render: ({locale, ...args}) => {
 		const container = document.createElement('div');
 		container.classList.add('cal3');
-		new Clndr(container, {...args});
+		new Clndr(container, {locale: getLocale(locale), ...args});
 		return container;
 	},
 };

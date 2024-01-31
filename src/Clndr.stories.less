@@ -110,6 +110,14 @@
 						background: @grey;
 					}
 
+					&.selected {
+						background-color: @red;
+
+						&:hover {
+							background: darken(@red, 10%);
+						}
+					}
+
 					.day-contents {
 						box-sizing: border-box;
 						font-size: 12px;
@@ -154,7 +162,8 @@
 			justify-content: space-between;
 			width: 100%;
 
-			.clndr-previous-button, .clndr-next-button {
+			.clndr-previous-button,
+			.clndr-next-button {
 				cursor: pointer;
 				padding: 14px;
 				text-align: center;
@@ -194,7 +203,8 @@
 					grid-template-columns: repeat(7, 1fr);
 					width: 100%;
 
-					.day, .empty {
+					.day,
+					.empty {
 						height: 66px;
 						padding: 24px 0;
 
@@ -211,6 +221,14 @@
 							.day-number {
 								padding-bottom: 4px;
 								border-bottom: 2px solid @violet;
+							}
+						}
+
+						&.selected {
+							background-color: @red;
+
+							&:hover {
+								background: darken(@red, 10%);
 							}
 						}
 
@@ -318,8 +336,7 @@
 				}
 			}
 
-			.day,
-			.my-day {
+			.day {
 				float: left;
 				height: @box-size;
 				width: @box-size;
@@ -330,6 +347,14 @@
 
 				&.today {
 					background-color: @yellow;
+				}
+
+				&.selected {
+					background-color: @red;
+
+					&:hover {
+						background: darken(@red, 10%);
+					}
 				}
 			}
 		}
@@ -430,6 +455,14 @@
 
 					&.today {
 						background-color: @yellow;
+					}
+
+					&.selected {
+						background-color: @red;
+
+						&:hover {
+							background: darken(@red, 10%);
+						}
 					}
 				}
 

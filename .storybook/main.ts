@@ -10,6 +10,9 @@ const config: StorybookConfig = {
 	core: {
 		disableTelemetry: true,
 	},
+	docs: {
+		autodocs: 'tag',
+	},
 	framework: {
 		name: '@storybook/html-vite',
 		options: {},

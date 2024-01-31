@@ -3,32 +3,32 @@ import Clndr from './Clndr';
 
 export type InternalOptions = {
 	render: (data: ClndrTemplateData) => string
-	events: ClndrEvent[]
-	ready?: (() => void)
-	extras?: unknown
-	locale?: Locale
-	weekOffset: WeekOffset
-	constraints?: Constraints
-	forceSixRows: boolean
-	selectedDate?: Date | string
-	doneRendering?: (() => void)
-	daysOfTheWeek?: DaysOfTheWeek
-	multiDayEvents?: MultiDayEventsDefinition
-	startWithMonth?: Date | string
-	dateParameter: string
-	showAdjacentMonths: boolean
-	trackSelectedDate: boolean
-	formatWeekdayHeader?: ((day: Date, locale?: Locale) => string)
 	adjacentDaysChangeMonth: boolean
+	classes: {[key in DayStatus]: string}
+	clickEvents: ClickEvents
+	constraints?: Constraints
+	dateParameter: string
+	daysOfTheWeek?: DaysOfTheWeek
+	doneRendering?: () => void
+	events: ClndrEvent[]
+	extras?: unknown
+	forceSixRows: boolean
+	formatWeekdayHeader?: (day: Date, locale?: Locale) => string
 	ignoreInactiveDaysInSelection: boolean
 	lengthOfTime: LengthOfTime
-	clickEvents: ClickEvents
-	useTouchEvents: boolean
+	locale?: Locale
+	multiDayEvents?: MultiDayEventsDefinition
+	ready?: () => void
+	selectedDate?: Date | string
+	showAdjacentMonths: boolean
+	startWithMonth?: Date | string
 	targets: {[key in TargetOption]: string}
-	classes: {[key in DayStatus]: string}
+	trackSelectedDate: boolean
+	useTouchEvents: boolean
+	weekOffset: WeekOffset
 }
 
-export type Options = Partial<
+export type ClndrOptions = Partial<
 	Omit<InternalOptions, 'classes' | 'lengthOfTime' | 'render' | 'targets'> & {
 		classes?: {[key in DayStatus]?: string}
 		lengthOfTime?: Partial<LengthOfTime>
@@ -78,14 +78,14 @@ type SingleDayEventDefinition = {
 }
 
 export type LengthOfTime = {
-	days?: number | null
+	days?: number
 	interval: number
-	months?: number | null
-	startDate?: Date | string | null
+	months?: number
+	startDate?: Date | string
 }
 
 type ClickEvents = {
-	click?: (target: Target) => void
+	click?: (target: ClndrTarget) => void
 	today?: (month: Date) => void
 	nextYear?: (month: Date) => void
 	nextMonth?: (month: Date) => void
@@ -98,7 +98,7 @@ type ClickEvents = {
 	onIntervalChange?: (intervalStart: Date, intervalEnd: Date) => void
 }
 
-export type Target = {
+export type ClndrTarget = {
 	date: Date | null
 	events: ClndrEvent[]
 	element: HTMLElement
@@ -139,9 +139,9 @@ export type ClndrTemplateData = {
 }
 
 export type Day = {
-	day?: number | string
+	day?: number
 	date?: Date
-	events?: InternalClndrEvent[]
+	events?: ClndrEvent[]
 	classes: string
 	properties?: DayProperties
 }
@@ -164,7 +164,7 @@ export type ClndrEventOrigin = {
 
 export type ClndrInteractionEvent = Event & {data: {context: Clndr}}
 
-export type NavigationOptions = {withCallbacks?: boolean}
+export type ClndrNavigationOptions = {withCallbacks?: boolean}
 
 export type NavigationConstraint = 'next' | 'today' | 'previous' | 'nextYear' | 'previousYear'
 export type NavigationConstraints = {[key in NavigationConstraint]: boolean}
