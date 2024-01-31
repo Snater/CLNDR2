@@ -329,31 +329,41 @@
 				width: 100%;
 
 				.header-day {
+					align-items: center;
 					background: @violet;
 					color: @white;
+					display: flex;
 					height: @box-size;
+					justify-content: center;
 					width: @box-size;
 				}
 			}
 
-			.day {
-				float: left;
-				height: @box-size;
-				width: @box-size;
+			.days {
+				display: grid;
+				grid-template: repeat(2, 1fr) / repeat(7, 1fr);
 
-				&.event {
-					background-color: @green;
-				}
+				.day {
+					align-items: center;
+					display: flex;
+					height: @box-size;
+					justify-content: center;
+					width: @box-size;
 
-				&.today {
-					background-color: @yellow;
-				}
+					&.event {
+						background-color: @green;
+					}
 
-				&.selected {
-					background-color: @red;
+					&.today {
+						background-color: @yellow;
+					}
 
-					&:hover {
-						background: darken(@red, 10%);
+					&.selected {
+						background-color: @red;
+
+						&:hover {
+							background: darken(@red, 10%);
+						}
 					}
 				}
 			}
