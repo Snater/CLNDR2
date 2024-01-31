@@ -233,38 +233,38 @@ new Clndr(container, {
   // callbacks.
   clickEvents: {
     // Triggered whenever a calendar box is clicked.
-    click: (target: ClndrTarget) => {...},
+    click: function(target: ClndrTarget) {...},
 
     // Triggered when a user goes to the current month and year.
-    today: (month: Date) => {...},
+    today: function(month: Date) {...},
 
     // Triggered when a user navigates forward a month.
-    nextMonth: (month: Date) => {...},
+    nextMonth: function(month: Date) {...},
 
     // Triggered when a user navigates back a month.
-    previousMonth: (month: Date) => {...},
+    previousMonth: function(month: Date) {...},
 
     // Triggered whenever the month is changed as a result of a click action.
-    onMonthChange: (month: Date) => {...},
+    onMonthChange: function(month: Date) {...},
 
     // Triggered when the next year button is clicked.
-    nextYear: (month: Date) => {...},
+    nextYear: function(month: Date) {...},
 
     // Triggered when the previous year button is clicked.
-    previousYear: (month: Date) => {...},
+    previousYear: function(month: Date) {...},
 
     // Triggered whenever the year is changed as a result of a click action. If
     // onMonthChange is also set, it is fired BEFORE onYearChange.
-    onYearChange: (month: Date) => {...},
+    onYearChange: function(month: Date) {...},
 
     // Triggered when a user navigates forward an interval, if `lengthOfTime` option is configured.
-    nextInterval: (start: Date, end: Date) => {...},
+    nextInterval: function(start: Date, end: Date) {...},
 
     // Triggered when a user navigates back an interval, if `lengthOfTime` option is configured.
-    previousInterval: (start: Date, end: Date) => {...},
+    previousInterval: function(start: Date, end: Date) {...},
 
     // Triggered whenever the time period is changed as configured in lengthOfTime.
-    onIntervalChange: (start: Date, end: Date) => {...},
+    onIntervalChange: function(start: Date, end: Date) {...},
   },
 
   // Prevent the user from navigating the calendar outside of a certain date range by specifying
@@ -283,7 +283,7 @@ new Clndr(container, {
   daysOfTheWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
 
   // A callback triggered when the calendar is done rendering.
-  doneRendering: () => {...},
+  doneRendering: function() {...},
 
   // An array of event objects
   events: [
@@ -346,7 +346,7 @@ new Clndr(container, {
 
   // Callback triggered once the calendar has been initialized and rendered.
   // `this.element` refers to the parent element that holds the calendar.
-  ready: () => {...},
+  ready: function() {...},
 
   // A date that should be selected (that is its element is supposed to receive the
   // `classes.selected` class) at the time the calendar is initialized.
@@ -588,9 +588,7 @@ clndr.addEvents(additionalEventsArray);
 
 // Remove events. All events for which the provided function returns true will be removed from the
 // calendar. Note that this triggers re-rendering the calendar.
-clndr.removeEvents((event => {
-  return event.id === idToRemove;
-}));
+clndr.removeEvents((event => event.id === idToRemove}));
 
 // Destroy the calendar instance. This will empty the DOM node containing the calendar.
 clndr.destroy();
