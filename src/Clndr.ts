@@ -652,17 +652,17 @@ class Clndr {
 		const data: ClndrTemplateData = {
 			days: [],
 			months: [],
-			intervalEnd: null,
-			intervalStart: null,
 			year: null,
-			eventsThisInterval: [],
-			extras: this.options.extras,
 			month: null,
-			daysOfTheWeek: this.daysOfTheWeek,
 			eventsThisMonth: [],
 			eventsLastMonth: [],
 			eventsNextMonth: [],
+			extras: this.options.extras,
+			daysOfTheWeek: this.daysOfTheWeek,
 			numberOfRows: 0,
+			intervalStart: null,
+			intervalEnd: null,
+			eventsThisInterval: [],
 			format: (date: Date, formatStr: string, options: FormatOptions = {}) => {
 				return format(date, formatStr, {locale: this.options.locale || undefined, ...options});
 			},

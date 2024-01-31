@@ -131,9 +131,9 @@ export type ClndrTemplateData = {
 	eventsThisMonth: ClndrEvent[]
 	extras: unknown | null
 	daysOfTheWeek: string[]
-	intervalEnd: Date | null
 	numberOfRows: number
 	intervalStart: Date | null
+	intervalEnd: Date | null
 	eventsThisInterval: ClndrEvent[] | ClndrEvent[][]
 	format: (date: Date, formatStr: string, options: FormatOptions) => string
 }

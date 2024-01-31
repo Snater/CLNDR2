@@ -12,7 +12,7 @@ import type {ClndrOptions} from './types';
 type OptionsForStory = Omit<ClndrOptions, 'locale'> & {locale: string}
 
 const meta: Meta<OptionsForStory> = {
-	title: 'Clndr',
+	title: 'CLNDR2',
 	argTypes: {
 		render: {
 			control: false,
@@ -155,7 +155,7 @@ const meta: Meta<OptionsForStory> = {
 			},
 		},
 		ignoreInactiveDaysInSelection: {
-			description: 'Whether days that are out the the calendar\'s boundaries (defined by `constraints`) should be considered for selection if `trackSelectedDate` is activated.',
+			description: 'Whether days that are out the the calendar\'s boundaries (defined by `constraints`) should be selectable if `trackSelectedDate` is activated.',
 			table: {
 				defaultValue: {
 					summary: 'false',
@@ -261,7 +261,7 @@ const meta: Meta<OptionsForStory> = {
 			},
 		},
 		trackSelectedDate: {
-			description: 'Whether the selected date should remain selected (that is the CSS class `classes.selected` applied) across re-renderings of the calendar, i.e. when navigating the calendar.',
+			description: 'Whether the last clicked day should be tracked, that is applying the `classes.selected` CSS class to the day that was clicked last. Otherwise, `classes.selected` will remain on what is set per `selectedDate` option.',
 			table: {
 				defaultValue: {
 					summary: 'false',
@@ -360,6 +360,13 @@ const meta: Meta<OptionsForStory> = {
 		ready: action('ready'),
 		useTouchEvents: false,
 		weekOffset: 0,
+	},
+	parameters: {
+		docs: {
+			description: {
+				component: 'Source code and usage instructions: https://github.com/Snater/CLNDR2/',
+			},
+		},
 	},
 	tags: ['autodocs'],
 };
