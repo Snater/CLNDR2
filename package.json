@@ -2,9 +2,9 @@
   "name": "clndr2",
   "version": "0.0.0",
   "description": "A framework-agnostic frontend calendar widget that uses HTML templates with your template engine of choice.",
-  "author": "snater.com",
+  "author": "H. Snater",
   "license": "MIT",
-  "homepage": "https://CLNDR2.snater.com",
+  "homepage": "https://clndr2.snater.com",
   "repository": {
     "type": "git",
     "url": "https://github.com/Snater/CLNDR2"

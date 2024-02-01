@@ -1,13 +1,13 @@
 # CLNDR2
 
-[![Test Status][github-action-image]][github-action-url]
+[![NPM version][npm-version-image]][npm-url] [![Test status][github-action-image]][github-action-url]
 
 CLNDR2 is a straightforward framework-agnostic front-end calendar widget operating on HTML templates powered by the template rendering engine of your choice.<br />
 It is the unofficial successor to awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you intend to migrate from CLNDR to CLNDR2, check out the [migration notes](#key-differences-to-clndr).
 
-**<p style="text-align: center;">Demos and additional documentation: https://clndr2.snater.com</p>**
+**<p style="text-align: center;">👉 Demos and additional documentation: https://clndr2.snater.com</p>**
 
---------
+---
 
 - [Basic Usage](#basic-usage)
 - [Dependencies](#dependencies)
@@ -657,3 +657,6 @@ const clndr = new Clndr(document.getElementById('calendar'), {
 
 [github-action-image]: https://github.com/Snater/CLNDR2/actions/workflows/test.yml/badge.svg
 [github-action-url]: https://github.com/Snater/CLNDR2/actions/workflows/test.yml
+
+[npm-url]: https://npmjs.org/package/clndr2
+[npm-version-image]: https://badge.fury.io/js/clndr2.svg
