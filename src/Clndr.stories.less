@@ -292,6 +292,124 @@
 	}
 }
 
+.mini-clndr {
+	max-width: 177px;
+	margin: 30px auto;
+
+	font-family: 'Droid Sans Mono', monospace;
+
+	.clndr {
+		.clndr-controls {
+			align-items: baseline;
+			display: flex;
+			justify-content: space-between;
+			margin-bottom: 3px;
+			width: 100%;
+
+			[role="button"] {
+				cursor: pointer;
+				padding: 3px 6px;
+				text-align: center;
+				user-select: none;
+
+				&:hover {
+					background-color: @grey;
+				}
+			}
+		}
+
+		.clndr-grid {
+			border: 1px solid @violet;
+			display: flex;
+			flex-direction: column;
+			text-align: center;
+
+			.days-of-the-week {
+				display: flex;
+				width: 100%;
+
+				.header-day {
+					align-items: center;
+					background: @violet;
+					color: @white;
+					display: flex;
+					height: @box-size;
+					justify-content: center;
+					width: @box-size;
+				}
+			}
+
+			.days {
+				display: grid;
+				grid-template: repeat(2, 1fr) / repeat(7, 1fr);
+
+				.day {
+					align-items: center;
+					display: flex;
+					height: @box-size;
+					justify-content: center;
+					width: @box-size;
+
+					&.event {
+						background-color: @green;
+					}
+
+					&.today {
+						background-color: @yellow;
+					}
+
+					&.selected {
+						background-color: @red;
+
+						&:hover {
+							background: darken(@red, 10%);
+						}
+					}
+
+					&[role="button"] {
+						cursor: pointer;
+					}
+				}
+			}
+		}
+	}
+
+	.events {
+		border: 1px solid @violet;
+		margin-top: 4px;
+
+		&.hidden {
+			display: none;
+		}
+
+		.events-header {
+			align-items: center;
+			background: @violet;
+			color: @white;
+			display: flex;
+			height: @box-size;
+			justify-content: center;
+			width: 100%;
+		}
+
+		.events-list {
+			padding: 4px;
+
+			.event {
+				margin-bottom: 8px;
+
+				&:last-child {
+					margin-bottom: 0;
+				}
+
+				.event-title {
+					font-weight: bold;
+				}
+			}
+		}
+	}
+}
+
 .cal2 {
 	max-width: 177px;
 	margin: 30px auto;

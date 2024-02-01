@@ -1,8 +1,8 @@
 import './clndr.stories.less';
 import {Meta, StoryObj} from '@storybook/html';
+import {de, enUS, es, fr} from 'date-fns/locale';
 import Clndr from './Clndr.js';
 import {action} from '@storybook/addon-actions';
-import {de, enUS, es, fr} from 'date-fns/locale';
 import ejs from 'ejs';
 
 import type {ClndrOptions} from './types';
@@ -388,18 +388,20 @@ function getLocale(id?: string) {
 }
 
 function getDateOfCurrentMonth(day: number) {
-	return new Date(new Date().getFullYear(), new Date().getMonth(), day).toISOString().slice(0, 10);
+	return new Date(new Date().getFullYear(), new Date().getMonth(), day + 1)
+		.toISOString()
+		.slice(0, 10);
 }
 
 export const Default: Story = {
 	args: {
+		adjacentDaysChangeMonth: false,
 		multiDayEvents: {
 			singleDay: 'date',
 			endDate: 'endDate',
 			startDate: 'startDate',
 		},
 		showAdjacentMonths: true,
-		adjacentDaysChangeMonth: false,
 	},
 	render: ({locale, ...args}) => {
 		const container = document.createElement('div');
@@ -422,6 +424,36 @@ export const Default: Story = {
 
 export const FullCalendar: Story = {
 	args: {
+		render: data => ejs.render(`
+			<div class="clndr-controls">
+				<div class="clndr-previous-button" role="button">&lt;</div>
+				<div class="current-month"><%= month %> <%= year %></div>
+				<div class="clndr-next-button" role="button">&gt;</div>
+			</div>
+			<div class="clndr-content">
+				<div class="clndr-grid">
+					<div class="days-of-the-week">
+						<% daysOfTheWeek.forEach(day => { %>
+							<div class="header-day"><%= day %></div>
+						<% }); %>
+					</div>
+					<div class="days">
+						<% days.forEach(day => { %>
+							<div class="<%= day.classes %>" id="<%= day.id %>"><span class="day-number"><%= day.day %></span></div>
+						<% }); %>
+					</div>
+				</div>
+				<div class="event-listing">
+					<div class="event-listing-title">EVENTS THIS MONTH</div>
+					<% eventsThisMonth.forEach(event => { %>
+						<div class="event-item">
+							<div class="event-item-name"><%= event.title %></div>
+							<div class="event-item-location"><%= event.location %></div>
+						</div>
+					<% }); %>
+				</div>
+			</div>
+		`, data),
 		events: [{
 			date: getDateOfCurrentMonth(12),
 			title: 'Football Match',
@@ -440,38 +472,6 @@ export const FullCalendar: Story = {
 			location: 'Seahorse Club',
 		}],
 		forceSixRows: true,
-		render: data => {
-			return ejs.render(`
-				<div class="clndr-controls">
-					<div class="clndr-previous-button" role="button">&lt;</div>
-					<div class="current-month"><%= month %> <%= year %></div>
-					<div class="clndr-next-button" role="button">&gt;</div>
-				</div>
-				<div class="clndr-content">
-					<div class="clndr-grid">
-						<div class="days-of-the-week">
-							<% daysOfTheWeek.forEach(day => { %>
-								<div class="header-day"><%= day %></div>
-							<% }); %>
-						</div>
-						<div class="days">
-							<% days.forEach(day => { %>
-								<div class="<%= day.classes %>" id="<%= day.id %>"><span class="day-number"><%= day.day %></span></div>
-							<% }); %>
-						</div>
-					</div>
-					<div class="event-listing">
-						<div class="event-listing-title">EVENTS THIS MONTH</div>
-						<% eventsThisMonth.forEach(event => { %>
-							<div class="event-item">
-								<div class="event-item-name"><%= event.title %></div>
-								<div class="event-item-location"><%= event.location %></div>
-							</div>
-						<% }); %>
-					</div>
-				</div>
-			`, data);
-		},
 	},
 	render: ({locale, ...args}) => {
 		const container = document.createElement('div');
@@ -481,8 +481,131 @@ export const FullCalendar: Story = {
 	},
 }
 
+export const MiniCalendarWithClickEvent: Story = {
+	args: {
+		render: data => ejs.render(`
+			<div class="clndr-controls">
+				<div class="clndr-previous-button" role="button">&lsaquo;</div>
+				<div class="month"><%= month %></div>
+				<div class="clndr-next-button" role="button">&rsaquo;</div>
+			</div>
+			<div class="clndr-grid">
+				<div class="days-of-the-week">
+					<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }); %>
+				</div>
+				<div class="days">
+					<% days.forEach(day => { %>
+						<div class="<%= day.classes %>" role="button"><%= day.day %></div>
+					<% }); %>
+				</div>
+			</div>
+
+		`, data),
+		clickEvents: {
+			click: target => {
+				if (!target.date) {
+					return;
+				}
+
+				const eventsContainer = document.querySelector('.events');
+				const eventList = eventsContainer?.querySelector('.events-list');
+
+				if (!eventsContainer || !eventList) {
+					throw new Error('HTML not properly initialized');
+				}
+
+				const events = target.events;
+
+				if (events.length === 0) {
+					eventsContainer.classList.add('hidden');
+					eventList.innerHTML = '';
+					return;
+				}
+
+				eventsContainer.classList.remove('hidden');
+
+				let html = '';
+
+				events.forEach(event => {
+					html += `
+						<div class="event">
+							<div class="event-title">${event.title}</div>
+							<div class="event-body">${event.description}</div>
+						</div>
+					`;
+				})
+
+				eventList.innerHTML = html;
+			},
+		},
+		events: [{
+			date: getDateOfCurrentMonth(12),
+			title: 'Boogie Night',
+			description: 'Bring your vinyls.',
+		}, {
+			date: getDateOfCurrentMonth(16),
+			title: 'Walk In The Park',
+			description: 'A step in the dark!',
+		}, {
+			start: getDateOfCurrentMonth(22),
+			end: getDateOfCurrentMonth(28),
+			title: 'Trip To A Remote Island',
+			description: 'Don\'t forget to take three things.',
+		}, {
+			start: getDateOfCurrentMonth(11),
+			end: getDateOfCurrentMonth(13),
+			title: 'Prepare for exam',
+			description: 'Make sure to buy enough food.',
+		}],
+		multiDayEvents: {
+			startDate: 'start',
+			endDate: 'end',
+			singleDay: 'date',
+		},
+		trackSelectedDate: true,
+	},
+	render: ({locale, ...args}) => {
+		const container = document.createElement('div');
+		container.classList.add('mini-clndr');
+
+		container.innerHTML = `
+			<div class="clndr"></div>
+			<div class="events hidden">
+				<div class="events-header">Events</div>
+				<div class="events-list"></div>
+			</div>
+		`;
+
+		new Clndr(
+			container.querySelector('.clndr') as HTMLElement,
+			{locale: getLocale(locale), ...args}
+		);
+		return container;
+	},
+}
+
 export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 	args: {
+		render: data => ejs.render(`
+			<div class="clndr-controls">
+				<div class="clndr-previous-button" role="button">&lsaquo;</div>
+				<div class="month"><%= days[0].day %>/<%= days[0].date.getMonth() + 1 %> - <%= days[days.length - 1].day %>/<%= days[days.length - 1].date.getMonth() + 1 %></div>
+				<div class="clndr-next-button" role="button">&rsaquo;</div>
+			</div>
+			<div class="clndr-grid">
+				<div class="days-of-the-week">
+					<% daysOfTheWeek.forEach(day => { %>
+						<div class="header-day"><%= day %></div>
+					<% }); %>
+				</div>
+				<div class="days">
+					<% days.forEach(day => { %>
+						<div class="<%= day.classes %>"><%= day.day %></div>
+					<% }); %>
+				</div>
+			</div>
+			<div class="clndr-today-button" role="button">Today</div>
+		`, data),
 		lengthOfTime: {
 			days: 14,
 			interval: 7,
@@ -491,28 +614,6 @@ export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 			singleDay: 'date',
 			endDate: 'endDate',
 			startDate: 'startDate',
-		},
-		render: data => {
-			return ejs.render(`
-				<div class="clndr-controls">
-					<div class="clndr-previous-button" role="button">&lsaquo;</div>
-					<div class="month"><%= days[0].day %>/<%= days[0].date.getMonth() + 1 %> - <%= days[days.length - 1].day %>/<%= days[days.length - 1].date.getMonth() + 1 %></div>
-					<div class="clndr-next-button" role="button">&rsaquo;</div>
-				</div>
-				<div class="clndr-grid">
-					<div class="days-of-the-week">
-						<% daysOfTheWeek.forEach(day => { %>
-							<div class="header-day"><%= day %></div>
-						<% }); %>
-					</div>
-					<div class="days">
-						<% days.forEach(day => { %>
-							<div class="<%= day.classes %>"><%= day.day %></div>
-						<% }); %>
-					</div>
-				</div>
-				<div class="clndr-today-button" role="button">Today</div>
-			`, data);
 		},
 	},
 	render: ({locale, ...args}) => {
@@ -525,6 +626,30 @@ export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 
 export const TwoMonthsWithOneMonthPagination: Story = {
 	args: {
+		render: data => ejs.render(`
+			<div class="clndr-controls top">
+				<div class="clndr-previous-button" role="button">&lsaquo;</div>
+				<div class="clndr-next-button" role="button">&rsaquo;</div>
+			</div>
+			<% months.forEach(cal => { %>
+				<div class="cal">
+					<div class="month"><%= format(cal.month, 'MMMM') %></div>
+					<div class="clndr-grid">
+						<div class="days-of-the-week">
+							<% daysOfTheWeek.forEach(day => { %>
+								<div class="header-day"><%= day %></div>
+							<% }); %>
+						</div>
+						<div class="days">
+							<% cal.days.forEach(day => { %>
+									<div class="<%= day.classes %>"><%= day.day %></div>
+							<% }); %>
+						</div>
+					</div>
+				</div>
+			<% }); %>
+			<div class="clndr-today-button" role="button">Today</div>
+		`, data),
 		lengthOfTime: {
 			months: 2,
 			interval: 1,
@@ -532,32 +657,6 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 		multiDayEvents: {
 			endDate: 'endDate',
 			startDate: 'startDate',
-		},
-		render: data => {
-			return ejs.render(`
-				<div class="clndr-controls top">
-					<div class="clndr-previous-button" role="button">&lsaquo;</div>
-					<div class="clndr-next-button" role="button">&rsaquo;</div>
-				</div>
-				<% months.forEach(cal => { %>
-					<div class="cal">
-						<div class="month"><%= format(cal.month, 'MMMM') %></div>
-						<div class="clndr-grid">
-							<div class="days-of-the-week">
-								<% daysOfTheWeek.forEach(day => { %>
-									<div class="header-day"><%= day %></div>
-								<% }); %>
-							</div>
-							<div class="days">
-								<% cal.days.forEach(day => { %>
-										<div class="<%= day.classes %>"><%= day.day %></div>
-								<% }); %>
-							</div>
-						</div>
-					</div>
-				<% }); %>
-				<div class="clndr-today-button" role="button">Today</div>
-			`, data);
 		},
 	},
 	render: ({locale, ...args}) => {
