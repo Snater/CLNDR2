@@ -5,7 +5,7 @@
 CLNDR2 is a straightforward framework-agnostic front-end calendar widget operating on HTML templates powered by the template rendering engine of your choice.<br />
 It is the unofficial successor to awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you intend to migrate from CLNDR to CLNDR2, check out the [migration notes](#key-differences-to-clndr).
 
-**<p style="text-align: center;">👉 Demos and additional documentation: https://clndr2.snater.com</p>**
+**👉 Demos and additional documentation: https://clndr2.snater.com**
 
 ---
 
@@ -52,9 +52,9 @@ Of course, you can also precompile your template, so compilation would not need 
 
 ```typescript
 import Clndr from 'clndr2';
-import {render} from 'ejs';
+import {compile} from 'ejs';
 
-const compiled = ejs.compile('... your template HTML string ...');
+const compiled = compile('... your template HTML string ...');
 
 const clndr = new Clndr(
   document.getElementById('calendar'),
@@ -639,6 +639,9 @@ $('#calendar').clndr({template: $('#calendar-template').html()});
 The CLNDR2 equivalent is (using Underscore in the example):
 
 ```typescript
+import Clndr from 'clndr2';
+import _ from 'underscore';
+
 const template = _.compile(document.getElementById('calendar-template').innerHTML);
 
 const clndr = new Clndr(document.getElementById('calendar'), {
