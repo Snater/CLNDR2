@@ -7,11 +7,7 @@ import ejs from 'ejs';
 
 import type {ClndrOptions} from './types';
 
-// To allow selecting a locale, fake the locale option to be string and pick the actual date-fns
-// locale in the stories
-type OptionsForStory = Omit<ClndrOptions, 'locale'> & {locale: string}
-
-const meta: Meta<OptionsForStory> = {
+const meta: Meta<ClndrOptions> = {
 	title: 'CLNDR2',
 	argTypes: {
 		render: {
@@ -179,6 +175,7 @@ const meta: Meta<OptionsForStory> = {
 		locale: {
 			control: 'select',
 			options: ['enUS', 'de', 'es', 'fr'],
+			mapping: {enUS, de, es, fr},
 			description: 'A date-fns locale used for formatting Date strings.',
 			table: {
 				defaultValue: {
@@ -356,7 +353,6 @@ const meta: Meta<OptionsForStory> = {
 		],
 		forceSixRows: false,
 		ignoreInactiveDaysInSelection: false,
-		locale: 'enUS',
 		ready: action('ready'),
 		useTouchEvents: false,
 		weekOffset: 0,
@@ -372,20 +368,7 @@ const meta: Meta<OptionsForStory> = {
 };
 
 export default meta;
-type Story = StoryObj<OptionsForStory>;
-
-function getLocale(id?: string) {
-	if (!id) {
-		return undefined;
-	}
-
-	return[
-		{id: 'de', value: de},
-		{id: 'enUS', value: enUS},
-		{id: 'es', value: es},
-		{id: 'fr', value: fr},
-	].find(locale => locale.id === id)?.value;
-}
+type Story = StoryObj<ClndrOptions>;
 
 function getDateOfCurrentMonth(day: number) {
 	return new Date(new Date().getFullYear(), new Date().getMonth(), day + 1)
@@ -403,11 +386,11 @@ export const Default: Story = {
 		},
 		showAdjacentMonths: true,
 	},
-	render: ({locale, ...args}) => {
+	render: args => {
 		const container = document.createElement('div');
 		container.classList.add('cal1');
 
-		const clndr = new Clndr(container, {locale: getLocale(locale), ...args});
+		const clndr = new Clndr(container, args);
 
 		document.addEventListener('keydown', event => {
 			if (event.key === 'ArrowLeft') {
@@ -473,10 +456,10 @@ export const FullCalendar: Story = {
 		}],
 		forceSixRows: true,
 	},
-	render: ({locale, ...args}) => {
+	render: args => {
 		const container = document.createElement('div');
 		container.classList.add('full-clndr');
-		new Clndr(container, {locale: getLocale(locale), ...args});
+		new Clndr(container, args);
 		return container;
 	},
 }
@@ -564,7 +547,7 @@ export const MiniCalendarWithClickEvent: Story = {
 		},
 		trackSelectedDate: true,
 	},
-	render: ({locale, ...args}) => {
+	render: args => {
 		const container = document.createElement('div');
 		container.classList.add('mini-clndr');
 
@@ -576,10 +559,7 @@ export const MiniCalendarWithClickEvent: Story = {
 			</div>
 		`;
 
-		new Clndr(
-			container.querySelector('.clndr') as HTMLElement,
-			{locale: getLocale(locale), ...args}
-		);
+		new Clndr(container.querySelector('.clndr') as HTMLElement, args);
 		return container;
 	},
 }
@@ -616,10 +596,10 @@ export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 			startDate: 'startDate',
 		},
 	},
-	render: ({locale, ...args}) => {
+	render: args => {
 		const container = document.createElement('div');
 		container.classList.add('cal2');
-		new Clndr(container, {locale: getLocale(locale), ...args});
+		new Clndr(container, args);
 		return container;
 	},
 };
@@ -659,10 +639,10 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 			startDate: 'startDate',
 		},
 	},
-	render: ({locale, ...args}) => {
+	render: args => {
 		const container = document.createElement('div');
 		container.classList.add('cal3');
-		new Clndr(container, {locale: getLocale(locale), ...args});
+		new Clndr(container, args);
 		return container;
 	},
 };
