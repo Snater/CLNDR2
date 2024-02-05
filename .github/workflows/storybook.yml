@@ -1,0 +1,18 @@
+name: Deploy Storybook
+on:
+  release:
+    types: [published]
+jobs:
+  deploy-storybook:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: npm run build-storybook
+    - name: Upload
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      with:
+        server: ${{secrets.FTP_SERVER}}
+        username: ${{secrets.FTP_USERNAME}}
+        password: ${{secrets.FTP_PASSWORD}}
+        local-dir: ./storybook-static/
+        dangerous-clean-slate: true
