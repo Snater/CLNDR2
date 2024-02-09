@@ -482,10 +482,11 @@ export const MiniCalendarWithClickEvent: Story = {
 					<% }); %>
 				</div>
 			</div>
-
 		`, data),
 		clickEvents: {
 			click: target => {
+				action('click')(target);
+
 				if (!target.date) {
 					return;
 				}
@@ -520,6 +521,16 @@ export const MiniCalendarWithClickEvent: Story = {
 
 				eventList.innerHTML = html;
 			},
+			today: action('today'),
+			nextMonth: action('nextMonth'),
+			previousMonth: action('previousMonth'),
+			onMonthChange: action('onMonthChange'),
+			nextYear: action('nextYear'),
+			previousYear: action('previousYear'),
+			onYearChange: action('onYearChange'),
+			nextInterval: action('nextInterval'),
+			previousInterval: action('previousInterval'),
+			onIntervalChange: action('onIntervalChange'),
 		},
 		events: [{
 			date: getDateOfCurrentMonth(12),
