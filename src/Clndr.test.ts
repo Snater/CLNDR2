@@ -281,6 +281,7 @@ describe('Setup', () => {
 	});
 
 	test('Custom week offset bigger than actual week length', () => {
+		// @ts-expect-error Intentionally provide weekOffset > 6
 		clndr = new Clndr(container, {render: provideRender(), weekOffset: 10});
 
 		expect(screen.queryAllByText('S')[0]).toBe(container.querySelector('.header-day'));
@@ -879,8 +880,14 @@ describe('Events', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			doneRendering: handleDoneRendering,
-			ready: handleReady,
+			doneRendering: function() {
+				expect(this).toBeInstanceOf(Clndr);
+				handleDoneRendering();
+			},
+			ready: function() {
+				expect(this).toBeInstanceOf(Clndr);
+				handleReady();
+			},
 		});
 
 		expect(handleDoneRendering).toHaveBeenCalledTimes(1);
@@ -946,12 +953,30 @@ describe('Events', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
-				onMonthChange: handleMonthChange,
-				previousMonth: handlePreviousMonth,
-				nextMonth: handleNextMonth,
-				onYearChange: handleYearChange,
-				previousYear: handlePreviousYear,
-				nextYear: handleNextYear,
+				onMonthChange: function() {
+					expect(this).toBeInstanceOf(Clndr);
+					handleMonthChange();
+				},
+				previousMonth: function() {
+					expect(this).toBeInstanceOf(Clndr);
+					handlePreviousMonth();
+				},
+				nextMonth: function() {
+					expect(this).toBeInstanceOf(Clndr);
+					handleNextMonth();
+				},
+				onYearChange: function() {
+					expect(this).toBeInstanceOf(Clndr);
+					handleYearChange();
+				},
+				previousYear: function() {
+					expect(this).toBeInstanceOf(Clndr);
+					handlePreviousYear();
+				},
+				nextYear: function() {
+					expect(this).toBeInstanceOf(Clndr);
+					handleNextYear();
+				},
 			},
 			startWithMonth: '1992-12',
 		});

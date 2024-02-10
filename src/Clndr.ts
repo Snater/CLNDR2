@@ -815,23 +815,23 @@ class Clndr {
 		};
 
 		if (eventTarget.closest('.' + targets.todayButton)) {
-			this.todayAction(customEvent);
+			this.today({withCallbacks: true});
 		}
 
 		if (eventTarget.closest('.' + targets.nextButton)) {
-			this.forwardAction(customEvent);
+			this.forward({withCallbacks: true});
 		}
 
 		if (eventTarget.closest('.' + targets.previousButton)) {
-			this.backAction(customEvent);
+			this.back({withCallbacks: true});
 		}
 
 		if (eventTarget.closest('.' + targets.nextYearButton)) {
-			this.nextYearAction(customEvent);
+			this.nextYear({withCallbacks: true});
 		}
 
 		if (eventTarget.closest('.' + targets.previousYearButton)) {
-			this.previousYearAction(customEvent);
+			this.previousYear({withCallbacks: true});
 		}
 	}
 
@@ -855,10 +855,10 @@ class Clndr {
 			}
 
 			if (currentTarget.classList.contains(classes.lastMonth)) {
-				this.backActionWithContext(this);
+				this.back({withCallbacks: true});
 				return true;
 			} else if (currentTarget.classList.contains(classes.nextMonth)) {
-				this.forwardActionWithContext(this);
+				this.forward({withCallbacks: true});
 				return true;
 			}
 		};
@@ -909,9 +909,9 @@ class Clndr {
 
 		if (this.options.adjacentDaysChangeMonth) {
 			if (currentTarget.classList.contains(this.options.classes.lastMonth)) {
-				this.backActionWithContext(this);
+				this.back({withCallbacks: true});
 			} else if (currentTarget.classList.contains(this.options.classes.nextMonth)) {
-				this.forwardActionWithContext(this);
+				this.forward({withCallbacks: true});
 			}
 		}
 	}
@@ -962,15 +962,14 @@ class Clndr {
 
 	/**
 	 * Triggers any applicable events given a change in the calendar's start and end dates.
-	 * @param ctx Contains the current (changed) start and end date.
 	 * @param orig Contains the original start and end dates.
 	 */
-	private triggerEvents(ctx: Clndr, orig: ClndrEventOrigin) {
-		const timeOpt = ctx.options.lengthOfTime;
-		const eventsOpt = ctx.options.clickEvents;
+	private triggerEvents(orig: ClndrEventOrigin) {
+		const timeOpt = this.options.lengthOfTime;
+		const eventsOpt = this.options.clickEvents;
 		const newInt = {
-			end: ctx.interval.end,
-			start: ctx.interval.start,
+			end: this.interval.end,
+			start: this.interval.start,
 		};
 
 		// If any of the change conditions have been hit, trigger the relevant events
@@ -998,46 +997,46 @@ class Clndr {
 			const prevInterval = isBefore(newInt.start, orig.start);
 			const intervalChanged = nextInterval || prevInterval;
 			const intervalArg: [Date, Date] = [
-				new Date(ctx.interval.start),
-				new Date(ctx.interval.end),
+				new Date(this.interval.start),
+				new Date(this.interval.end),
 			];
 
 			if (nextInterval && eventsOpt.nextInterval) {
-				eventsOpt.nextInterval.apply(ctx, intervalArg);
+				eventsOpt.nextInterval.apply(this, intervalArg);
 			}
 
 			if (prevInterval && eventsOpt.previousInterval) {
-				eventsOpt.previousInterval.apply(ctx, intervalArg);
+				eventsOpt.previousInterval.apply(this, intervalArg);
 			}
 
 			if (intervalChanged && eventsOpt.onIntervalChange) {
-				eventsOpt.onIntervalChange.apply(ctx, intervalArg);
+				eventsOpt.onIntervalChange.apply(this, intervalArg);
 			}
 		} else {
-			const monthArg: [Date] = [new Date(ctx.interval.month)];
+			const monthArg: [Date] = [new Date(this.interval.month)];
 
 			if (nextMonth && eventsOpt.nextMonth) {
-				eventsOpt.nextMonth.apply(ctx, monthArg);
+				eventsOpt.nextMonth.apply(this, monthArg);
 			}
 
 			if (prevMonth && eventsOpt.previousMonth) {
-				eventsOpt.previousMonth.apply(ctx, monthArg);
+				eventsOpt.previousMonth.apply(this, monthArg);
 			}
 
 			if (monthChanged && eventsOpt.onMonthChange) {
-				eventsOpt.onMonthChange.apply(ctx, monthArg);
+				eventsOpt.onMonthChange.apply(this, monthArg);
 			}
 
 			if (nextYear && eventsOpt.nextYear) {
-				eventsOpt.nextYear.apply(ctx, monthArg);
+				eventsOpt.nextYear.apply(this, monthArg);
 			}
 
 			if (prevYear && eventsOpt.previousYear) {
-				eventsOpt.previousYear.apply(ctx, monthArg);
+				eventsOpt.previousYear.apply(this, monthArg);
 			}
 
 			if (yearChanged && eventsOpt.onYearChange) {
-				eventsOpt.onYearChange.apply(ctx, monthArg);
+				eventsOpt.onYearChange.apply(this, monthArg);
 			}
 		}
 	}
@@ -1121,77 +1120,44 @@ class Clndr {
 		return Clndr.mergeOptions<Day>(defaults, options);
 	}
 
-	private backAction(event: ClndrInteractionEvent) {
-		const ctx = event.data.context;
-
-		ctx.backActionWithContext(event.data.context);
-	}
-
-	private backActionWithContext(ctx: Clndr) {
-		ctx.back({withCallbacks: true}, ctx);
-	}
-
-	private forwardAction(event: ClndrInteractionEvent) {
-		const ctx = event.data.context;
-
-		ctx.forwardActionWithContext(ctx);
-	}
-
-	private forwardActionWithContext(ctx: Clndr) {
-		ctx.forward({withCallbacks: true}, ctx);
-	}
-
-	private previousYearAction(event: ClndrInteractionEvent) {
-		event.data.context.previousYear({withCallbacks: true}, event.data.context);
-	}
-
-	private nextYearAction(event: ClndrInteractionEvent) {
-		event.data.context.nextYear({withCallbacks: true}, event.data.context);
-	}
-
-	private todayAction(event: ClndrInteractionEvent) {
-		event.data.context.today({withCallbacks: true}, event.data.context);
-	}
-
 	/**
-	 * Main action to go backward one or more periods.
+	 * Action to go backward one or more periods.
 	 */
-	back(options: ClndrNavigationOptions = {}, ctx?: Clndr) {
-		ctx = ctx || this;
-		const timeOpt = ctx.options.lengthOfTime;
+	back(options: ClndrNavigationOptions = {}) {
+		const timeOpt = this.options.lengthOfTime;
 		const defaults: ClndrNavigationOptions = {withCallbacks: false};
 		const orig: ClndrEventOrigin = {
-			end: ctx.interval.end,
-			start: ctx.interval.start,
+			end: this.interval.end,
+			start: this.interval.start,
 		};
 
 		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
 
-		if (!ctx.constraints.previous) {
-			return ctx;
+		if (!this.constraints.previous) {
+			return this;
 		}
 
 		if (timeOpt.days && timeOpt.interval) {
 			// Shift the interval by days
-			ctx.interval.start = startOfDay(subDays(ctx.interval.start, timeOpt.interval));
-			ctx.interval.end = endOfDay(addDays(ctx.interval.start, timeOpt.days - 1));
-			ctx.interval.month = new Date(ctx.interval.start);
+			this.interval.start = startOfDay(subDays(this.interval.start, timeOpt.interval));
+			this.interval.end = endOfDay(addDays(this.interval.start, timeOpt.days - 1));
+			this.interval.month = new Date(this.interval.start);
 		} else {
 			// Shift the interval by a month (or several months)
-			ctx.interval.start = startOfMonth(subMonths(ctx.interval.start, timeOpt.interval));
-			ctx.interval.end = endOfMonth(
-				subDays(addMonths(ctx.interval.start, timeOpt.months || timeOpt.interval), 1)
+			this.interval.start = startOfMonth(subMonths(this.interval.start, timeOpt.interval));
+			this.interval.end = endOfMonth(
+				subDays(addMonths(this.interval.start, timeOpt.months || timeOpt.interval), 1)
 			);
-			ctx.interval.month = new Date(ctx.interval.start);
+			this.interval.month = new Date(this.interval.start);
 		}
 
-		ctx.render();
+		this.render();
 
 		if (options.withCallbacks) {
-			ctx.triggerEvents(ctx, orig);
+			this.triggerEvents(orig);
 		}
 
-		return ctx;
+		return this;
 	}
 
 	/**
@@ -1202,44 +1168,43 @@ class Clndr {
 	}
 
 	/**
-	 * Main action to go forward one or more periods.
+	 * Action to go forward one or more periods.
 	 */
-	forward(options: ClndrNavigationOptions = {}, ctx?: Clndr) {
-		ctx = ctx || this;
-		const timeOpt = ctx.options.lengthOfTime;
+	forward(options: ClndrNavigationOptions = {}) {
+		const timeOpt = this.options.lengthOfTime;
 		const defaults: ClndrNavigationOptions = {withCallbacks: false};
 		const orig: ClndrEventOrigin = {
-			end: ctx.interval.end,
-			start: ctx.interval.start,
+			end: this.interval.end,
+			start: this.interval.start,
 		};
 
 		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
 
-		if (!ctx.constraints.next) {
-			return ctx;
+		if (!this.constraints.next) {
+			return this;
 		}
 
 		if (timeOpt.days && timeOpt.interval) {
 			// Shift the interval by days
-			ctx.interval.start = startOfDay(addDays(ctx.interval.start, timeOpt.interval));
-			ctx.interval.end = endOfDay(addDays(ctx.interval.start, timeOpt.days - 1));
-			ctx.interval.month = new Date(ctx.interval.start);
+			this.interval.start = startOfDay(addDays(this.interval.start, timeOpt.interval));
+			this.interval.end = endOfDay(addDays(this.interval.start, timeOpt.days - 1));
+			this.interval.month = new Date(this.interval.start);
 		} else {
 			// Shift the interval by a month (or several months)
-			ctx.interval.start = startOfMonth(addMonths(ctx.interval.start, timeOpt.interval));
-			ctx.interval.end = endOfMonth(
-				subDays(addMonths(ctx.interval.start, timeOpt.months || timeOpt.interval), 1)
+			this.interval.start = startOfMonth(addMonths(this.interval.start, timeOpt.interval));
+			this.interval.end = endOfMonth(
+				subDays(addMonths(this.interval.start, timeOpt.months || timeOpt.interval), 1)
 			);
-			ctx.interval.month = new Date(ctx.interval.start);
+			this.interval.month = new Date(this.interval.start);
 		}
 
-		ctx.render();
+		this.render();
 
 		if (options.withCallbacks) {
-			ctx.triggerEvents(ctx, orig);
+			this.triggerEvents(orig);
 		}
 
-		return ctx;
+		return this;
 	}
 
 	/**
@@ -1250,107 +1215,107 @@ class Clndr {
 	}
 
 	/**
-	 * Main action to go back one year.
+	 * Action to go back one year.
 	 */
-	previousYear(options: ClndrNavigationOptions = {}, ctx?: Clndr) {
-		ctx = ctx || this;
+	previousYear(options: ClndrNavigationOptions = {}) {
 		const defaults: ClndrNavigationOptions = {	withCallbacks: false};
 		const orig: ClndrEventOrigin = {
-			end: ctx.interval.end,
-			start: ctx.interval.start,
+			end: this.interval.end,
+			start: this.interval.start,
 		};
 
 		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
 
-		if (!ctx.constraints.previousYear) {
-			return ctx;
+		if (!this.constraints.previousYear) {
+			return this;
 		}
 
-		ctx.interval.month = subYears(ctx.interval.month, 1);
-		ctx.interval.start = subYears(ctx.interval.start, 1);
-		ctx.interval.end = subYears(ctx.interval.end, 1);
+		this.interval.month = subYears(this.interval.month, 1);
+		this.interval.start = subYears(this.interval.start, 1);
+		this.interval.end = subYears(this.interval.end, 1);
 
-		ctx.render();
+		this.render();
 
 		if (options.withCallbacks) {
-			ctx.triggerEvents(ctx, orig);
+			this.triggerEvents(orig);
 		}
 
-		return ctx;
+		return this;
 	}
 
 	/**
-	 * Main action to go forward one year.
+	 * Action to go forward one year.
 	 */
-	nextYear(options: ClndrNavigationOptions = {}, ctx?: Clndr) {
-		ctx = ctx || this;
+	nextYear(options: ClndrNavigationOptions = {}) {
 		const defaults: ClndrNavigationOptions = {withCallbacks: false};
 		const orig: ClndrEventOrigin = {
-			end: ctx.interval.end,
-			start: ctx.interval.start,
+			end: this.interval.end,
+			start: this.interval.start,
 		};
 
 		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
 
-		if (!ctx.constraints.nextYear) {
-			return ctx;
+		if (!this.constraints.nextYear) {
+			return this;
 		}
 
-		ctx.interval.month = addYears(ctx.interval.month, 1);
-		ctx.interval.start = addYears(ctx.interval.start, 1);
-		ctx.interval.end = addYears(ctx.interval.end, 1);
+		this.interval.month = addYears(this.interval.month, 1);
+		this.interval.start = addYears(this.interval.start, 1);
+		this.interval.end = addYears(this.interval.end, 1);
 
-		ctx.render();
+		this.render();
 
 		if (options.withCallbacks) {
-			ctx.triggerEvents(ctx, orig);
+			this.triggerEvents(orig);
 		}
 
-		return ctx;
+		return this;
 	}
 
-	today(options: ClndrNavigationOptions = {}, ctx?: Clndr) {
-		ctx = ctx || this;
-		const timeOpt = ctx.options.lengthOfTime;
+	today(options: ClndrNavigationOptions = {}) {
+		const timeOpt = this.options.lengthOfTime;
 		const defaults: ClndrNavigationOptions = {withCallbacks: false};
 		const orig: ClndrEventOrigin = {
-			end: ctx.interval.end,
-			start: ctx.interval.start,
+			end: this.interval.end,
+			start: this.interval.start,
 		};
 
 		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
 
 		// Only used for legacy month view
-		ctx.interval.month = startOfMonth(new Date());
+		this.interval.month = startOfMonth(new Date());
 
 		if (timeOpt.days) {
 			// If there was a startDate specified, its weekday should be figured out to use that as the
 			// starting point of the interval. If not, go to today.weekday(0).
-			ctx.interval.start = startOfDay(setDay(
+			this.interval.start = startOfDay(setDay(
 				new Date(),
 				timeOpt.startDate ? getDay(new Date(timeOpt.startDate)) : 0
 			));
 
-			ctx.interval.end = endOfDay(addDays(ctx.interval.start, timeOpt.days - 1));
+			this.interval.end = endOfDay(addDays(this.interval.start, timeOpt.days - 1));
 		} else {
-			ctx.interval.start = startOfMonth(new Date());
-			ctx.interval.end = endOfMonth(
-				subDays(addMonths(ctx.interval.start, timeOpt.months || timeOpt.interval), 1)
+			this.interval.start = startOfMonth(new Date());
+			this.interval.end = endOfMonth(
+				subDays(addMonths(this.interval.start, timeOpt.months || timeOpt.interval), 1)
 			);
 		}
 
 		// No need to re-render if the month was not changed
-		if (!isSameMonth(ctx.interval.start, orig.start) || !isSameMonth(ctx.interval.end, orig.end)) {
-			ctx.render();
+		if (
+			!isSameMonth(this.interval.start, orig.start)
+			|| !isSameMonth(this.interval.end, orig.end)
+		) {
+			this.render();
 		}
 
 		// Fire the today event handler regardless of any change
 		if (options.withCallbacks) {
-			if (ctx.options.clickEvents.today) {
-				ctx.options.clickEvents.today.apply(ctx, [new Date(ctx.interval.month)]);
+			if (this.options.clickEvents.today) {
+				this.options.clickEvents.today.apply(this, [new Date(this.interval.month)]);
 			}
 
-			ctx.triggerEvents(ctx, orig);
+			this.triggerEvents(orig);
 		}
 	}
 
@@ -1378,7 +1343,7 @@ class Clndr {
 		this.render();
 
 		if (options && options.withCallbacks) {
-			this.triggerEvents(this, orig);
+			this.triggerEvents(orig);
 		}
 
 		return this;
@@ -1397,7 +1362,7 @@ class Clndr {
 		this.render();
 
 		if (options && options.withCallbacks) {
-			this.triggerEvents(this, orig);
+			this.triggerEvents(orig);
 		}
 
 		return this;
@@ -1435,7 +1400,7 @@ class Clndr {
 		this.render();
 
 		if (options && options.withCallbacks) {
-			this.triggerEvents(this, orig);
+			this.triggerEvents(orig);
 		}
 
 		return this;
