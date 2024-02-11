@@ -1,5 +1,4 @@
 import {FormatOptions, Locale} from 'date-fns';
-import Clndr from './Clndr';
 
 export type InternalOptions = {
 	render: (data: ClndrTemplateData) => string
@@ -23,7 +22,7 @@ export type InternalOptions = {
 	showAdjacentMonths: boolean
 	startWithMonth?: Date | string
 	targets: {[key in TargetOption]: string}
-	trackSelectedDate: boolean
+	trackSelectedDate: TrackSelectedDateOption
 	useTouchEvents: boolean
 	weekOffset: WeekOffset
 }
@@ -56,6 +55,8 @@ export type InternalClndrEvent = {
 	_clndrEndDateObject: Date
 	originalEvent: ClndrEvent
 }
+
+export type TrackSelectedDateOption = boolean | 'all'
 
 export type WeekOffset = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
@@ -161,8 +162,6 @@ export type ClndrEventOrigin = {
 	start: Date
 	end: Date
 }
-
-export type ClndrInteractionEvent = Event & {data: {context: Clndr}}
 
 export type ClndrNavigationOptions = {withCallbacks?: boolean}
 

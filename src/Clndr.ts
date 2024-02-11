@@ -32,7 +32,6 @@ import {
 import type {
 	ClndrEvent,
 	ClndrEventOrigin,
-	ClndrInteractionEvent,
 	ClndrNavigationOptions,
 	ClndrOptions,
 	ClndrTarget,
@@ -804,15 +803,6 @@ class Clndr {
 
 		this.handleDayEvent(event);
 		this.handleEmptyEvent(event);
-
-		// Bind the previous, next and today buttons. The current context is passed along with the
-		// event, so that it can update this instance.
-
-		const customEvent = event as ClndrInteractionEvent;
-
-		customEvent.data = {
-			context: this,
-		};
 
 		if (eventTarget.closest('.' + targets.todayButton)) {
 			this.today({withCallbacks: true});
