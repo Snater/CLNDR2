@@ -22,7 +22,7 @@ export type InternalOptions = {
 	showAdjacentMonths: boolean
 	startWithMonth?: Date | string
 	targets: {[key in TargetOption]: string}
-	trackSelectedDate: TrackSelectedDateOption
+	trackSelectedDate: boolean
 	useTouchEvents: boolean
 	weekOffset: WeekOffset
 }
@@ -55,8 +55,6 @@ export type InternalClndrEvent = {
 	_clndrEndDateObject: Date
 	originalEvent: ClndrEvent
 }
-
-export type TrackSelectedDateOption = boolean | 'all'
 
 export type WeekOffset = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
