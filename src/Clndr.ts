@@ -829,56 +829,58 @@ class Clndr {
 	 * Handles click event on day boxes.
 	 */
 	private handleDayEvent(event: Event) {
-		const eventTarget = event.target as HTMLElement;
-		const classes = this.options.classes;
-		const currentTarget = eventTarget.closest('.' + this.options.targets.day)
+		const eventTarget = event.target as HTMLElement | null;
+		const currentTarget = eventTarget?.closest(
+			'.' + this.options.targets.day
+		) as HTMLElement | null;
 
 		if (!currentTarget) {
 			return;
 		}
 
-		// If adjacentDaysChangeMonth is on, the month might need to be changed when clicking on a day.
-		// Forward and Back trigger render() to be called.
-		const handleAdjacentDay = () => {
-			if (!this.options.adjacentDaysChangeMonth) {
-				return;
-			}
+		this.navigatePerAdjacentDay(currentTarget);
 
-			if (currentTarget.classList.contains(classes.lastMonth)) {
-				this.back({withCallbacks: true});
-				return true;
-			} else if (currentTarget.classList.contains(classes.nextMonth)) {
-				this.forward({withCallbacks: true});
-				return true;
-			}
-		};
+		this.updateSelectedDate(currentTarget);
 
-		// If trackSelectedDate setting is enabled, the selected date is to be stored as a string. When
-		// render() is called, the selected date will get the additional classes added. If there is no
-		// re-render, the classes need to be added manually.
-		if (this.options.trackSelectedDate
-			&& !(
-				this.options.ignoreInactiveDaysInSelection
-				&& currentTarget.classList.contains(classes.inactive)
-			)
-		) {
-			// If there was no re-render, manually update classes
-			if (!handleAdjacentDay()) {
-				// Remember new selected date
-				this.options.selectedDate = this.getTargetDateString(currentTarget as HTMLElement);
-				this.element.querySelectorAll('.' + classes.selected)
-					.forEach(node => node.classList.remove(classes.selected));
-				currentTarget.classList.add(classes.selected);
-			}
-		} else {
-			handleAdjacentDay();
-		}
-
-		// Trigger click event after any selected date updates
 		if (this.options.clickEvents.click) {
-			const target = this.buildTargetObject(currentTarget as HTMLElement, true);
+			const target = this.buildTargetObject(currentTarget, true);
 			this.options.clickEvents.click.apply(this, [target]);
 		}
+	}
+
+	/**
+	 * Navigates to another month according to the target element provided.
+	 */
+	private navigatePerAdjacentDay(target: HTMLElement) {
+		if (!this.options.adjacentDaysChangeMonth) {
+			return;
+		}
+
+		if (target.classList.contains(this.options.classes.lastMonth)) {
+			this.back({withCallbacks: true});
+		} else if (target.classList.contains(this.options.classes.nextMonth)) {
+			this.forward({withCallbacks: true});
+		}
+	}
+
+	/**
+	 * Updates the selected date according to the target element provided.
+	 */
+	private updateSelectedDate(target: HTMLElement) {
+		if (!this.options.trackSelectedDate
+			|| (
+				this.options.ignoreInactiveDaysInSelection
+				&& target.classList.contains(this.options.classes.inactive)
+			)
+		) {
+			return;
+		}
+
+		this.options.selectedDate = this.getTargetDateString(target);
+		this.element.querySelectorAll('.' + this.options.classes.selected)
+			.forEach(node => node.classList.remove(this.options.classes.selected));
+		this.element.querySelector('.calendar-day-' + this.options.selectedDate)?.classList
+			.add(this.options.classes.selected);
 	}
 
 	/**

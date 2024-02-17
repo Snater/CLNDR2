@@ -434,9 +434,9 @@ describe('Setup', () => {
 		await user.click(screen.getByText('12'));
 		expect(screen.getByText('12').parentNode).toHaveClass('selected');
 		await user.click(screen.getByText('31'));
-		expect(screen.getByText('31').parentNode).not.toHaveClass('selected');
+		expect(screen.getByText('31').parentNode).toHaveClass('selected');
 		await user.click(screen.getByText('next'));
-		expect(screen.getByText('12').parentNode).toHaveClass('selected');
+		expect(screen.getByText('12').parentNode).not.toHaveClass('selected');
 	});
 
 	test('Define just a date after the current date', async() => {
