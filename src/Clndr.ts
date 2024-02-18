@@ -843,7 +843,7 @@ class Clndr {
 		this.updateSelectedDate(currentTarget);
 
 		if (this.options.clickEvents.click) {
-			const target = this.buildTargetObject(currentTarget, true);
+			const target = this.buildTargetObject(currentTarget);
 			this.options.clickEvents.click.apply(this, [target]);
 		}
 	}
@@ -887,15 +887,17 @@ class Clndr {
 	 * Handles click event on empty day boxes.
 	 */
 	private handleEmptyEvent(event: Event) {
-		const eventTarget = event.target as HTMLElement;
-		const currentTarget = eventTarget.closest('.' + this.options.targets.empty);
+		const eventTarget = event.target as HTMLElement | null;
+		const currentTarget = eventTarget?.closest(
+			'.' + this.options.targets.empty
+		) as HTMLElement | null;
 
 		if (!currentTarget) {
 			return;
 		}
 
 		if (this.options.clickEvents.click) {
-			const target = this.buildTargetObject(currentTarget as HTMLElement, false);
+			const target = this.buildTargetObject(currentTarget);
 			this.options.clickEvents.click.apply(this, [target]);
 		}
 
@@ -909,35 +911,18 @@ class Clndr {
 	}
 
 	/**
-	 * Creates the object to be returned along with click events.
+	 * Creates the object to be returned along click events.
 	 */
-	private buildTargetObject(currentTarget: HTMLElement, targetWasDay: boolean): ClndrTarget {
-		const dateString = this.getTargetDateString(currentTarget);
-		const target: ClndrTarget = {
-			date: dateString ? new Date(dateString) : null,
-			events: [],
-			element: currentTarget,
+	private buildTargetObject(target: HTMLElement): ClndrTarget {
+		const targetWasDay = target.classList.contains(this.options.targets.day);
+		const dateString = this.getTargetDateString(target);
+		const date = dateString ? new Date(dateString) : null;
+
+		return {
+			date,
+			events: targetWasDay && date ? this.getEventsOfDate(date) : [],
+			element: target,
 		};
-
-		// No reason to figure out the target day's event if click was just on an empty box or if there
-		// are no events at all
-		if (!targetWasDay || !target.date || this.events.length === 0) {
-			return target;
-		}
-
-		const targetEndDate = endOfDay(target.date);
-
-		target.events = this.events.filter(event => {
-			if (this.options.multiDayEvents) {
-				return target.date
-					&& !isAfter(event._clndrStartDateObject, targetEndDate)
-					&& !isAfter(target.date, event._clndrEndDateObject);
-			} else {
-				return dateString === format(event._clndrStartDateObject, 'yyyy-MM-dd');
-			}
-		}).map(event => event.originalEvent);
-
-		return target;
 	}
 
 	/**
@@ -950,6 +935,24 @@ class Clndr {
 		return index === -1
 			? undefined
 			: target.className.substring(index + 13, index + 23);
+	}
+
+	private getEventsOfDate(date: Date): ClndrEvent[] {
+		if (this.events.length === 0) {
+			return [];
+		}
+
+		const targetEndDate = endOfDay(date);
+
+		return this.events.filter(event => {
+			if (this.options.multiDayEvents) {
+				return date
+					&& !isAfter(event._clndrStartDateObject, targetEndDate)
+					&& !isAfter(date, event._clndrEndDateObject);
+			} else {
+				return isSameDay(date, event._clndrStartDateObject);
+			}
+		}).map(event => event.originalEvent);
 	}
 
 	/**
