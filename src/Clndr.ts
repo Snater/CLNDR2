@@ -149,14 +149,9 @@ class Clndr {
 	private eventsNextMonth: InternalClndrEvent[];
 	private eventsThisInterval: InternalClndrEvent[];
 	private events: InternalClndrEvent[];
-	/**
-	 * Helper object for days to be able to resolve their classes correctly.
-	 */
-	private _currentIntervalStart: Date;
 
 	constructor(element: HTMLElement, options: ClndrOptions) {
 		this.element = element;
-		this._currentIntervalStart = new Date();
 		this.eventsLastMonth = [];
 		this.eventsNextMonth = [];
 		this.eventsThisInterval = [];
@@ -417,11 +412,12 @@ class Clndr {
 	}
 
 	private createDaysObject(startDate: Date, endDate: Date) {
+
+		const currentIntervalStart = new Date(startDate);
+
 		// This array will contain the data of the entire grid (including blank spaces)
 		let days: Day[] = [];
 		let dateIterator;
-
-		this._currentIntervalStart = new Date(startDate);
 
 		this.parseEvents(startDate, endDate);
 
@@ -437,7 +433,11 @@ class Clndr {
 		if (!this.options.lengthOfTime.days && remainingDaysOfPreviousMonth > 0) {
 			days = [
 				...days,
-				...this.aggregateDaysOfPreviousMonth(startDate, remainingDaysOfPreviousMonth),
+				...this.aggregateDaysOfPreviousMonth(
+					startDate,
+					remainingDaysOfPreviousMonth,
+					currentIntervalStart
+				),
 			];
 		}
 
@@ -445,7 +445,7 @@ class Clndr {
 		dateIterator = new Date(startDate);
 
 		while (isBefore(dateIterator, endDate) || isSameDay(dateIterator, endDate)) {
-			days.push(this.createDayObject(dateIterator, this.eventsThisInterval));
+			days.push(this.createDayObject(dateIterator, this.eventsThisInterval, currentIntervalStart));
 			dateIterator = addDays(dateIterator, 1);
 		}
 
@@ -453,7 +453,14 @@ class Clndr {
 		const remainingDaysOfNextMonth = 7 - days.length % 7;
 
 		if (!this.options.lengthOfTime.days && remainingDaysOfNextMonth < 7) {
-			days = [...days, ...this.aggregateDaysOfNextMonth(dateIterator, remainingDaysOfNextMonth)];
+			days = [
+				...days,
+				...this.aggregateDaysOfNextMonth(
+					dateIterator,
+					remainingDaysOfNextMonth,
+					currentIntervalStart
+				),
+			];
 			dateIterator = addDays(dateIterator, remainingDaysOfNextMonth + 1);
 		}
 
@@ -461,7 +468,14 @@ class Clndr {
 		const remainingDaysForSixRows = 42 - days.length;
 
 		if (this.options.forceSixRows && remainingDaysForSixRows > 0) {
-			days = [...days, ...this.aggregateDaysOfNextMonth(dateIterator, remainingDaysForSixRows)];
+			days = [
+				...days,
+				...this.aggregateDaysOfNextMonth(
+					dateIterator,
+					remainingDaysForSixRows,
+					currentIntervalStart
+				),
+			];
 		}
 
 		return days;
@@ -513,13 +527,17 @@ class Clndr {
 		});
 	}
 
-	private aggregateDaysOfPreviousMonth(startDate: Date, count: number) {
+	private aggregateDaysOfPreviousMonth(
+		startDate: Date,
+		count: number,
+		currentIntervalStart: Date
+	) {
 		const days: Day[] = [];
 
 		for (let i = 1; i <= count; i++) {
 			if (this.options.showAdjacentMonths) {
 				const day = subDays(new Date(getYear(startDate), getMonth(startDate), i), count);
-				days.push(this.createDayObject(day, this.eventsLastMonth));
+				days.push(this.createDayObject(day, this.eventsLastMonth, currentIntervalStart));
 			} else {
 				days.push(
 					this.calendarDay({
@@ -532,12 +550,14 @@ class Clndr {
 		return days;
 	}
 
-	private aggregateDaysOfNextMonth(startDate: Date, count: number) {
+	private aggregateDaysOfNextMonth(startDate: Date, count: number, currentIntervalStart: Date) {
 		const days: Day[] = [];
 
 		for (let i = 0; i < count; i++) {
 			if (this.options.showAdjacentMonths) {
-				days.push(this.createDayObject(addDays(startDate, i), this.eventsNextMonth));
+				days.push(
+					this.createDayObject(addDays(startDate, i), this.eventsNextMonth, currentIntervalStart)
+				);
 			} else {
 				days.push(
 					this.calendarDay({
@@ -549,7 +569,11 @@ class Clndr {
 		return days;
 	}
 
-	private createDayObject(day: Date, monthEvents: InternalClndrEvent[]) {
+	private createDayObject(
+		day: Date,
+		monthEvents: InternalClndrEvent[],
+		currentIntervalStart: Date
+	) {
 		const now = new Date();
 		const dayEnd = endOfDay(day);
 		const classes = [this.options.targets.day];
@@ -580,18 +604,18 @@ class Clndr {
 		}
 
 		if (!this.options.lengthOfTime.days) {
-			if (getMonth(this._currentIntervalStart) > getMonth(day)) {
+			if (getMonth(currentIntervalStart) > getMonth(day)) {
 				classes.push(this.options.classes.adjacentMonth);
 				properties.isAdjacentMonth = true;
 
-				getYear(this._currentIntervalStart) === getYear(day)
+				getYear(currentIntervalStart) === getYear(day)
 					? classes.push(this.options.classes.lastMonth)
 					: classes.push(this.options.classes.nextMonth);
-			} else if (getMonth(this._currentIntervalStart) < getMonth(day)) {
+			} else if (getMonth(currentIntervalStart) < getMonth(day)) {
 				classes.push(this.options.classes.adjacentMonth);
 				properties.isAdjacentMonth = true;
 
-				getYear(this._currentIntervalStart) === getYear(day)
+				getYear(currentIntervalStart) === getYear(day)
 					? classes.push(this.options.classes.nextMonth)
 					: classes.push(this.options.classes.lastMonth);
 			}
