@@ -64,14 +64,14 @@ const clndr = new Clndr(
 
 ## Dependencies
 
-- [date-fns](https://date-fns.org/) is required for date calculations.
+[date-fns](https://date-fns.org/) is required for date calculations and is installed as peer dependency. The advantage of using date-fns is, by using native `Date` objects, not locking in to a specific date model or library, as well as date-fns supporting tree-shaking, so CLNDR2 along with date-fns will have a minimal footprint in your build.
 
 ## Installation
 
-CLNDR2 can be installed via [NPM](https://npmjs.org):
+CLNDR2 can be installed via [NPM](https://www.npmjs.com/package/clndr2):
 
 ```shell
-npm install clndr2
+npm i clndr2
 ```
 
 ## Templating
@@ -118,7 +118,7 @@ new Clndr(container, {
 
 The `render` function must return the HTML result of the rendering operation.
 
-CLNDR has been tested successfully with [doT.js](http://olado.github.io/doT/), [Hogan.js](http://twitter.github.io/hogan.js/), [Handlebars.js](http://handlebarsjs.com/), [Mustache.js](https://github.com/janl/mustache.js/), and [Knockout.js](https://github.com/karl-sjogren/clndr-knockout), so CLNDR2 is supposed to support these template engines as well. Please get in touch if you have success with other languages and they will be documented here.
+CLNDR has been tested successfully with [doT.js](http://olado.github.io/doT/), [Hogan.js](http://twitter.github.io/hogan.js/), [Handlebars.js](http://handlebarsjs.com/), [Mustache.js](https://github.com/janl/mustache.js/), and [Knockout.js](https://github.com/karl-sjogren/clndr-knockout), so CLNDR2 is supposed to support these template engines as well. Please get in touch if you have success with other languages for them to be documented here.
 
 ## Calendar Events
 
@@ -539,7 +539,7 @@ new Clndr(container, {
   },
   clickEvents: {
     click: target => {
-      if (!$(target.element).hasClass('inactive')) {
+      if (!target.element.classList.contains('inactive')) {
         console.log('You picked a valid date!');
       } else {
         console.log('That date is outside of the range.');
@@ -618,7 +618,7 @@ For applying additional internationalization, the `extras` option can be used to
 
 ## Key differences to CLNDR
 
-- Instead of a jQuery plugin, CLNDR2 provides an ES module.
+- Instead of a jQuery plugin, CLNDR2 provides a `CLNDR` class per an ES module.
 - The dependency on jQuery is removed.
 - The moment dependency is replaced by date-fns.
 - There is no soft dependency on Underscore anymore, the `template` option as well as the default template was removed. You just have to provide your own `render` function.
@@ -658,7 +658,7 @@ const clndr = new Clndr(document.getElementById('calendar'), {
 - If you want CLNDR2 to localize the day heading and the month name passed to the template, provide a date-fns locale per the new `locale` option.
 
 
-[npm-url]: https://npmjs.org/package/clndr2
+[npm-url]: https://www.npmjs.com/package/clndr2
 [npm-version-image]: https://badge.fury.io/js/clndr2.svg
 
 [github-action-image]: https://github.com/Snater/CLNDR2/actions/workflows/test.yml/badge.svg
