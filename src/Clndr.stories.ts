@@ -67,14 +67,13 @@ const meta: Meta<ClndrOptions> = {
 			},
 		},
 		dateParameter: {
-			description: 'The key of the date in an event object when setting up the calendar for *single-day* events, i.e. setting this option to `\'dateParam\'`, the events array should be `{dateParam: Date | string, ...}[]`.',
-			control: 'text',
+			description: 'The key(s) used to extract dates from the `events` array. For a calendar with *single-day* events only, this may be a plain string, i.e. setting this option to `\'dateParam\'`, the events array should be `{dateParam: Date | string, ...}[]`. Provide an object to configure multi-day events, i.e. setting `{startDate: \'start\', endDate: \'end\'}`, the events array should be `{start: Date | string, end: Date | string, ...}[]`. Use the `date` field to also enable single-day events in a multi-day calendar, i.e. `{date: \'day\', startDate: \'start\', endDate: \'end\'}`.',
 			table: {
 				defaultValue: {
-					summary: '\'date\'',
+					summary: '{date: \'date\', startDate: \'startDate\', endDate: \'endDate\'},',
 				},
 				type: {
-					summary: 'string',
+					summary: 'string | {date?: string, startDate?: string, endDate?: string}',
 				},
 			},
 		},
@@ -105,7 +104,7 @@ const meta: Meta<ClndrOptions> = {
 			},
 		},
 		events: {
-			description: 'Array of event objects. When setting up the calendar for using single-day events, each event object should contain a "date" field (the name can be customized per `dateParameter`). When setting up the calendar for multi-day events, start and end date have to be provided per keys set per multiDayEvents option.',
+			description: 'Array of event objects. When setting up the calendar for using single-day events, each event object should contain a "date" field (the name can be customized per `dateParameter`). When setting up the calendar for multi-day events, start and end date have to be provided per keys set per `dateParameter` option.',
 			table: {
 				defaultValue: {
 					summary: '[]',
@@ -184,18 +183,6 @@ const meta: Meta<ClndrOptions> = {
 				type: {
 					summary: 'Locale',
 					detail: 'date-fns locale object',
-				},
-			},
-		},
-		multiDayEvents: {
-			description: 'Set up the calender for *multi-day* events. The values specify the keys used in the `events` array, i.e. setting `{startDate: \'start\', endDate: \'end\'}`, the events array should be `{start: Date | string, end: Date | string, ...}[]`. Use the `singleDay` field to also enable single-day events in a multi-day calendar.',
-			control: 'object',
-			table: {
-				defaultValue: {
-					summary: 'undefined',
-				},
-				type: {
-					summary: 'Partial<{startDate: string, endDate: string} & {singleDay: string}',
 				},
 			},
 		},
@@ -338,7 +325,11 @@ const meta: Meta<ClndrOptions> = {
 			previousInterval: action('previousInterval'),
 			onIntervalChange: action('onIntervalChange'),
 		},
-		dateParameter: 'date',
+		dateParameter: {
+			date: 'date',
+			startDate: 'startDate',
+			endDate: 'endDate',
+		},
 		doneRendering: action('doneRendering'),
 		events: [
 			{
@@ -379,11 +370,6 @@ function getDateOfCurrentMonth(day: number) {
 export const Default: Story = {
 	args: {
 		adjacentDaysChangeMonth: false,
-		multiDayEvents: {
-			singleDay: 'date',
-			endDate: 'endDate',
-			startDate: 'startDate',
-		},
 		showAdjacentMonths: true,
 	},
 	render: args => {
@@ -533,29 +519,24 @@ export const MiniCalendarWithClickEvent: Story = {
 			onIntervalChange: action('onIntervalChange'),
 		},
 		events: [{
-			date: getDateOfCurrentMonth(12),
 			title: 'Boogie Night',
 			description: 'Bring your vinyls.',
+			date: getDateOfCurrentMonth(12),
 		}, {
-			date: getDateOfCurrentMonth(16),
 			title: 'Walk In The Park',
 			description: 'A step in the dark!',
+			date: getDateOfCurrentMonth(16),
 		}, {
-			start: getDateOfCurrentMonth(22),
-			end: getDateOfCurrentMonth(28),
 			title: 'Trip To A Remote Island',
 			description: 'Don\'t forget to take three things.',
+			startDate: getDateOfCurrentMonth(22),
+			endDate: getDateOfCurrentMonth(28),
 		}, {
-			start: getDateOfCurrentMonth(11),
-			end: getDateOfCurrentMonth(13),
 			title: 'Prepare for exam',
 			description: 'Make sure to buy enough food.',
+			startDate: getDateOfCurrentMonth(11),
+			endDate: getDateOfCurrentMonth(13),
 		}],
-		multiDayEvents: {
-			startDate: 'start',
-			endDate: 'end',
-			singleDay: 'date',
-		},
 		trackSelectedDate: true,
 	},
 	render: args => {
@@ -601,11 +582,6 @@ export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 			days: 14,
 			interval: 7,
 		},
-		multiDayEvents: {
-			singleDay: 'date',
-			endDate: 'endDate',
-			startDate: 'startDate',
-		},
 	},
 	render: args => {
 		const container = document.createElement('div');
@@ -644,10 +620,6 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 		lengthOfTime: {
 			months: 2,
 			interval: 1,
-		},
-		multiDayEvents: {
-			endDate: 'endDate',
-			startDate: 'startDate',
 		},
 	},
 	render: args => {

@@ -117,7 +117,6 @@ let clndr: Clndr;
 beforeAll(() => {
 	jest.useFakeTimers({now: new Date(2024, 0, 18, 12)});
 	jest.spyOn(Date, 'now').mockImplementation(() => new Date('2024-01-18T12:00:00.000Z').valueOf());
-	jest.spyOn(console, 'warn').mockImplementation(jest.fn);
 	user = userEvent.setup({delay: null});
 });
 
@@ -180,21 +179,21 @@ describe('Setup', () => {
 	test('Basic multi-day events', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
+			dateParameter: {
+				startDate: 'startDate',
+				endDate: 'endDate',
+			},
 			events: [
 				{
 					title: 'Multi1',
-					endDate: '1992-10-17',
 					startDate: '1992-10-12',
+					endDate: '1992-10-17',
 				}, {
 					title: 'Multi2',
-					endDate: '1992-10-27',
 					startDate: '1992-10-24',
+					endDate: '1992-10-27',
 				},
 			],
-			multiDayEvents: {
-				endDate: 'endDate',
-				startDate: 'startDate',
-			},
 			startWithMonth: '1992-10',
 		});
 
@@ -208,6 +207,10 @@ describe('Setup', () => {
 	test('Multi-day events with partial dates', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
+			dateParameter: {
+				startDate: 'startDate',
+				endDate: 'endDate',
+			},
 			events: [
 				{
 					title: 'Multi1',
@@ -217,10 +220,6 @@ describe('Setup', () => {
 					endDate: '2024-01-12',
 				},
 			],
-			multiDayEvents: {
-				endDate: 'endDate',
-				startDate: 'startDate',
-			},
 		});
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).toHaveClass('event');
@@ -230,41 +229,28 @@ describe('Setup', () => {
 		expect(container.querySelector('.calendar-day-2024-01-02')).not.toHaveClass('event');
 	});
 
-	test('Multi-day event with no date', () => {
-		clndr = new Clndr(container, {
-			render: provideRender(),
-			events: [{title: 'Multi'}],
-			multiDayEvents: {
-				endDate: 'endDate',
-				startDate: 'startDate',
-			},
-		});
-
-		expect(container.querySelectorAll('.event').length).toBe(0);
-	});
-
 	test('Mixing single-day and multi-day events', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
+			dateParameter: {
+				date: 'date',
+				startDate: 'startDate',
+				endDate: 'endDate',
+			},
 			events: [
 				{
 					title: 'Multi1',
-					endDate: '2024-01-17',
 					startDate: '2024-01-12',
+					endDate: '2024-01-17',
 				}, {
 					title: 'Multi2',
-					endDate: '2024-01-27',
 					startDate: '2024-01-24',
+					endDate: '2024-01-27',
 				}, {
 					title: 'Single',
 					date: '2024-01-19',
 				},
 			],
-			multiDayEvents: {
-				singleDay: 'date',
-				endDate: 'endDate',
-				startDate: 'startDate',
-			},
 		});
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).toHaveClass('event');
@@ -281,10 +267,14 @@ describe('Setup', () => {
 	});
 
 	test('Custom week offset bigger than actual week length', () => {
+		const mockWarn = jest.fn();
+		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
+
 		// @ts-expect-error Intentionally provide weekOffset > 6
 		clndr = new Clndr(container, {render: provideRender(), weekOffset: 10});
 
 		expect(screen.queryAllByText('S')[0]).toBe(container.querySelector('.header-day'));
+		expect(mockWarn).toHaveBeenCalledTimes(1);
 	});
 
 	test('Custom week offset while not showing adjacent months', () => {
@@ -453,8 +443,8 @@ describe('Setup', () => {
 	test('Custom dateParameter', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			events: [{customDateParameter: '1992-10-15'}],
 			dateParameter: 'customDateParameter',
+			events: [{customDateParameter: '1992-10-15'}],
 			startWithMonth: '1992-10',
 		});
 
@@ -1023,15 +1013,15 @@ describe('Events', () => {
 			clickEvents: {
 				click: handleClick,
 			},
+			dateParameter: {
+				startDate: 'startDate',
+				endDate: 'endDate',
+			},
 			events: [{
 				title: 'Multi-day event',
-				endDate: '1992-10-17',
 				startDate: '1992-10-12',
+				endDate: '1992-10-17',
 			}],
-			multiDayEvents: {
-				endDate: 'endDate',
-				startDate: 'startDate',
-			},
 			startWithMonth: '1992-10',
 		})
 
@@ -1095,7 +1085,7 @@ describe('Data manipulations', () => {
 	});
 
 	test('Add an event with forcing no re-rendering', () => {
-		const clndr = new Clndr(container, {render: provideRender()});
+		clndr = new Clndr(container, {render: provideRender()});
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 
@@ -1107,10 +1097,10 @@ describe('Data manipulations', () => {
 	test('Add a single-day event with multi-day events being configured', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			multiDayEvents: {
-				singleDay: 'date',
-				endDate: 'endDate',
+			dateParameter: {
+				date: 'date',
 				startDate: 'startDate',
+				endDate: 'endDate',
 			},
 		});
 
@@ -1139,16 +1129,16 @@ describe('Data manipulations', () => {
 	test('Set all events with multi-day events being configured', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			events: [{
-				title: 'Multi',
-				endDate: '2024-01-17',
-				startDate: '2024-01-12',
-			}],
-			multiDayEvents: {
-				singleDay: 'date',
+			dateParameter: {
+				date: 'date',
 				startDate: 'startDate',
 				endDate: 'endDate',
 			},
+			events: [{
+				title: 'Multi',
+				startDate: '2024-01-12',
+				endDate: '2024-01-17',
+			}],
 		});
 
 		expect(container.querySelector('.calendar-day-2024-01-15')).toHaveClass('event');
@@ -1185,28 +1175,28 @@ describe('Custom interval', () => {
 	test('lengthOfTime option', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
+			dateParameter: {
+				startDate: 'startDate',
+				endDate: 'endDate',
+			},
 			events: [{
 				title: 'Event in previous month',
-				endDate: '1992-09-27',
 				startDate: '1992-09-24',
+				endDate: '1992-09-27',
 			}, {
 				title: 'Event in this month',
-				endDate: '1992-10-27',
 				startDate: '1992-10-24',
+				endDate: '1992-10-27',
 			}, {
 				title: 'Event in next month',
-				endDate: '1992-11-27',
 				startDate: '1992-11-24',
+				endDate: '1992-11-27',
 			}, {
 				title: 'Event in next month interval',
-				endDate: '1993-01-27',
 				startDate: '1993-01-24',
+				endDate: '1993-01-27',
 			}],
 			lengthOfTime: {months: 3},
-			multiDayEvents: {
-				endDate: 'endDate',
-				startDate: 'startDate',
-			},
 			startWithMonth: '1992-10',
 		});
 
@@ -1256,8 +1246,8 @@ describe('Constraints', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			constraints: {
-				startDate: '1992-10-15',
 				endDate: '1992-11-15',
+				startDate: '1992-10-15',
 			},
 		});
 
@@ -1276,8 +1266,8 @@ describe('Constraints', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
 			constraints: {
-				startDate: '2100-01-01',
 				endDate: '2100-01-06',
+				startDate: '2100-01-01',
 			},
 			lengthOfTime: {days: 7, interval: 7},
 		});
@@ -1302,8 +1292,8 @@ describe('Constraints', () => {
 				startDate: '1992-10-15',
 			},
 			constraints: {
-				endDate: '1992-09-15',
 				startDate: '1992-09-01',
+				endDate: '1992-09-15',
 			},
 		});
 
@@ -1319,8 +1309,8 @@ describe('Constraints', () => {
 				startDate: '1992-10-15',
 			},
 			constraints: {
-				endDate: '1992-11-15',
 				startDate: '1993-11-30',
+				endDate: '1992-11-15',
 			},
 		});
 
@@ -1336,6 +1326,24 @@ describe('Handling errors', () => {
 
 		// @ts-expect-error Intentionally provide no options
 		expect(() => new Clndr(container)).toThrow();
+	});
+
+	test('Multi-day event with no date', () => {
+		const mockWarn = jest.fn();
+		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
+
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			dateParameter: {
+				date: undefined,
+				startDate: 'startDate',
+				endDate: 'endDate',
+			},
+			events: [{title: 'Multi'}],
+		});
+
+		expect(container.querySelectorAll('.event').length).toBe(0);
+		expect(mockWarn).toHaveBeenCalledTimes(1);
 	});
 
 	test('Missing CSS classes to detect month change when not showing adjacent months', async() => {
@@ -1374,47 +1382,67 @@ describe('Handling errors', () => {
 	});
 
 	test('Specifying wrong dateParameter option', () => {
-		expect(() => new Clndr(container, {
+		const mockWarn = jest.fn();
+		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
+
+		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
 			dateParameter: 'wrong',
 			events: [{date: '2024-02-19'}],
-		})).toThrow();
+		});
+
+		expect(mockWarn).toHaveBeenCalledTimes(1);
 	});
 
-	test('Specifying multi-day events without multiDayEvents option', () => {
-		expect(() => new Clndr(container, {
+	test('Specifying multi-day events without dateParameter option', () => {
+		const mockWarn = jest.fn();
+		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
+
+		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
 			dateParameter: 'wrong',
 			events: [{date: '2024-02-19'}],
-		})).toThrow();
+		});
+
+		expect(mockWarn).toHaveBeenCalledTimes(1);
 	});
 
 	test('Invalid date parameter on multi-day event', () => {
-		expect(() => new Clndr(container, {
+		const mockWarn = jest.fn();
+		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
+
+		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			dateParameter: 'wrong',
+			dateParameter: {
+				date: 'wrong',
+				startDate: 'startDate',
+				endDate: 'endDate',
+			},
 			events: [{
 				title: 'Multi1',
-				endDate: '1992-10-17',
 				startDate: {year: 1992},
+				endDate: '1992-10-17',
 			}],
-			multiDayEvents: {
-				endDate: 'endDate',
-				startDate: 'startDate',
-			},
 			startWithMonth: '1992-10',
-		})).toThrow();
+		});
+
+		expect(mockWarn).toHaveBeenCalledTimes(1);
 	});
 
 	test('Invalid date parameter on single-day event when having set up multi-day event', () => {
-		expect(() => new Clndr(container, {
+		const mockWarn = jest.fn();
+		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
+
+		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			events: [{singleDay: '1992-10-15'}],
-			multiDayEvents: {
-				singleDay: 'wrong',
+			dateParameter: {
+				date: 'wrong',
 			},
+			events: [{singleDay: '1992-10-15'}],
 			startWithMonth: '1992-10',
-		})).toThrow();
+		});
+
+		expect(mockWarn).toHaveBeenCalledTimes(1);
 	});
 
 });

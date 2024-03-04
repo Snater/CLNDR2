@@ -66,7 +66,11 @@ const defaults: InternalOptions = {
 		adjacentMonth: 'adjacent-month',
 	},
 	clickEvents: {},
-	dateParameter: 'date',
+	dateParameter: {
+		date: 'date',
+		startDate: 'startDate',
+		endDate: 'endDate',
+	},
 	events: [],
 	forceSixRows: false,
 	ignoreInactiveDaysInSelection: false,
@@ -114,7 +118,7 @@ class Clndr {
 			} else if (source[key] instanceof Date) {
 				targetObject[key] = new Date(source[key] as Date);
 			} else if (Clndr.isObject(source[key])) {
-				if (!targetObject[key]) {
+				if (!Clndr.isObject(targetObject[key])) {
 					Object.assign(targetObject, {[key]: {}});
 				}
 				Clndr.mergeDeep(
@@ -173,12 +177,9 @@ class Clndr {
 			previousYear: true,
 		};
 
-		// Store the events internally with a Day object attached to them. The Day object eases
-		// date comparisons while looping over the event dates
-		this.events = [
-			...this.addMultiDayDateObjectsToEvents(this.options.events),
-			...this.addDateObjectToEvents(this.options.events),
-		];
+		// Store the events internally with a Day object attached to them. The Day object eases date
+		// comparisons while looping over the event dates
+		this.events = this.parseToInternalEvents(this.options.events);
 
 		// Annihilate any chance for bugs by overwriting conflicting options
 		if (this.options.lengthOfTime.months) {
@@ -969,13 +970,8 @@ class Clndr {
 		const targetEndDate = endOfDay(date);
 
 		return this.events.filter(event => {
-			if (this.options.multiDayEvents) {
-				return date
-					&& !isAfter(event._clndrStartDateObject, targetEndDate)
-					&& !isAfter(date, event._clndrEndDateObject);
-			} else {
-				return isSameDay(date, event._clndrStartDateObject);
-			}
+			return !isAfter(event._clndrStartDateObject, targetEndDate)
+				&& !isAfter(date, event._clndrEndDateObject);
 		}).map(event => event.originalEvent);
 	}
 
@@ -1060,73 +1056,67 @@ class Clndr {
 		}
 	}
 
-	private addDateObjectToEvents(events: ClndrEvent[]) {
-		if (this.options.multiDayEvents) {
-			return [];
-		}
+	private parseToInternalEvents(events: ClndrEvent[]) {
+		const dateParameter = this.options.dateParameter;
 
-		return events.map((event): InternalClndrEvent => {
-			if (!(event[this.options.dateParameter] instanceof Date)
-				&& typeof event[this.options.dateParameter] !== 'string'
-			) {
-				throw new Error(
-					`event['${this.options.dateParameter}'] is required to be a Date or a string, while ${typeof event[this.options.dateParameter]} was provided`
-				);
-			}
+		return events.map(event => {
 
-			return {
-				_clndrStartDateObject: new Date(event[this.options.dateParameter] as Date | string),
-				_clndrEndDateObject: new Date(event[this.options.dateParameter] as Date | string),
-				originalEvent: event,
-			}
-		});
-	}
-
-	private addMultiDayDateObjectsToEvents(events: ClndrEvent[]) {
-		if (!this.options.multiDayEvents) {
-			return [];
-		}
-
-		const multiEvents = this.options.multiDayEvents;
-		const internalEvents: InternalClndrEvent[] = [];
-
-		events.forEach(event => {
-			const start = multiEvents.startDate && event[multiEvents.startDate];
-			const end = multiEvents.endDate && event[multiEvents.endDate];
-
-			if (!end && !start && multiEvents.singleDay) {
-				if (!(event[multiEvents.singleDay] instanceof Date)
-					&& typeof event[multiEvents.singleDay] !== 'string'
-				) {
-					throw new Error(
-						`event['${multiEvents.singleDay}'] is required to be a Date or a string, while ${typeof event[multiEvents.singleDay]} was provided`
+			if (typeof dateParameter === 'string') {
+				if (!(event[dateParameter] instanceof Date) && typeof event[dateParameter] !== 'string') {
+					console.warn(
+						`event['${dateParameter}'] is required to be a Date or a string, while ${typeof event[dateParameter]} was provided`,
+						event
 					);
+					return;
 				}
 
-				internalEvents.push({
-					_clndrEndDateObject: new Date(event[multiEvents.singleDay] as Date | string),
-					_clndrStartDateObject: new Date(event[multiEvents.singleDay] as Date | string),
+				return {
+					_clndrStartDateObject: new Date(event[dateParameter] as Date | string),
+					_clndrEndDateObject: new Date(event[dateParameter] as Date | string),
 					originalEvent: event,
-				});
+				};
+			}
+
+			const start = dateParameter.startDate && event[dateParameter.startDate];
+			const end = dateParameter.endDate && event[dateParameter.endDate];
+
+			if (!end && !start && dateParameter.date) {
+				if (!(event[dateParameter.date] instanceof Date)
+					&& typeof event[dateParameter.date] !== 'string'
+				) {
+					console.warn(
+						`event['${dateParameter.date}'] is required to be a Date or a string, while ${typeof event[dateParameter.date]} was provided`,
+						event
+					);
+					return;
+				}
+
+				return {
+					_clndrStartDateObject: new Date(event[dateParameter.date] as Date | string),
+					_clndrEndDateObject: new Date(event[dateParameter.date] as Date | string),
+					originalEvent: event,
+				};
 			} else if (end || start) {
 				if (
 					start && !(start instanceof Date) && typeof start !== 'string'
 					|| end && !(end instanceof Date) && typeof end !== 'string'
 				) {
-					throw new Error(
-						`event['${multiEvents.startDate}'] and event['${multiEvents.endDate}'] are required to be a Date or a string`
+					console.warn(
+						`event['${dateParameter.startDate}'] and event['${dateParameter.endDate}'] are required to be a Date or a string`,
+						event
 					);
+					return;
 				}
 
-				internalEvents.push({
-					_clndrEndDateObject: new Date((end || start) as Date | string),
+				return {
 					_clndrStartDateObject: new Date((start || end) as Date | string),
+					_clndrEndDateObject: new Date((end || start) as Date | string),
 					originalEvent: event,
-				});
+				};
 			}
-		});
 
-		return internalEvents;
+			console.warn('Invalid event configuration', event);
+		}).filter(event => !!event) as InternalClndrEvent[];
 	}
 
 	private calendarDay(options: Day) {
@@ -1439,11 +1429,7 @@ class Clndr {
 	 * Overwrites events and triggers re-rendering.
 	 */
 	setEvents(events: ClndrEvent[]) {
-		this.events = [
-			...this.addMultiDayDateObjectsToEvents(events),
-			...this.addDateObjectToEvents(events),
-		];
-
+		this.events = this.parseToInternalEvents(events);
 		this.render();
 
 		return this;
@@ -1454,11 +1440,7 @@ class Clndr {
 	 */
 	addEvents(events: ClndrEvent[], reRender = true) {
 		this.options.events = [...this.options.events, ...events];
-		this.events = [
-			...this.events,
-			...this.addMultiDayDateObjectsToEvents(events),
-			...this.addDateObjectToEvents(events),
-		];
+		this.events = [...this.events, ...this.parseToInternalEvents(events)];
 
 		if (reRender) {
 			this.render();

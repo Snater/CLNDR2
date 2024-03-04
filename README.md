@@ -64,7 +64,7 @@ const clndr = new Clndr(
 
 ## Dependencies
 
-[date-fns](https://date-fns.org/) is required for date calculations and is installed as peer dependency. The advantage of using date-fns is, by using native `Date` objects, not locking in to a specific date model or library, as well as date-fns supporting tree-shaking, so CLNDR2 along with date-fns will have a minimal footprint in your build.
+[date-fns](https://date-fns.org/) is required for date calculations. Instead of baking it into the CLNDR2 build, it is installed as peer dependency, so you can use date-fns in your project without duplicating functionality imported from of date-fns. date-fns operates on native `Date` objects. Hence, an advantage of using date-fns is not locking in to a specific date model or library. Additionally, by date-fns supporting tree-shaking, only the date-fns functions actually used will be included in your build, which results in a minimal footprint of CLNDR2 along with date-fns in your build.
 
 ## Installation
 
@@ -139,62 +139,58 @@ CLNDR2 looks through the objects in your events array for a `date` field unless 
 
 ### Multi-day Events
 
-Using multi-day events is activated by configuring the `multiDayEvents` option with the keys where the calendar can expect the start and end date of the events to be stored within the event objects:
+You may also provide events spanning across multiple days.
 
 ```typescript
 const template = ejs.compile(myTemplate);
 
 const lotsOfEvents = [
   {
-    end: '2013-11-08',
-    start: '2013-11-04',
     title: 'Monday to Friday Event',
+    startDate: '2013-11-04',
+    endDate: '2013-11-08',
   }, {
-    end: '2013-11-20',
-    start: '2013-11-15',
     title: 'Another Long Event',
+    startDate: '2013-11-15',
+    endDate: '2013-11-20',
   },
 ];
 
 new Clndr(document.getElementById('calendar'), {
   render: data => template(data),
   events: lotsOfEvents,
-  multiDayEvents: {
-    endDate: 'end',
-    startDate: 'start',
-  },
 });
 ```
 
-When looping through days in my template, "Monday to Friday Event" will be passed to *every single day* between the start and end date.
+When looping through days in the example template, the "Monday to Friday Event" will be passed to *every single day* between the start and end date. The keys where the calendar can expect the start and end date of the events to be stored within the event objects can be customised by configuring the `dateParameter` option.
 
 ### Mixing Multi-day and Single-day Events
 
-If you have a mix of single-day and multi-day events, you can specify a third property of `multiDayEvents` called `singleDay` that refers to the date field for a single-day event:
+Multi-day and single-day events may be mixed. In the example, the `dateParameter` option is used to specify custom keys, though you may also just use the defaults instead.
 
 ```typescript
 const mixedEvents = [
   {
-    end: '2015-11-08',
+    title: 'Monday to Friday Event',
     start: '2015-11-04',
-    title: 'Monday to Friday Event'
+    end: '2015-11-08',
   }, {
-    end: '2015-11-20',
+    title: 'Another Long Event',
     start: '2015-11-15',
-    title: 'Another Long Event'
+    end: '2015-11-20',
   }, {
     title: 'Birthday',
-    date: '2015-07-16',
+    day: '2015-07-16',
   },
 ];
 
 new Clndr(document.getElementById('calendar'), {
   render: data => template(data),
   events: mixedEvents,
-  multiDayEvents: {
-    endDate: 'end',
-    singleDay: 'date',
+  dateParameter: {
+    date: 'day',
     startDate: 'start',
+    endDate: 'end',
   },
 });
 ```
@@ -275,8 +271,15 @@ new Clndr(container, {
     endDate: '2018-01-09'
   },
 
-  // If you're supplying an events array, dateParameter points to the field in your event object
-  dateParameter: 'date',
+  // If you're supplying an events array, dateParameter configures which key(s) to look for dates
+  // in the events provided per the `events` option. You may set this to a plain string when setting
+  // up a calendar with single-day events only.
+  dateParameter: {
+    // `date` configures the key of single-day events.
+    date: 'date',
+    startDate: 'startDate',
+    endDate: 'endDate',
+  },
 
   // An array of day abbreviation labels used in the calendar header. If you provided a date-fns
   // locale per the `locale` option, it will be guessed for you.
@@ -333,16 +336,6 @@ new Clndr(container, {
   // A date-fns locale to use when formatting date strings (the month name passed to the template,
   // the day abbreveiations in the calendar header).
   locale: undefined,
-
-  // Sets up the calendar for multi-day events by specifying the keys of the start and end fields
-  // within your event objects.
-  multiDayEvents: {
-    endDate: 'endDate',
-    startDate: 'startDate',
-    // If events array also contains single-day events with a different date field, the `singleDay`
-    // property can be used to refer to these.
-    singleDay: 'date'
-  },
 
   // Callback triggered once the calendar has been initialized and rendered.
   // `this.element` refers to the parent element that holds the calendar.

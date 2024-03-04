@@ -6,7 +6,7 @@ export type InternalOptions = {
 	classes: {[key in DayStatus]: string}
 	clickEvents: ClickEvents
 	constraints?: Constraints
-	dateParameter: string
+	dateParameter: DateParameterDefinition
 	daysOfTheWeek?: DaysOfTheWeek
 	doneRendering?: () => void
 	events: ClndrEvent[]
@@ -16,7 +16,6 @@ export type InternalOptions = {
 	ignoreInactiveDaysInSelection: boolean
 	lengthOfTime: LengthOfTime
 	locale?: Locale
-	multiDayEvents?: MultiDayEventsDefinition
 	ready?: () => void
 	selectedDate?: Date | string
 	showAdjacentMonths: boolean
@@ -65,16 +64,9 @@ export type Constraints = {
 
 export type DaysOfTheWeek = [string, string, string, string, string, string, string]
 
-type MultiDayEventsDefinition = Partial<MultiDayEventDefinition & SingleDayEventDefinition>
-
-type MultiDayEventDefinition = {
-	startDate: string
-	endDate: string
-}
-
-type SingleDayEventDefinition = {
-	singleDay: string
-}
+type DateParameterDefinition = string
+	| {date: string, startDate: never, endDate: never}
+	| {date?: string, startDate: string, endDate: string}
 
 export type LengthOfTime = {
 	days?: number
