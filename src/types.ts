@@ -159,7 +159,6 @@ export type NavigationConstraint = 'next' | 'today' | 'previous' | 'nextYear' | 
 export type NavigationConstraints = {[key in NavigationConstraint]: boolean}
 
 export type Interval = {
-	month: Date
 	start: Date
 	end: Date
 }
