@@ -148,17 +148,9 @@ type Month = {
 	month: Date
 }
 
-export type ClndrEventOrigin = {
-	start: Date
-	end: Date
-}
-
 export type ClndrNavigationOptions = {withCallbacks?: boolean}
 
 export type NavigationConstraint = 'next' | 'today' | 'previous' | 'nextYear' | 'previousYear'
 export type NavigationConstraints = {[key in NavigationConstraint]: boolean}
 
-export type Interval = {
-	start: Date
-	end: Date
-}
+export type Interval = [Date, Date]
