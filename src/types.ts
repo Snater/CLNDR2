@@ -68,12 +68,13 @@ type DateParameterDefinition = string
 	| {date: string, startDate: never, endDate: never}
 	| {date?: string, startDate: string, endDate: string}
 
-export type LengthOfTime = {
-	days?: number
-	interval: number
-	months?: number
-	startDate?: Date | string
-}
+export type LengthOfTime = ({
+	days: number
+	months?: never
+} | {
+	days?: never
+	months: number
+}) & {interval: number, startDate?: Date | string}
 
 type ClickEvents = {
 	click?: (target: ClndrTarget) => void

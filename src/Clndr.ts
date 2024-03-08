@@ -73,7 +73,7 @@ const defaults: InternalOptions = {
 	events: [],
 	forceSixRows: false,
 	ignoreInactiveDaysInSelection: false,
-	lengthOfTime: {interval: 1},
+	lengthOfTime: {interval: 1, months: 1},
 	showAdjacentMonths: true,
 	targets: {
 		day: 'day',
@@ -180,11 +180,6 @@ class Clndr {
 		// comparisons while looping over the event dates
 		this.events = this.parseToInternalEvents(this.options.events);
 
-		// Annihilate any chance for bugs by overwriting conflicting options
-		if (this.options.lengthOfTime.months) {
-			this.options.lengthOfTime.days = undefined;
-		}
-
 		// To support arbitrary lengths of time, the current range is stored in addition to the current
 		// month
 		this.interval = this.initInterval(
@@ -239,7 +234,16 @@ class Clndr {
 		weekOffset: WeekOffset
 	): Interval {
 
-		if (lengthOfTime.months) {
+		if (typeof lengthOfTime.days === 'number') {
+			const start = startOfDay(lengthOfTime.startDate
+				? new Date(lengthOfTime.startDate)
+				: setDay(new Date(), weekOffset)
+			);
+
+			const end = endOfDay(addDays(start, lengthOfTime.days - 1));
+
+			return [start, end];
+		} else {
 			const start = startOfMonth(
 				new Date(lengthOfTime.startDate || startWithMonth || Date.now())
 			);
@@ -250,23 +254,6 @@ class Clndr {
 
 			return [start, end];
 		}
-
-		if (lengthOfTime.days) {
-			const start = startOfDay(lengthOfTime.startDate
-				? new Date(lengthOfTime.startDate)
-				: setDay(new Date(), weekOffset)
-			);
-
-			const end = endOfDay(addDays(start, lengthOfTime.days - 1));
-
-			return [start, end];
-		}
-
-		// No length of time specified, so we're going to default into using the current month as the
-		// time period.
-		const month = startOfMonth(new Date());
-
-		return [month, endOfMonth(month)];
 	}
 
 	private initConstraints(
@@ -667,13 +654,14 @@ class Clndr {
 			},
 		};
 
-		if (this.options.lengthOfTime.days) {
+		if (typeof this.options.lengthOfTime.days === 'number') {
 			data.days = this.createDaysObject(this.interval);
 			data.intervalEnd = this.interval[1];
 			data.numberOfRows = Math.ceil(data.days.length / 7);
 			data.intervalStart = this.interval[0];
 			data.eventsThisInterval = this.eventsThisInterval.map(event => event.originalEvent);
-		} else if (this.options.lengthOfTime.months) {
+		} else if (this.options.lengthOfTime.months > 1) {
+			// TODO: Merge `this.options.lengthOfTime.months > 1` and `else`
 			const eventsThisInterval: ClndrEvent[][] = [];
 
 			for (let i = 0; i < this.options.lengthOfTime.months; i++) {
@@ -953,7 +941,6 @@ class Clndr {
 	 * @param orig Contains the original start and end dates.
 	 */
 	private triggerEvents(orig: Interval) {
-		const timeOpt = this.options.lengthOfTime;
 		const eventsOpt = this.options.clickEvents;
 		const newInt: Interval = [this.interval[0], this.interval[1]];
 
@@ -976,50 +963,47 @@ class Clndr {
 			|| getYear(orig[1]) - getYear(newInt[1]) === 1;
 		const yearChanged = getYear(newInt[0]) !== getYear(orig[0]);
 
-		// Only configs with a time period will get the interval change event
-		if (timeOpt.days || timeOpt.months) {
-			const nextInterval = isAfter(newInt[0], orig[0]);
-			const prevInterval = isBefore(newInt[0], orig[0]);
-			const intervalChanged = nextInterval || prevInterval;
-			const intervalArg: [Date, Date] = this.interval;
+		const nextInterval = isAfter(newInt[0], orig[0]);
+		const prevInterval = isBefore(newInt[0], orig[0]);
+		const intervalChanged = nextInterval || prevInterval;
+		const intervalArg: [Date, Date] = this.interval;
 
-			if (nextInterval && eventsOpt.nextInterval) {
-				eventsOpt.nextInterval.apply(this, intervalArg);
-			}
+		if (nextInterval && eventsOpt.nextInterval) {
+			eventsOpt.nextInterval.apply(this, intervalArg);
+		}
 
-			if (prevInterval && eventsOpt.previousInterval) {
-				eventsOpt.previousInterval.apply(this, intervalArg);
-			}
+		if (prevInterval && eventsOpt.previousInterval) {
+			eventsOpt.previousInterval.apply(this, intervalArg);
+		}
 
-			if (intervalChanged && eventsOpt.onIntervalChange) {
-				eventsOpt.onIntervalChange.apply(this, intervalArg);
-			}
-		} else {
-			const monthArg: [Date] = [this.interval[0]];
+		if (intervalChanged && eventsOpt.onIntervalChange) {
+			eventsOpt.onIntervalChange.apply(this, intervalArg);
+		}
 
-			if (nextMonth && eventsOpt.nextMonth) {
-				eventsOpt.nextMonth.apply(this, monthArg);
-			}
+		const monthArg: [Date] = [this.interval[0]];
 
-			if (prevMonth && eventsOpt.previousMonth) {
-				eventsOpt.previousMonth.apply(this, monthArg);
-			}
+		if (nextMonth && eventsOpt.nextMonth) {
+			eventsOpt.nextMonth.apply(this, monthArg);
+		}
 
-			if (monthChanged && eventsOpt.onMonthChange) {
-				eventsOpt.onMonthChange.apply(this, monthArg);
-			}
+		if (prevMonth && eventsOpt.previousMonth) {
+			eventsOpt.previousMonth.apply(this, monthArg);
+		}
 
-			if (nextYear && eventsOpt.nextYear) {
-				eventsOpt.nextYear.apply(this, monthArg);
-			}
+		if (monthChanged && eventsOpt.onMonthChange) {
+			eventsOpt.onMonthChange.apply(this, monthArg);
+		}
 
-			if (prevYear && eventsOpt.previousYear) {
-				eventsOpt.previousYear.apply(this, monthArg);
-			}
+		if (nextYear && eventsOpt.nextYear) {
+			eventsOpt.nextYear.apply(this, monthArg);
+		}
 
-			if (yearChanged && eventsOpt.onYearChange) {
-				eventsOpt.onYearChange.apply(this, monthArg);
-			}
+		if (prevYear && eventsOpt.previousYear) {
+			eventsOpt.previousYear.apply(this, monthArg);
+		}
+
+		if (yearChanged && eventsOpt.onYearChange) {
+			eventsOpt.onYearChange.apply(this, monthArg);
 		}
 	}
 
@@ -1110,7 +1094,7 @@ class Clndr {
 			return this;
 		}
 
-		if (timeOpt.days && timeOpt.interval) {
+		if (typeof timeOpt.days === 'number') {
 			// Shift the interval by days
 			this.interval[0] = startOfDay(subDays(this.interval[0], timeOpt.interval));
 			this.interval[1] = endOfDay(addDays(this.interval[0], timeOpt.days - 1));
@@ -1118,7 +1102,7 @@ class Clndr {
 			// Shift the interval by a month (or several months)
 			this.interval[0] = startOfMonth(subMonths(this.interval[0], timeOpt.interval));
 			this.interval[1] = endOfMonth(
-				subDays(addMonths(this.interval[0], timeOpt.months || timeOpt.interval), 1)
+				subDays(addMonths(this.interval[0], timeOpt.months), 1)
 			);
 		}
 
@@ -1152,7 +1136,7 @@ class Clndr {
 			return this;
 		}
 
-		if (timeOpt.days && timeOpt.interval) {
+		if (typeof timeOpt.days === 'number') {
 			// Shift the interval by days
 			this.interval[0] = startOfDay(addDays(this.interval[0], timeOpt.interval));
 			this.interval[1] = endOfDay(addDays(this.interval[0], timeOpt.days - 1));
@@ -1160,7 +1144,7 @@ class Clndr {
 			// Shift the interval by a month (or several months)
 			this.interval[0] = startOfMonth(addMonths(this.interval[0], timeOpt.interval));
 			this.interval[1] = endOfMonth(
-				subDays(addMonths(this.interval[0], timeOpt.months || timeOpt.interval), 1)
+				subDays(addMonths(this.interval[0], timeOpt.months), 1)
 			);
 		}
 
@@ -1237,7 +1221,7 @@ class Clndr {
 
 		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
 
-		if (timeOpt.days) {
+		if (typeof timeOpt.days === 'number') {
 			// If there was a startDate specified, its weekday should be figured out to use that as the
 			// starting point of the interval. If not, go to today.weekday(0).
 			this.interval[0] = startOfDay(setDay(
@@ -1249,7 +1233,7 @@ class Clndr {
 		} else {
 			this.interval[0] = startOfMonth(new Date());
 			this.interval[1] = endOfMonth(
-				subDays(addMonths(this.interval[0], timeOpt.months || timeOpt.interval), 1)
+				subDays(addMonths(this.interval[0], timeOpt.months), 1)
 			);
 		}
 
@@ -1278,15 +1262,13 @@ class Clndr {
 		const timeOpt = this.options.lengthOfTime;
 		const orig: Interval = [this.interval[0], this.interval[1]];
 
-		if (timeOpt.days || timeOpt.months) {
-			console.warn(
-				'You are using a custom date interval. Use Clndr.setIntervalStart(startDate) instead.'
-			);
-			return this;
+		if (typeof timeOpt.days === 'number') {
+			this.interval[0] = setMonth(this.interval[0], newMonth);
+			this.interval[1] = endOfDay(addDays(this.interval[0], timeOpt.days - 1));
+		} else {
+			this.interval[0] = startOfMonth(setMonth(this.interval[0], newMonth));
+			this.interval[1] = endOfMonth(this.interval[0]);
 		}
-
-		this.interval[0] = startOfMonth(setMonth(this.interval[0], newMonth));
-		this.interval[1] = endOfMonth(this.interval[0]);
 
 		this.render();
 
@@ -1319,20 +1301,13 @@ class Clndr {
 		const timeOpt = this.options.lengthOfTime;
 		const orig: Interval = [this.interval[0], this.interval[1]];
 
-		if (!timeOpt.days && !timeOpt.months) {
-			console.warn(
-				'You are not using a custom date interval. Use Clndr.setMonth(new Month) or Clndr.setYear(newYear) instead.'
-			);
-			return this;
-		}
-
-		if (timeOpt.days) {
+		if (typeof timeOpt.days === 'number') {
 			this.interval[0] = startOfDay(new Date(newDate));
 			this.interval[1] = endOfDay(addDays(this.interval[0], timeOpt.days - 1));
 		} else {
 			this.interval[0] = startOfMonth(new Date(newDate));
 			this.interval[1] = endOfMonth(
-				subDays(addMonths(this.interval[0], timeOpt.months as number), 1)
+				subDays(addMonths(this.interval[0], timeOpt.months), 1)
 			);
 		}
 

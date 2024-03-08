@@ -381,18 +381,18 @@ describe('Setup', () => {
 	});
 
 	test('Use touch events', () => {
-		const handleMonthChange = jest.fn();
+		const handleIntervalChange = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
-				onMonthChange: handleMonthChange,
+				onIntervalChange: handleIntervalChange,
 			},
 			useTouchEvents: true,
 		});
 
 		fireEvent.touchStart(screen.getByText('next'));
-		expect(handleMonthChange).toHaveBeenCalledTimes(1);
+		expect(handleIntervalChange).toHaveBeenCalledTimes(1);
 	});
 
 	test('Track selected date while inactive days should be ignored in selection', async() => {
@@ -663,11 +663,13 @@ describe('Navigation', () => {
 
 	test('Programmatically trigger today() with callbacks', () => {
 		const handleToday = jest.fn();
+		const handleIntervalChange = jest.fn();
 		const handleYearChange = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
+				onIntervalChange: handleIntervalChange,
 				onYearChange: handleYearChange,
 				today: handleToday,
 			},
@@ -678,6 +680,7 @@ describe('Navigation', () => {
 
 		expect(handleToday).toHaveBeenCalledTimes(1);
 		expect(handleYearChange).toHaveBeenCalledTimes(1);
+		expect(handleIntervalChange).toHaveBeenCalledTimes(1);
 	});
 
 	test('Go to today while having a custom interval with a start date being set', () => {
@@ -725,11 +728,13 @@ describe('Navigation', () => {
 	})
 
 	test('Programmatically set month with callbacks', () => {
+		const handleIntervalChange = jest.fn();
 		const handleMonthChange = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
+				onIntervalChange: handleIntervalChange,
 				onMonthChange: handleMonthChange,
 			},
 			startWithMonth: '1992-10',
@@ -739,15 +744,18 @@ describe('Navigation', () => {
 		clndr.setMonth(0, {withCallbacks: true});
 		expect(screen.getByText('January 1992')).toBeInTheDocument();
 
+		expect(handleIntervalChange).toHaveBeenCalledTimes(1);
 		expect(handleMonthChange).toHaveBeenCalledTimes(1);
 	});
 
 	test('Programmatically set month with empty options', () => {
+		const handleIntervalChange = jest.fn();
 		const handleMonthChange = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
+				onIntervalChange: handleIntervalChange,
 				onMonthChange: handleMonthChange,
 			},
 			startWithMonth: '1992-10',
@@ -757,31 +765,48 @@ describe('Navigation', () => {
 		clndr.setMonth(0, {});
 		expect(screen.getByText('January 1992')).toBeInTheDocument();
 
+		expect(handleIntervalChange).toHaveBeenCalledTimes(0);
 		expect(handleMonthChange).toHaveBeenCalledTimes(0);
 	});
 
-	test('Try programmatically setting month while having configured a custom interval', () => {
-		const mockWarn = jest.fn();
-		console.warn = mockWarn;
-
+	test('Programmatically set month while having configured a custom month interval', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
 			lengthOfTime: {
 				months: 2,
+				startDate: '1992-10-01',
 			},
 		});
 
-		expect(mockWarn).toHaveBeenCalledTimes(0);
+		expect(screen.getByText('October 1992')).toBeInTheDocument();
+		expect(screen.getByText('November 1992')).toBeInTheDocument();
 		clndr.setMonth(4);
-		expect(mockWarn).toHaveBeenCalledTimes(1);
+		expect(screen.getByText('May 1992')).toBeInTheDocument();
+		expect(screen.getByText('June 1992')).toBeInTheDocument();
+	});
+
+	test('Programmatically set month while having configured a custom day interval', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneWeekTemplate),
+			lengthOfTime: {
+				days: 7,
+				startDate: '1992-10-01',
+			},
+		});
+
+		expect(screen.getByText('10/01 - 10/07')).toBeInTheDocument();
+		clndr.setMonth(4);
+		expect(screen.getByText('05/01 - 05/07')).toBeInTheDocument();
 	});
 
 	test('Programmatically set year with callbacks', () => {
+		const handleIntervalChange = jest.fn();
 		const handleYearChange = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
+				onIntervalChange: handleIntervalChange,
 				onYearChange: handleYearChange,
 			},
 			startWithMonth: '1992-10',
@@ -791,15 +816,18 @@ describe('Navigation', () => {
 		clndr.setYear(1991, {withCallbacks: true});
 		expect(screen.getByText('October 1991')).toBeInTheDocument();
 
+		expect(handleIntervalChange).toHaveBeenCalledTimes(1);
 		expect(handleYearChange).toHaveBeenCalledTimes(1);
 	});
 
 	test('Programmatically set year with empty options', () => {
+		const handleIntervalChange = jest.fn();
 		const handleYearChange = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
+				onIntervalChange: handleIntervalChange,
 				onYearChange: handleYearChange,
 			},
 			startWithMonth: '1992-10',
@@ -809,21 +837,19 @@ describe('Navigation', () => {
 		clndr.setYear(1991);
 		expect(screen.getByText('October 1991')).toBeInTheDocument();
 
+		expect(handleIntervalChange).toHaveBeenCalledTimes(0);
 		expect(handleYearChange).toHaveBeenCalledTimes(0);
 	});
 
-	test('Try programmatically set new interval while there is a custom interval configured', () => {
-		const mockWarn = jest.fn();
-		console.warn = mockWarn;
-
+	test('Programmatically set new interval on default configuration', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			startWithMonth: '1992-10',
 		});
 
-		expect(mockWarn).toHaveBeenCalledTimes(0);
+		expect(screen.getByText('October 1992')).toBeInTheDocument();
 		clndr.setIntervalStart('2000-10-15');
-		expect(mockWarn).toHaveBeenCalledTimes(1);
+		expect(screen.getByText('October 2000')).toBeInTheDocument();
 	});
 
 	test('Programmatically set new interval with having a custom month interval configured', () => {
@@ -933,6 +959,7 @@ describe('Events', () => {
 	});
 
 	test('Trigger default change callbacks', () => {
+		const handleIntervalChange = jest.fn();
 		const handleMonthChange = jest.fn();
 		const handlePreviousMonth = jest.fn();
 		const handleNextMonth = jest.fn();
@@ -943,6 +970,10 @@ describe('Events', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
+				onIntervalChange: function() {
+					expect(this).toBeInstanceOf(Clndr);
+					handleIntervalChange();
+				},
 				onMonthChange: function() {
 					expect(this).toBeInstanceOf(Clndr);
 					handleMonthChange();
@@ -974,6 +1005,7 @@ describe('Events', () => {
 		clndr.next({withCallbacks: true});
 		clndr.back({withCallbacks: true});
 
+		expect(handleIntervalChange).toHaveBeenCalledTimes(2);
 		expect(handleMonthChange).toHaveBeenCalledTimes(2);
 		expect(handlePreviousMonth).toHaveBeenCalledTimes(1);
 		expect(handleNextMonth).toHaveBeenCalledTimes(1);
@@ -1435,6 +1467,7 @@ describe('Handling errors', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
+			// @ts-expect-error Intentionally provide invalid dateParameter configuration
 			dateParameter: {
 				date: 'wrong',
 			},

@@ -315,13 +315,13 @@ new Clndr(container, {
   // option) should be selectable, if the `trackSelectedDate` option is activated.
   ignoreInactiveDaysInSelection: false,
 
-  // Render a custom interval. That is, if the calendar should render one or more months, or one or
-  // more days at once. Use the "interval option" to define the paging interval when navigating
-  // forward or backward. If both months and days are null, it will default to the standard monthly
-  // view.
+  // Customize the calendar's interval. That is, if the calendar should render more than one months,
+  // or, instead, one or more days at once. Use the "interval option" to define the paging interval
+  // when navigating forward or backward. Note that either "months" or "days" needs to be defined,
+  // while both should never be set at the same time.
   lengthOfTime: {
-    // Set to an integer if one or more months should be rendered.
-    months: undefined,
+    // Adjust to render more than one month at the same time.
+    months: 1,
 
     // Set to an integer if one or more days should be rendered, i.e. setting this to 14 would
     // render a 2-week calendar.
@@ -382,7 +382,7 @@ The data passed to the template depends on whether a custom interval is configur
 
 ### Default Configuration
 
-Without a custom interval being configured, the data passed to the template would look like this:
+Without a custom interval being configured, the calendar is configured for viewing one month at a time. In that case, the data passed to the template would look like this:
 
 ```typescript
 // The `days` array, documented in more detail below;
@@ -611,7 +611,7 @@ For applying additional internationalization, the `extras` option can be used to
 
 ## Key differences to CLNDR
 
-- Instead of a jQuery plugin, CLNDR2 provides a `CLNDR` class per an ES module.
+- Instead of a jQuery plugin, CLNDR2 provides a `Clndr` class per an ES module.
 - The dependency on jQuery is removed.
 - The moment dependency is replaced by date-fns.
 - There is no soft dependency on Underscore anymore, the `template` option as well as the default template was removed. You just have to provide your own `render` function.

@@ -164,10 +164,10 @@ const meta: Meta<ClndrOptions> = {
 			description: 'Specify a custom interval the calendar should display, i.e. more than one month or two weeks. You can also define the pagination step.',
 			table: {
 				defaultValue: {
-					summary: '{interval: 1}',
+					summary: '{months: 1, interval: 1}',
 				},
 				type: {
-					summary: '{days?: number, interval: number, months?: number, startDate?: Date | string}',
+					summary: '({days: number, months?: never} | {days?: never,	months: number}) & {interval: number, startDate?: Date | string}',
 				},
 			},
 		},
@@ -246,6 +246,7 @@ const meta: Meta<ClndrOptions> = {
 		},
 		trackSelectedDate: {
 			description: 'Whether the last clicked day should be tracked, that is applying the `classes.selected` CSS class to the day that was clicked last. Otherwise, `classes.selected` will remain on what is set per `selectedDate` option.',
+			control: 'boolean',
 			table: {
 				defaultValue: {
 					summary: 'false',
