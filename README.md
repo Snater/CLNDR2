@@ -349,7 +349,8 @@ new Clndr(container, {
   showAdjacentMonths: true,
 
   // Determines which month to display initially by providing either a date string or a Date object.
-  startWithMonth: '1992-10',
+  // If not provided, today's date is used.
+  startOn: new Date('1992-10'),
 
   // The target classnames that the calendar will look for to bind events.
   // These are the defaults:

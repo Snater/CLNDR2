@@ -19,7 +19,7 @@ export type InternalOptions = {
 	ready?: () => void
 	selectedDate?: Date | string
 	showAdjacentMonths: boolean
-	startWithMonth?: Date | string
+	startOn?: Date
 	targets: {[key in TargetOption]: string}
 	trackSelectedDate: boolean
 	useTouchEvents: boolean
@@ -74,7 +74,7 @@ export type LengthOfTime = ({
 } | {
 	days?: never
 	months: number
-}) & {interval: number, startDate?: Date | string}
+}) & {interval: number}
 
 type ClickEvents = {
 	click?: (target: ClndrTarget) => void

@@ -167,7 +167,7 @@ const meta: Meta<ClndrOptions> = {
 					summary: '{months: 1, interval: 1}',
 				},
 				type: {
-					summary: '({days: number, months?: never} | {days?: never,	months: number}) & {interval: number, startDate?: Date | string}',
+					summary: '({days: number, months?: never} | {days?: never,	months: number}) & {interval: number}',
 				},
 			},
 		},
@@ -221,15 +221,15 @@ const meta: Meta<ClndrOptions> = {
 				},
 			},
 		},
-		startWithMonth: {
-			description: 'Set up the calendar to initially display a particular month.',
+		startOn: {
+			description: 'Set up the start point which the calendar should initially be rendered from. The value provided will be mapped to the setup of the calendar, i.e. if you set up the calendar using `months` of the `lengthOfTime` option (which is also set by default), the calendar will start on, for example, October 1992 no matter if `startDate` is `new Date(\'1992-10\')` or new Date(\'1992-10-15\')`. `undefined` will use today\'s date.',
 			control: 'date',
 			table: {
 				defaultValue: {
 					summary: 'undefined',
 				},
 				type: {
-					summary: 'Date | string',
+					summary: 'Date | undefined',
 				},
 			},
 		},

@@ -184,19 +184,9 @@ class Clndr {
 		// month
 		this.interval = this.initInterval(
 			this.options.lengthOfTime,
-			this.options.startWithMonth,
+			this.options.startOn,
 			this.options.weekOffset
 		);
-
-		if (this.options.startWithMonth) {
-			const intervalStart = startOfMonth(new Date(this.options.startWithMonth));
-			this.interval = [
-				intervalStart,
-				this.options.lengthOfTime.days
-					? endOfDay(addDays(intervalStart, this.options.lengthOfTime.days - 1))
-					: endOfMonth(intervalStart),
-			];
-		}
 
 		// If there are constraints, make sure the interval is within them
 		if (this.options.constraints) {
@@ -230,23 +220,17 @@ class Clndr {
 
 	private initInterval(
 		lengthOfTime: LengthOfTime,
-		startWithMonth: Date | string | undefined,
+		startOn: Date | undefined,
 		weekOffset: WeekOffset
 	): Interval {
 
 		if (typeof lengthOfTime.days === 'number') {
-			const start = startOfDay(lengthOfTime.startDate
-				? new Date(lengthOfTime.startDate)
-				: setDay(new Date(), weekOffset)
-			);
-
+			const start = startOfDay(startOn ? startOn : setDay(new Date(), weekOffset));
 			const end = endOfDay(addDays(start, lengthOfTime.days - 1));
 
 			return [start, end];
 		} else {
-			const start = startOfMonth(
-				new Date(lengthOfTime.startDate || startWithMonth || Date.now())
-			);
+			const start = startOfMonth(startOn || Date.now());
 
 			// Subtract a day so that we are at the end of the interval. We always want intervalEnd to be
 			// inclusive.
@@ -1222,11 +1206,11 @@ class Clndr {
 		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
 
 		if (typeof timeOpt.days === 'number') {
-			// If there was a startDate specified, its weekday should be figured out to use that as the
+			// If there was startOn specified, its weekday should be figured out to use that as the
 			// starting point of the interval. If not, go to today.weekday(0).
 			this.interval[0] = startOfDay(setDay(
 				new Date(),
-				timeOpt.startDate ? getDay(new Date(timeOpt.startDate)) : 0
+				this.options.startOn ? getDay(this.options.startOn) : 0
 			));
 
 			this.interval[1] = endOfDay(addDays(this.interval[0], timeOpt.days - 1));

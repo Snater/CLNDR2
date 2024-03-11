@@ -194,7 +194,7 @@ describe('Setup', () => {
 					endDate: '1992-10-27',
 				},
 			],
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('12').parentNode).toHaveClass('event');
@@ -291,7 +291,7 @@ describe('Setup', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			forceSixRows: true,
-			startWithMonth: '1992-02',
+			startOn: new Date('1992-02'),
 		});
 
 		expect(container.querySelector('.calendar-day-1992-03-07')).toBeInTheDocument();
@@ -302,7 +302,7 @@ describe('Setup', () => {
 			render: provideRender(),
 			forceSixRows: true,
 			showAdjacentMonths: false,
-			startWithMonth: '1992-02',
+			startOn: new Date('1992-02'),
 		});
 
 		expect(container.querySelectorAll('.empty').length).toBeGreaterThan(0);
@@ -312,7 +312,7 @@ describe('Setup', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			selectedDate: '1992-10-15',
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toHaveClass('selected');
@@ -324,7 +324,7 @@ describe('Setup', () => {
 			lengthOfTime: {
 				days: 7,
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-01')).toBeInTheDocument();
@@ -336,7 +336,7 @@ describe('Setup', () => {
 			lengthOfTime: {
 				days: 6,
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-01')).toBeInTheDocument();
@@ -358,7 +358,7 @@ describe('Setup', () => {
 			render: provideRender(),
 			events: [{date: '1992-10-15'}],
 			showAdjacentMonths: false,
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.queryAllByText('1').length).toBe(1);
@@ -399,7 +399,7 @@ describe('Setup', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			ignoreInactiveDaysInSelection: true,
-			startWithMonth: '1992-06',
+			startOn: new Date('1992-06'),
 			trackSelectedDate: true,
 		});
 
@@ -416,7 +416,7 @@ describe('Setup', () => {
 			render: provideRender(),
 			adjacentDaysChangeMonth: true,
 			ignoreInactiveDaysInSelection: true,
-			startWithMonth: '1992-06',
+			startOn: new Date('1992-06'),
 			trackSelectedDate: true,
 		});
 
@@ -433,7 +433,7 @@ describe('Setup', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			events: [{date: '1992-10-15'}],
-			startWithMonth: '1992-09',
+			startOn: new Date('1992-09'),
 		});
 
 		await user.click(screen.getByText('next'));
@@ -445,7 +445,7 @@ describe('Setup', () => {
 			render: provideRender(),
 			dateParameter: 'customDateParameter',
 			events: [{customDateParameter: '1992-10-15'}],
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText(15).parentNode).toHaveClass('event');
@@ -492,7 +492,7 @@ describe('Navigation', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			events: [{date: '1992-10-15'}],
-			startWithMonth: '1992-11',
+			startOn: new Date('1992-11'),
 		});
 
 		expect(screen.getByText('November 1992')).toBeInTheDocument();
@@ -506,7 +506,7 @@ describe('Navigation', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			adjacentDaysChangeMonth: true,
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -519,7 +519,7 @@ describe('Navigation', () => {
 			render: provideRender(),
 			showAdjacentMonths: false,
 			adjacentDaysChangeMonth: true,
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -534,7 +534,7 @@ describe('Navigation', () => {
 			render: provideRender(),
 			showAdjacentMonths: false,
 			adjacentDaysChangeMonth: true,
-			startWithMonth: '1992-09',
+			startOn: new Date('1992-09'),
 		});
 
 		expect(screen.getByText('September 1992')).toBeInTheDocument();
@@ -548,7 +548,7 @@ describe('Navigation', () => {
 			clickEvents: {
 				click: jest.fn(),
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 			lengthOfTime: {
 				months: 3,
 			},
@@ -565,7 +565,7 @@ describe('Navigation', () => {
 			clickEvents: {
 				click: jest.fn(),
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 			lengthOfTime: {
 				months: 3,
 			},
@@ -579,7 +579,7 @@ describe('Navigation', () => {
 	test('Programmatically change month by calling previous()', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -590,7 +590,7 @@ describe('Navigation', () => {
 	test('Programmatically change month by calling forward() and back()', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			startWithMonth: '1992-09',
+			startOn: new Date('1992-09'),
 		});
 
 		expect(screen.getByText('September 1992')).toBeInTheDocument();
@@ -603,7 +603,7 @@ describe('Navigation', () => {
 	test('Programmatically change year using previousYear()', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -617,7 +617,7 @@ describe('Navigation', () => {
 			constraints: {
 				startDate: '1992-10-15',
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -628,7 +628,7 @@ describe('Navigation', () => {
 	test('Programmatically change year using nextYear()', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -642,7 +642,7 @@ describe('Navigation', () => {
 			constraints: {
 				endDate: '1992-10-15',
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -653,7 +653,7 @@ describe('Navigation', () => {
 	test('Programmatically trigger today()', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
@@ -673,7 +673,7 @@ describe('Navigation', () => {
 				onYearChange: handleYearChange,
 				today: handleToday,
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		clndr.today({withCallbacks: true});
@@ -688,8 +688,8 @@ describe('Navigation', () => {
 			render: provideRender(oneWeekTemplate),
 			lengthOfTime: {
 				days: 7,
-				startDate: '1992-10-15',
 			},
+			startOn: new Date('1992-10-15'),
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
@@ -737,7 +737,7 @@ describe('Navigation', () => {
 				onIntervalChange: handleIntervalChange,
 				onMonthChange: handleMonthChange,
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -758,7 +758,7 @@ describe('Navigation', () => {
 				onIntervalChange: handleIntervalChange,
 				onMonthChange: handleMonthChange,
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -774,8 +774,8 @@ describe('Navigation', () => {
 			render: provideRender(multiMonthTemplate),
 			lengthOfTime: {
 				months: 2,
-				startDate: '1992-10-01',
 			},
+			startOn: new Date('1992-10-01'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -790,8 +790,8 @@ describe('Navigation', () => {
 			render: provideRender(oneWeekTemplate),
 			lengthOfTime: {
 				days: 7,
-				startDate: '1992-10-01',
 			},
+			startOn: new Date('1992-10-01'),
 		});
 
 		expect(screen.getByText('10/01 - 10/07')).toBeInTheDocument();
@@ -809,7 +809,7 @@ describe('Navigation', () => {
 				onIntervalChange: handleIntervalChange,
 				onYearChange: handleYearChange,
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -830,7 +830,7 @@ describe('Navigation', () => {
 				onIntervalChange: handleIntervalChange,
 				onYearChange: handleYearChange,
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -844,7 +844,7 @@ describe('Navigation', () => {
 	test('Programmatically set new interval on default configuration', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -863,7 +863,7 @@ describe('Navigation', () => {
 			lengthOfTime: {
 				months: 3,
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -878,7 +878,7 @@ describe('Navigation', () => {
 			lengthOfTime: {
 				days: 7,
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText('10/01 - 10/07')).toBeInTheDocument();
@@ -914,7 +914,7 @@ describe('Events', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			adjacentDaysChangeMonth: true,
-			startWithMonth: '1992-09',
+			startOn: new Date('1992-09'),
 		});
 
 		expect(screen.getByText('September 1992')).toBeInTheDocument();
@@ -927,7 +927,7 @@ describe('Events', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {click: handleClick},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		await user.click(screen.getByText('15'));
@@ -999,7 +999,7 @@ describe('Events', () => {
 					handleNextYear();
 				},
 			},
-			startWithMonth: '1992-12',
+			startOn: new Date('1992-12'),
 		});
 
 		clndr.next({withCallbacks: true});
@@ -1028,7 +1028,7 @@ describe('Events', () => {
 				title: 'This is an event',
 				date: '1992-10-15',
 			}],
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		})
 
 		await user.click(screen.getByText('15'));
@@ -1054,7 +1054,7 @@ describe('Events', () => {
 				startDate: '1992-10-12',
 				endDate: '1992-10-17',
 			}],
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		})
 
 		await user.click(screen.getByText('15'));
@@ -1229,7 +1229,7 @@ describe('Custom interval', () => {
 				endDate: '1993-01-27',
 			}],
 			lengthOfTime: {months: 3},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-07')).toBeInTheDocument();
@@ -1241,7 +1241,8 @@ describe('Custom interval', () => {
 	test('Custom month view interval with custom start date', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			lengthOfTime: {months: 2, startDate: '1992-10-15'},
+			lengthOfTime: {months: 2},
+			startOn: new Date('1992-10-15'),
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
@@ -1252,7 +1253,7 @@ describe('Custom interval', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
 			lengthOfTime: {months: 2},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
@@ -1263,7 +1264,8 @@ describe('Custom interval', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
 			events: [{date: '1992-10-15'}],
-			lengthOfTime: {days: 7, startDate: '1992-10-15'},
+			lengthOfTime: {days: 7},
+			startOn: new Date('1992-10-15'),
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
@@ -1321,12 +1323,12 @@ describe('Constraints', () => {
 			lengthOfTime: {
 				days: 7,
 				interval: 7,
-				startDate: '1992-10-15',
 			},
 			constraints: {
 				startDate: '1992-09-01',
 				endDate: '1992-09-15',
 			},
+			startOn: new Date('1992-10-15'),
 		});
 
 		expect(container.querySelector('.calendar-day-1992-09-15')).toBeInTheDocument();
@@ -1338,12 +1340,12 @@ describe('Constraints', () => {
 			lengthOfTime: {
 				months: 3,
 				interval: 7,
-				startDate: '1992-10-15',
 			},
 			constraints: {
 				startDate: '1993-11-30',
 				endDate: '1992-11-15',
 			},
+			startOn: new Date('1992-10-15'),
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).not.toBeInTheDocument();
@@ -1383,7 +1385,7 @@ describe('Handling errors', () => {
 			render: provideRender(),
 			adjacentDaysChangeMonth: true,
 			showAdjacentMonths: false,
-			startWithMonth: '1992-09',
+			startOn: new Date('1992-09'),
 		});
 
 		const emptyElement = container.querySelector('.empty');
@@ -1402,7 +1404,7 @@ describe('Handling errors', () => {
 			clickEvents: {
 				click: handleClick,
 			},
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		const dayElement = screen.getByText('15').parentNode;
@@ -1455,7 +1457,7 @@ describe('Handling errors', () => {
 				startDate: {year: 1992},
 				endDate: '1992-10-17',
 			}],
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(mockWarn).toHaveBeenCalledTimes(1);
@@ -1472,7 +1474,7 @@ describe('Handling errors', () => {
 				date: 'wrong',
 			},
 			events: [{singleDay: '1992-10-15'}],
-			startWithMonth: '1992-10',
+			startOn: new Date('1992-10'),
 		});
 
 		expect(mockWarn).toHaveBeenCalledTimes(1);
