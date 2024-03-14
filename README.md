@@ -253,13 +253,13 @@ new Clndr(container, {
     // onMonthChange is also set, it is fired BEFORE onYearChange.
     onYearChange: function(month: Date) {...},
 
-    // Triggered when a user navigates forward an interval, if `lengthOfTime` option is configured.
+    // Triggered when a user navigates forward an interval.
     nextInterval: function(start: Date, end: Date) {...},
 
-    // Triggered when a user navigates back an interval, if `lengthOfTime` option is configured.
+    // Triggered when a user navigates back an interval.
     previousInterval: function(start: Date, end: Date) {...},
 
-    // Triggered whenever the time period is changed as configured in lengthOfTime.
+    // Triggered whenever the time period is changed.
     onIntervalChange: function(start: Date, end: Date) {...},
   },
 
@@ -315,22 +315,23 @@ new Clndr(container, {
   // option) should be selectable, if the `trackSelectedDate` option is activated.
   ignoreInactiveDaysInSelection: false,
 
-  // Customize the calendar's interval. That is, if the calendar should render more than one months,
-  // or, instead, one or more days at once. Use the "interval option" to define the paging interval
-  // when navigating forward or backward. Note that either "months" or "days" needs to be defined,
-  // while both should never be set at the same time.
-  lengthOfTime: {
-    // Adjust to render more than one month at the same time.
-    months: 1,
+  // Customize the calendar's pagination. That is, if the calendar should
+  // render more than one month, or a certain amount of days at once.
+  pagination: {
+    // May be set to either `month` or `day`
+    unit: 'month',
 
-    // Set to an integer if one or more days should be rendered, i.e. setting this to 14 would
-    // render a 2-week calendar.
-    days: undefined,
+    // Adjust to render more than one month at the same time (when
+    // `unit === 'month')` or set `unit` to `day` to define how many days to
+    // display at the same time, i.e. displaying a week setting `size` to `7`.
+    size: 1,
 
-    // The amount of months or days that will be navigated forward/backward  when paging the
-    // calendar, i.e. days=14 and interval=7 would result in a calendar displaying two weeks
-    // at a time paging forward and backward one week at a time.
-    interval: 1
+    // The amount of months or days that will be navigated forward/backward
+    // when paging the calendar, i.e. `unit === 'day'` together with
+    // `size === 14` and `step === 7` would result in a calendar displaying two
+    // weeks with paging forward and backward one week at a time.
+    // If not set, `size` will be used for paginating.
+    step: 1
   },
   
   // A date-fns locale to use when formatting date strings (the month name passed to the template,
@@ -379,7 +380,7 @@ new Clndr(container, {
 
 ## Data provided to the Template
 
-The data passed to the template depends on whether a custom interval is configured (using the `lengthOfTime` option).
+The data passed to the template depends on whether custom pagination is configured (using the `pagination` option).
 
 ### Default Configuration
 
@@ -424,15 +425,14 @@ format: (date: Date, formatStr: string, options: FormatOptions = {}): string => 
 
 ### When a Custom Interval is configured
 
-Having a custom interval configured per the `lengthOfTime` option, the data provided to the template would look like this:
+Having a custom pagination configured per the `pagination` option, the data provided to the template would look like this:
 
 ```typescript
-// The `days` array, documented in more detail below; only populated if `lengthOfTime.days` is
-// configured
+// The `days` array, documented in more detail below; only populated if `pagination.unit === 'day'`
 days: [{day, classes, events, date, properties}, ...]
 
 // Array of month objects, ech containing a `days` array as well as a Date object referring to the
-// month; only populated when `lengthOfTime.months` is configured
+// month; only populated when `pagination.unit === 'month'`
 months: [{days, month}, ...]
 
 year: null

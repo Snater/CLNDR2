@@ -160,17 +160,6 @@ const meta: Meta<ClndrOptions> = {
 				},
 			},
 		},
-		lengthOfTime: {
-			description: 'Specify a custom interval the calendar should display, i.e. more than one month or two weeks. You can also define the pagination step.',
-			table: {
-				defaultValue: {
-					summary: '{months: 1, interval: 1}',
-				},
-				type: {
-					summary: '({days: number, months?: never} | {days?: never,	months: number}) & {interval: number}',
-				},
-			},
-		},
 		locale: {
 			control: 'select',
 			options: ['enUS', 'de', 'es', 'fr'],
@@ -183,6 +172,18 @@ const meta: Meta<ClndrOptions> = {
 				type: {
 					summary: 'Locale',
 					detail: 'date-fns locale object',
+				},
+			},
+		},
+		pagination: {
+			description: 'Specify custom pagination, i.e. display more than one month or a custom amount of days, like two weeks. You can also define the pagination step.',
+			table: {
+				defaultValue: {
+					summary: '{unit: \'month\', size: 1}',
+				},
+				type: {
+					summary: '{unit: \'month\' | \'day\', size: number, step?: number}',
+					detail: 'If `step` is not defined, `size` is used as the step size when navigating.',
 				},
 			},
 		},
@@ -222,7 +223,7 @@ const meta: Meta<ClndrOptions> = {
 			},
 		},
 		startOn: {
-			description: 'Set up the start point which the calendar should initially be rendered from. The value provided will be mapped to the setup of the calendar, i.e. if you set up the calendar using `months` of the `lengthOfTime` option (which is also set by default), the calendar will start on, for example, October 1992 no matter if `startDate` is `new Date(\'1992-10\')` or new Date(\'1992-10-15\')`. `undefined` will use today\'s date.',
+			description: 'Set up the start point which the calendar should initially be rendered from. The value provided will be mapped to the setup of the calendar, i.e. if setting up the calendar using `pagination.unit === \'month\'` (which is also set by default), the calendar will start on, for example, October 1992 no matter if `startOn` is `new Date(\'1992-10\')` or new Date(\'1992-10-15\')`. `undefined` will use today\'s date.',
 			control: 'date',
 			table: {
 				defaultValue: {
@@ -579,9 +580,10 @@ export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 			</div>
 			<div class="clndr-today-button" role="button">Today</div>
 		`, data),
-		lengthOfTime: {
-			days: 14,
-			interval: 7,
+		pagination: {
+			unit: 'day',
+			size: 14,
+			step: 7,
 		},
 	},
 	render: args => {
@@ -618,9 +620,10 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 			<% }); %>
 			<div class="clndr-today-button" role="button">Today</div>
 		`, data),
-		lengthOfTime: {
-			months: 2,
-			interval: 1,
+		pagination: {
+			unit: 'month',
+			size: 2,
+			step: 1,
 		},
 	},
 	render: args => {

@@ -14,8 +14,8 @@ export type InternalOptions = {
 	forceSixRows: boolean
 	formatWeekdayHeader?: (day: Date, locale?: Locale) => string
 	ignoreInactiveDaysInSelection: boolean
-	lengthOfTime: LengthOfTime
 	locale?: Locale
+	pagination: Pagination
 	ready?: () => void
 	selectedDate?: Date | string
 	showAdjacentMonths: boolean
@@ -27,9 +27,9 @@ export type InternalOptions = {
 }
 
 export type ClndrOptions = Partial<
-	Omit<InternalOptions, 'classes' | 'lengthOfTime' | 'render' | 'targets'> & {
+	Omit<InternalOptions, 'classes' | 'pagination' | 'render' | 'targets'> & {
 		classes?: {[key in DayStatus]?: string}
-		lengthOfTime?: Partial<LengthOfTime>
+		pagination?: Pagination
 		targets?: {[key in TargetOption]?: string}
 	}
 > & {
@@ -68,13 +68,11 @@ type DateParameterDefinition = string
 	| {date: string, startDate: never, endDate: never}
 	| {date?: string, startDate: string, endDate: string}
 
-export type LengthOfTime = ({
-	days: number
-	months?: never
-} | {
-	days?: never
-	months: number
-}) & {interval: number}
+export type Pagination = {
+	unit: 'month' | 'day'
+	size: number
+	step?: number
+}
 
 type ClickEvents = {
 	click?: (target: ClndrTarget) => void

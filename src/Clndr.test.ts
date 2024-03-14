@@ -321,9 +321,7 @@ describe('Setup', () => {
 	test('Custom day interval while providing start month', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			lengthOfTime: {
-				days: 7,
-			},
+			pagination: {unit: 'day', size: 7},
 			startOn: new Date('1992-10'),
 		});
 
@@ -333,9 +331,7 @@ describe('Setup', () => {
 	test('Day interval not being dividable by 7', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			lengthOfTime: {
-				days: 6,
-			},
+			pagination: {unit: 'day', size: 6},
 			startOn: new Date('1992-10'),
 		});
 
@@ -371,9 +367,7 @@ describe('Setup', () => {
 			clickEvents: {
 				click: jest.fn(),
 			},
-			lengthOfTime: {
-				months: 3,
-			},
+			pagination: {unit: 'month', size: 3},
 			locale: de,
 		});
 
@@ -549,9 +543,7 @@ describe('Navigation', () => {
 				click: jest.fn(),
 			},
 			startOn: new Date('1992-10'),
-			lengthOfTime: {
-				months: 3,
-			},
+			pagination: {unit: 'month', size: 3},
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -566,9 +558,7 @@ describe('Navigation', () => {
 				click: jest.fn(),
 			},
 			startOn: new Date('1992-10'),
-			lengthOfTime: {
-				months: 3,
-			},
+			pagination: {unit: 'month', size: 3},
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -598,6 +588,68 @@ describe('Navigation', () => {
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
 		clndr.back();
 		expect(screen.getByText('September 1992')).toBeInTheDocument();
+	});
+
+	test('Programmatically change month by calling forward() and back() with custom month page size', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(multiMonthTemplate),
+			pagination: {unit: 'month', size: 2},
+			startOn: new Date('1992-09'),
+		});
+
+		expect(screen.getByText('September 1992')).toBeInTheDocument();
+		expect(screen.getByText('October 1992')).toBeInTheDocument();
+		clndr.forward();
+		expect(screen.getByText('November 1992')).toBeInTheDocument();
+		expect(screen.getByText('December 1992')).toBeInTheDocument();
+		clndr.back();
+		expect(screen.getByText('September 1992')).toBeInTheDocument();
+		expect(screen.getByText('October 1992')).toBeInTheDocument();
+	});
+
+	test('Programmatically change month by calling forward() and back() with custom month pagination, including step', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(multiMonthTemplate),
+			pagination: {unit: 'month', size: 2, step: 1},
+			startOn: new Date('1992-09'),
+		});
+
+		expect(screen.getByText('September 1992')).toBeInTheDocument();
+		expect(screen.getByText('October 1992')).toBeInTheDocument();
+		clndr.forward();
+		expect(screen.getByText('October 1992')).toBeInTheDocument();
+		expect(screen.getByText('November 1992')).toBeInTheDocument();
+		clndr.back();
+		expect(screen.getByText('September 1992')).toBeInTheDocument();
+		expect(screen.getByText('October 1992')).toBeInTheDocument();
+	});
+
+	test('Programmatically change month by calling forward() and back() with custom day page size', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneWeekTemplate),
+			pagination: {unit: 'day', size: 7},
+			startOn: new Date('1992-09'),
+		});
+
+		expect(screen.getByText('09/01 - 09/07')).toBeInTheDocument();
+		clndr.forward();
+		expect(screen.getByText('09/08 - 09/14')).toBeInTheDocument();
+		clndr.back();
+		expect(screen.getByText('09/01 - 09/07')).toBeInTheDocument();
+	});
+
+	test('Programmatically change month by calling forward() and back() with custom day pagination, including step', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneWeekTemplate),
+			pagination: {unit: 'day', size: 7, step: 1},
+			startOn: new Date('1992-09'),
+		});
+
+		expect(screen.getByText('09/01 - 09/07')).toBeInTheDocument();
+		clndr.forward();
+		expect(screen.getByText('09/02 - 09/08')).toBeInTheDocument();
+		clndr.back();
+		expect(screen.getByText('09/01 - 09/07')).toBeInTheDocument();
 	});
 
 	test('Programmatically change year using previousYear()', async () => {
@@ -686,9 +738,7 @@ describe('Navigation', () => {
 	test('Go to today while having a custom interval with a start date being set', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			lengthOfTime: {
-				days: 7,
-			},
+			pagination: {unit: 'day', size: 7},
 			startOn: new Date('1992-10-15'),
 		});
 
@@ -702,9 +752,7 @@ describe('Navigation', () => {
 	test('Go to today while having a custom interval', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			lengthOfTime: {
-				days: 7,
-			},
+			pagination: {unit: 'day', size: 7},
 		});
 
 		expect(container.querySelector('.calendar-day-2024-01-18')).toBeInTheDocument();
@@ -772,9 +820,7 @@ describe('Navigation', () => {
 	test('Programmatically set month while having configured a custom month interval', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			lengthOfTime: {
-				months: 2,
-			},
+			pagination: {unit: 'month', size: 2},
 			startOn: new Date('1992-10-01'),
 		});
 
@@ -788,9 +834,7 @@ describe('Navigation', () => {
 	test('Programmatically set month while having configured a custom day interval', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			lengthOfTime: {
-				days: 7,
-			},
+			pagination: {unit: 'day', size: 7},
 			startOn: new Date('1992-10-01'),
 		});
 
@@ -860,9 +904,7 @@ describe('Navigation', () => {
 			clickEvents: {
 				onIntervalChange: handleIntervalChange,
 			},
-			lengthOfTime: {
-				months: 3,
-			},
+			pagination: {unit: 'month', size: 3},
 			startOn: new Date('1992-10'),
 		});
 
@@ -875,9 +917,7 @@ describe('Navigation', () => {
 	test('Programmatically set new interval with having a custom month interval configured', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			lengthOfTime: {
-				days: 7,
-			},
+			pagination: {unit: 'day', size: 7},
 			startOn: new Date('1992-10'),
 		});
 
@@ -947,7 +987,7 @@ describe('Events', () => {
 				nextInterval: handleNextInterval,
 				onIntervalChange: handleIntervalChange,
 			},
-			lengthOfTime: {months: 3},
+			pagination: {unit: 'month', size: 3},
 		});
 
 		clndr.back({withCallbacks: true});
@@ -1204,7 +1244,7 @@ describe('Data manipulations', () => {
 
 describe('Custom interval', () => {
 
-	test('lengthOfTime option', () => {
+	test('pagination option', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
 			dateParameter: {
@@ -1228,7 +1268,7 @@ describe('Custom interval', () => {
 				startDate: '1993-01-24',
 				endDate: '1993-01-27',
 			}],
-			lengthOfTime: {months: 3},
+			pagination: {unit: 'month', size: 3},
 			startOn: new Date('1992-10'),
 		});
 
@@ -1241,7 +1281,7 @@ describe('Custom interval', () => {
 	test('Custom month view interval with custom start date', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			lengthOfTime: {months: 2},
+			pagination: {unit: 'month', size: 2},
 			startOn: new Date('1992-10-15'),
 		});
 
@@ -1252,7 +1292,7 @@ describe('Custom interval', () => {
 	test('Custom month view interval with custom start month', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			lengthOfTime: {months: 2},
+			pagination: {unit: 'month', size: 2},
 			startOn: new Date('1992-10'),
 		});
 
@@ -1264,7 +1304,7 @@ describe('Custom interval', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
 			events: [{date: '1992-10-15'}],
-			lengthOfTime: {days: 7},
+			pagination: {unit: 'day', size: 7},
 			startOn: new Date('1992-10-15'),
 		});
 
@@ -1303,7 +1343,7 @@ describe('Constraints', () => {
 				endDate: '2100-01-06',
 				startDate: '2100-01-01',
 			},
-			lengthOfTime: {days: 7, interval: 7},
+			pagination: {unit: 'day', size: 7, step: 7},
 		});
 
 		expect(container.querySelector('.calendar-day-2100-01-01')).toBeInTheDocument();
@@ -1320,10 +1360,7 @@ describe('Constraints', () => {
 	test('Day starting interval is after the ending constraint', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			lengthOfTime: {
-				days: 7,
-				interval: 7,
-			},
+			pagination: {unit: 'day', size: 7, step: 7},
 			constraints: {
 				startDate: '1992-09-01',
 				endDate: '1992-09-15',
@@ -1337,10 +1374,7 @@ describe('Constraints', () => {
 	test('End date constraint is before start date constraint', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			lengthOfTime: {
-				months: 3,
-				interval: 7,
-			},
+			pagination: {unit: 'month', size: 3, step: 7},
 			constraints: {
 				startDate: '1993-11-30',
 				endDate: '1992-11-15',
