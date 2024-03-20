@@ -321,7 +321,7 @@ describe('Setup', () => {
 	test('Custom day interval while providing start month', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			pagination: {unit: 'day', size: 7},
+			pagination: {scope: 'day', size: 7},
 			startOn: new Date('1992-10'),
 		});
 
@@ -331,7 +331,7 @@ describe('Setup', () => {
 	test('Day interval not being dividable by 7', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			pagination: {unit: 'day', size: 6},
+			pagination: {scope: 'day', size: 6},
 			startOn: new Date('1992-10'),
 		});
 
@@ -367,7 +367,7 @@ describe('Setup', () => {
 			clickEvents: {
 				click: jest.fn(),
 			},
-			pagination: {unit: 'month', size: 3},
+			pagination: {scope: 'month', size: 3},
 			locale: de,
 		});
 
@@ -543,7 +543,7 @@ describe('Navigation', () => {
 				click: jest.fn(),
 			},
 			startOn: new Date('1992-10'),
-			pagination: {unit: 'month', size: 3},
+			pagination: {scope: 'month', size: 3},
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -558,7 +558,7 @@ describe('Navigation', () => {
 				click: jest.fn(),
 			},
 			startOn: new Date('1992-10'),
-			pagination: {unit: 'month', size: 3},
+			pagination: {scope: 'month', size: 3},
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -593,7 +593,7 @@ describe('Navigation', () => {
 	test('Programmatically change month by calling forward() and back() with custom month page size', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			pagination: {unit: 'month', size: 2},
+			pagination: {scope: 'month', size: 2},
 			startOn: new Date('1992-09'),
 		});
 
@@ -610,7 +610,7 @@ describe('Navigation', () => {
 	test('Programmatically change month by calling forward() and back() with custom month pagination, including step', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			pagination: {unit: 'month', size: 2, step: 1},
+			pagination: {scope: 'month', size: 2, step: 1},
 			startOn: new Date('1992-09'),
 		});
 
@@ -627,7 +627,7 @@ describe('Navigation', () => {
 	test('Programmatically change month by calling forward() and back() with custom day page size', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			pagination: {unit: 'day', size: 7},
+			pagination: {scope: 'day', size: 7},
 			startOn: new Date('1992-09'),
 		});
 
@@ -641,7 +641,7 @@ describe('Navigation', () => {
 	test('Programmatically change month by calling forward() and back() with custom day pagination, including step', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			pagination: {unit: 'day', size: 7, step: 1},
+			pagination: {scope: 'day', size: 7, step: 1},
 			startOn: new Date('1992-09'),
 		});
 
@@ -738,7 +738,7 @@ describe('Navigation', () => {
 	test('Go to today while having a custom interval with a start date being set', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			pagination: {unit: 'day', size: 7},
+			pagination: {scope: 'day', size: 7},
 			startOn: new Date('1992-10-15'),
 		});
 
@@ -752,7 +752,7 @@ describe('Navigation', () => {
 	test('Go to today while having a custom interval', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			pagination: {unit: 'day', size: 7},
+			pagination: {scope: 'day', size: 7},
 		});
 
 		expect(container.querySelector('.calendar-day-2024-01-18')).toBeInTheDocument();
@@ -820,7 +820,7 @@ describe('Navigation', () => {
 	test('Programmatically set month while having configured a custom month interval', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			pagination: {unit: 'month', size: 2},
+			pagination: {scope: 'month', size: 2},
 			startOn: new Date('1992-10-01'),
 		});
 
@@ -834,7 +834,7 @@ describe('Navigation', () => {
 	test('Programmatically set month while having configured a custom day interval', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			pagination: {unit: 'day', size: 7},
+			pagination: {scope: 'day', size: 7},
 			startOn: new Date('1992-10-01'),
 		});
 
@@ -904,7 +904,7 @@ describe('Navigation', () => {
 			clickEvents: {
 				onIntervalChange: handleIntervalChange,
 			},
-			pagination: {unit: 'month', size: 3},
+			pagination: {scope: 'month', size: 3},
 			startOn: new Date('1992-10'),
 		});
 
@@ -917,7 +917,7 @@ describe('Navigation', () => {
 	test('Programmatically set new interval with having a custom month interval configured', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			pagination: {unit: 'day', size: 7},
+			pagination: {scope: 'day', size: 7},
 			startOn: new Date('1992-10'),
 		});
 
@@ -987,7 +987,7 @@ describe('Events', () => {
 				nextInterval: handleNextInterval,
 				onIntervalChange: handleIntervalChange,
 			},
-			pagination: {unit: 'month', size: 3},
+			pagination: {scope: 'month', size: 3},
 		});
 
 		clndr.back({withCallbacks: true});
@@ -1268,7 +1268,7 @@ describe('Custom interval', () => {
 				startDate: '1993-01-24',
 				endDate: '1993-01-27',
 			}],
-			pagination: {unit: 'month', size: 3},
+			pagination: {scope: 'month', size: 3},
 			startOn: new Date('1992-10'),
 		});
 
@@ -1281,7 +1281,7 @@ describe('Custom interval', () => {
 	test('Custom month view interval with custom start date', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			pagination: {unit: 'month', size: 2},
+			pagination: {scope: 'month', size: 2},
 			startOn: new Date('1992-10-15'),
 		});
 
@@ -1292,7 +1292,7 @@ describe('Custom interval', () => {
 	test('Custom month view interval with custom start month', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			pagination: {unit: 'month', size: 2},
+			pagination: {scope: 'month', size: 2},
 			startOn: new Date('1992-10'),
 		});
 
@@ -1304,7 +1304,7 @@ describe('Custom interval', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
 			events: [{date: '1992-10-15'}],
-			pagination: {unit: 'day', size: 7},
+			pagination: {scope: 'day', size: 7},
 			startOn: new Date('1992-10-15'),
 		});
 
@@ -1343,7 +1343,7 @@ describe('Constraints', () => {
 				endDate: '2100-01-06',
 				startDate: '2100-01-01',
 			},
-			pagination: {unit: 'day', size: 7, step: 7},
+			pagination: {scope: 'day', size: 7, step: 7},
 		});
 
 		expect(container.querySelector('.calendar-day-2100-01-01')).toBeInTheDocument();
@@ -1360,7 +1360,7 @@ describe('Constraints', () => {
 	test('Day starting interval is after the ending constraint', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			pagination: {unit: 'day', size: 7, step: 7},
+			pagination: {scope: 'day', size: 7, step: 7},
 			constraints: {
 				startDate: '1992-09-01',
 				endDate: '1992-09-15',
@@ -1374,7 +1374,7 @@ describe('Constraints', () => {
 	test('End date constraint is before start date constraint', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			pagination: {unit: 'month', size: 3, step: 7},
+			pagination: {scope: 'month', size: 3, step: 7},
 			constraints: {
 				startDate: '1993-11-30',
 				endDate: '1992-11-15',

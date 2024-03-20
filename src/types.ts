@@ -69,7 +69,7 @@ type DateParameterDefinition = string
 	| {date?: string, startDate: string, endDate: string}
 
 export type Pagination = {
-	unit: 'month' | 'day'
+	scope: 'month' | 'day'
 	size: number
 	step?: number
 }
@@ -153,3 +153,10 @@ export type NavigationConstraint = 'next' | 'today' | 'previous' | 'nextYear' | 
 export type NavigationConstraints = {[key in NavigationConstraint]: boolean}
 
 export type Interval = [Date, Date]
+
+// Tuple of dates before the days of the current page, the days of the current page, and days after
+// the current page's days. To be used when showing days of adjacent months along a current page's
+// month(s).
+export type PageDates = [Date[], Date[], Date[]];
+
+export type Adjacent = 'before' | 'after' | null;

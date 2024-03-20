@@ -319,15 +319,15 @@ new Clndr(container, {
   // render more than one month, or a certain amount of days at once.
   pagination: {
     // May be set to either `month` or `day`
-    unit: 'month',
+    scope: 'month',
 
     // Adjust to render more than one month at the same time (when
-    // `unit === 'month')` or set `unit` to `day` to define how many days to
+    // `scope === 'month')` or set `scope` to `day` to define how many days to
     // display at the same time, i.e. displaying a week setting `size` to `7`.
     size: 1,
 
     // The amount of months or days that will be navigated forward/backward
-    // when paging the calendar, i.e. `unit === 'day'` together with
+    // when paging the calendar, i.e. `scope === 'day'` together with
     // `size === 14` and `step === 7` would result in a calendar displaying two
     // weeks with paging forward and backward one week at a time.
     // If not set, `size` will be used for paginating.
@@ -428,11 +428,11 @@ format: (date: Date, formatStr: string, options: FormatOptions = {}): string => 
 Having a custom pagination configured per the `pagination` option, the data provided to the template would look like this:
 
 ```typescript
-// The `days` array, documented in more detail below; only populated if `pagination.unit === 'day'`
+// The `days` array, documented in more detail below; only populated if `pagination.scope === 'day'`
 days: [{day, classes, events, date, properties}, ...]
 
 // Array of month objects, ech containing a `days` array as well as a Date object referring to the
-// month; only populated when `pagination.unit === 'month'`
+// month; only populated when `pagination.scope === 'month'`
 months: [{days, month}, ...]
 
 year: null

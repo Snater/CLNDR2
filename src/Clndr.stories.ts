@@ -179,10 +179,10 @@ const meta: Meta<ClndrOptions> = {
 			description: 'Specify custom pagination, i.e. display more than one month or a custom amount of days, like two weeks. You can also define the pagination step.',
 			table: {
 				defaultValue: {
-					summary: '{unit: \'month\', size: 1}',
+					summary: '{scope: \'month\', size: 1}',
 				},
 				type: {
-					summary: '{unit: \'month\' | \'day\', size: number, step?: number}',
+					summary: '{scope: \'month\' | \'day\', size: number, step?: number}',
 					detail: 'If `step` is not defined, `size` is used as the step size when navigating.',
 				},
 			},
@@ -223,7 +223,7 @@ const meta: Meta<ClndrOptions> = {
 			},
 		},
 		startOn: {
-			description: 'Set up the start point which the calendar should initially be rendered from. The value provided will be mapped to the setup of the calendar, i.e. if setting up the calendar using `pagination.unit === \'month\'` (which is also set by default), the calendar will start on, for example, October 1992 no matter if `startOn` is `new Date(\'1992-10\')` or new Date(\'1992-10-15\')`. `undefined` will use today\'s date.',
+			description: 'Set up the start point which the calendar should initially be rendered from. The value provided will be mapped to the setup of the calendar, i.e. if setting up the calendar using `pagination.scope === \'month\'` (which is also set by default), the calendar will start on, for example, October 1992 no matter if `startOn` is `new Date(\'1992-10\')` or new Date(\'1992-10-15\')`. `undefined` will use today\'s date.',
 			control: 'date',
 			table: {
 				defaultValue: {
@@ -581,7 +581,7 @@ export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 			<div class="clndr-today-button" role="button">Today</div>
 		`, data),
 		pagination: {
-			unit: 'day',
+			scope: 'day',
 			size: 14,
 			step: 7,
 		},
@@ -621,7 +621,7 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 			<div class="clndr-today-button" role="button">Today</div>
 		`, data),
 		pagination: {
-			unit: 'month',
+			scope: 'month',
 			size: 2,
 			step: 1,
 		},
