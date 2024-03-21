@@ -20,7 +20,7 @@ import {
 	subMonths,
 	subYears,
 } from 'date-fns';
-import {Adapter} from './Adapter';
+import {Adapter, AdapterOptions} from './Adapter';
 import {DayAdapter} from './DayAdapter';
 import {MonthAdapter} from './MonthAdapter';
 import type {
@@ -38,7 +38,7 @@ import type {
 	Interval,
 	NavigationConstraint,
 	NavigationConstraints,
-	Pagination,
+	Scope,
 	TargetOption,
 	WeekOffset,
 } from './types';
@@ -82,6 +82,11 @@ const defaults: InternalOptions = {
 	useTouchEvents: false,
 	weekOffset: 0,
 };
+
+const adapters: Record<Scope, new (options: AdapterOptions) => Adapter> = {
+	month: MonthAdapter,
+	day: DayAdapter,
+} as const;
 
 class Clndr {
 
@@ -163,9 +168,9 @@ class Clndr {
 			this.options.weekOffset = 0;
 		}
 
-		this.adapter = this.options.pagination.scope === 'day'
-			? new DayAdapter()
-			: new MonthAdapter({forceSixRows: this.options.forceSixRows});
+		this.adapter = new adapters[this.options.pagination.scope](
+			{pageSize: this.options.pagination.size, forceSixRows: this.options.forceSixRows}
+		);
 
 		this.constraints = {
 			next: true,
@@ -181,19 +186,11 @@ class Clndr {
 
 		// To support arbitrary lengths of time, the current range is stored in addition to the current
 		// month
-		this.interval = this.adapter.initInterval(
-			this.options.pagination.size,
-			this.options.startOn,
-			this.options.weekOffset
-		);
+		this.interval = this.adapter.initInterval(this.options.startOn, this.options.weekOffset);
 
 		// If there are constraints, make sure the interval is within them
 		if (this.options.constraints) {
-			this.interval = this.initConstraints(
-				this.options.constraints,
-				this.options.pagination,
-				this.interval
-			);
+			this.interval = this.initConstraints(this.options.constraints, this.interval);
 		}
 
 		this.daysOfTheWeek = this.options.daysOfTheWeek
@@ -217,26 +214,20 @@ class Clndr {
 		this.options.ready?.apply(this, []);
 	}
 
-	private initConstraints(
-		constraints: Constraints,
-		pagination: Pagination,
-		interval: Interval
-	) {
+	private initConstraints(constraints: Constraints, interval: Interval) {
 		let adjustedInterval: Interval = [interval[0], interval[1]];
 
 		if (constraints.startDate) {
 			adjustedInterval = this.adapter.initStartConstraint(
 				new Date(constraints.startDate),
-				adjustedInterval,
-				pagination.size
+				adjustedInterval
 			);
 		}
 
 		if (constraints.endDate) {
 			adjustedInterval = this.adapter.initEndConstraint(
 				new Date(constraints.endDate),
-				adjustedInterval,
-				pagination.size
+				adjustedInterval
 			);
 		}
 
@@ -868,7 +859,6 @@ class Clndr {
 
 		this.interval = this.adapter.back(
 			this.interval,
-			this.options.pagination.size,
 			this.options.pagination.step || this.options.pagination.size
 		);
 
@@ -903,7 +893,6 @@ class Clndr {
 
 		this.interval = this.adapter.forward(
 			this.interval,
-			this.options.pagination.size,
 			this.options.pagination.step || this.options.pagination.size
 		);
 
@@ -979,11 +968,7 @@ class Clndr {
 
 		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
 
-		this.interval = this.adapter.setDay(
-			new Date(),
-			this.options.pagination.size,
-			this.options.startOn
-		);
+		this.interval = this.adapter.setDay(new Date(), this.options.startOn);
 
 		// No need to re-render if the month was not changed
 		if (
@@ -1009,7 +994,7 @@ class Clndr {
 	setMonth(newMonth: number, options: ClndrNavigationOptions = {}) {
 		const orig: Interval = [this.interval[0], this.interval[1]];
 
-		this.interval = this.adapter.setMonth(newMonth, this.interval, this.options.pagination.size);
+		this.interval = this.adapter.setMonth(newMonth, this.interval);
 
 		this.render();
 
@@ -1041,11 +1026,7 @@ class Clndr {
 	setIntervalStart(newDate: Date | string, options: ClndrNavigationOptions = {}) {
 		const orig: Interval = [this.interval[0], this.interval[1]];
 
-		this.interval = this.adapter.setDay(
-			new Date(newDate),
-			this.options.pagination.size,
-			this.options.startOn
-		);
+		this.interval = this.adapter.setDay(new Date(newDate), this.options.startOn);
 
 		this.render();
 

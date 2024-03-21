@@ -69,10 +69,12 @@ type DateParameterDefinition = string
 	| {date?: string, startDate: string, endDate: string}
 
 export type Pagination = {
-	scope: 'month' | 'day'
+	scope: Scope
 	size: number
 	step?: number
 }
+
+export type Scope = 'month' | 'day'
 
 type ClickEvents = {
 	click?: (target: ClndrTarget) => void

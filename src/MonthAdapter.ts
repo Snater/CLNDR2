@@ -27,24 +27,14 @@ import type {
 	PageDates,
 } from './types';
 
-type MonthScopeOptions = {
-	forceSixRows: boolean
-}
+export class MonthAdapter extends Adapter {
 
-export class MonthAdapter implements Adapter {
-
-	private readonly options: MonthScopeOptions;
-
-	constructor(options: MonthScopeOptions) {
-		this.options = options;
-	}
-
-	initInterval(pageSize: number, startOn?: Date): Interval {
+	initInterval(startOn?: Date): Interval {
 		const start = startOfMonth(startOn || new Date());
 
 		// Subtract a day so that we are at the end of the interval. We always want intervalEnd to be
 		// inclusive.
-		const end = subDays(addMonths(start, pageSize), 1);
+		const end = subDays(addMonths(start, this.options.pageSize), 1);
 		return [start, end];
 	}
 
@@ -156,24 +146,24 @@ export class MonthAdapter implements Adapter {
 		return null;
 	}
 
-	setDay(day: Date, pageSize: number): Interval {
+	setDay(day: Date): Interval {
 		const start = startOfMonth(day);
-		return [start, endOfMonth(subDays(addMonths(start, pageSize), 1))];
+		return [start, endOfMonth(subDays(addMonths(start, this.options.pageSize), 1))];
 	}
 
-	setMonth(newMonth: number, interval: Interval, pageSize: number): Interval {
+	setMonth(newMonth: number, interval: Interval): Interval {
 		const start = startOfMonth(setMonth(interval[0], newMonth));
-		return [start, endOfMonth(subDays(addMonths(start, pageSize), 1))];
+		return [start, endOfMonth(subDays(addMonths(start, this.options.pageSize), 1))];
 	}
 
-	back(interval: Interval, pageSize: number, step: number): Interval {
+	back(interval: Interval, step: number): Interval {
 		const start = startOfMonth(subMonths(interval[0], step));
-		return [start, endOfMonth(subDays(addMonths(start, pageSize), 1))];
+		return [start, endOfMonth(subDays(addMonths(start, this.options.pageSize), 1))];
 	}
 
-	forward(interval: Interval, pageSize: number, step: number): Interval {
+	forward(interval: Interval, step: number): Interval {
 		const start = startOfMonth(addMonths(interval[0], step));
-		return [start, endOfMonth(subDays(addMonths(start, pageSize), 1))];
+		return [start, endOfMonth(subDays(addMonths(start, this.options.pageSize), 1))];
 	}
 
 	flushTemplateData(
