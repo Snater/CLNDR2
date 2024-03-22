@@ -255,7 +255,10 @@ class Clndr {
 		return adjustedDaysOfTheWeek;
 	}
 
-	private createDaysObject(interval: Interval) {
+	private createDaysObject(
+		interval: Interval,
+		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
+	) {
 
 		const dates = this.adapter.aggregateDays(interval, this.options.weekOffset);
 
@@ -263,7 +266,7 @@ class Clndr {
 		return [
 			...dates[0].map(day => {
 				if (this.options.showAdjacent) {
-					return this.createDayObject(day, this.events, interval)
+					return this.createDayObject(day, events[0], interval)
 				} else {
 					return this.calendarDay({
 						classes: [this.options.targets.empty, this.options.classes.lastMonth].join(' '),
@@ -271,11 +274,11 @@ class Clndr {
 				}
 			}),
 			...dates[1].map(date => {
-				return this.createDayObject(date, this.events, interval)
+				return this.createDayObject(date, events[1], interval)
 			}),
 			...dates[2].map(day => {
 				if (this.options.showAdjacent) {
-					return this.createDayObject(day, this.events, interval)
+					return this.createDayObject(day, events[2], interval)
 				} else {
 					return this.calendarDay({
 						classes: [this.options.targets.empty, this.options.classes.nextMonth].join(' '),
@@ -424,12 +427,14 @@ class Clndr {
 			},
 		};
 
+		const parsedEvents = this.parseEvents(this.interval);
+
 		// TODO: Streamline template data
 		return this.adapter.flushTemplateData.apply(this, [
 			data,
 			this.interval,
-			this.createDaysObject,
-			this.parseEvents(this.interval),
+			(interval: Interval) => this.createDaysObject(interval, parsedEvents),
+			parsedEvents,
 			this.options.pagination.size,
 			this.options.locale,
 		]);

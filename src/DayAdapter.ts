@@ -100,7 +100,7 @@ export class DayAdapter extends Adapter {
 		createDaysObject: (interval: Interval) => Day[],
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
 	): ClndrTemplateData {
-		data.days = createDaysObject.apply(this, [interval]);
+		data.days = createDaysObject(interval);
 		data.intervalEnd = interval[1];
 		data.numberOfRows = Math.ceil(data.days.length / 7);
 		data.intervalStart = interval[0];

@@ -212,10 +212,7 @@ export class MonthAdapter extends Adapter {
 			for (let i = 0; i < pageSize; i++) {
 				const currentIntervalStart = addMonths(interval[0], i);
 				const currentIntervalEnd = endOfMonth(currentIntervalStart);
-				const days = createDaysObject.apply(
-					this,
-					[[currentIntervalStart, currentIntervalEnd]]
-				);
+				const days = createDaysObject([currentIntervalStart, currentIntervalEnd]);
 
 				// Save events processed for each month into a master array of events for this interval
 				eventsThisInterval.push(
@@ -241,7 +238,7 @@ export class MonthAdapter extends Adapter {
 		} else {
 			// Since this is the default "month" view, the interval's start and end will always be the
 			// start and the end of the same month
-			data.days = createDaysObject.apply(this, [interval]);
+			data.days = createDaysObject(interval);
 
 			data.year = getYear(interval[0]);
 			data.month = format(interval[0], 'MMMM', {locale});
