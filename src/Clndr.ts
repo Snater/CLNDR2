@@ -4,7 +4,6 @@ import {
 	addMonths,
 	addYears,
 	endOfDay,
-	endOfMonth,
 	format,
 	getDate,
 	getDay,
@@ -16,7 +15,6 @@ import {
 	isSameMonth,
 	setDay,
 	setYear,
-	startOfMonth,
 	subMonths,
 	subYears,
 } from 'date-fns';
@@ -68,7 +66,7 @@ const defaults: InternalOptions = {
 	forceSixRows: false,
 	ignoreInactiveDaysInSelection: false,
 	pagination: {scope: 'month', size: 1},
-	showAdjacentMonths: true,
+	showAdjacent: true,
 	targets: {
 		day: 'day',
 		empty: 'empty',
@@ -148,16 +146,10 @@ class Clndr {
 	private interval: Interval;
 	private options: InternalOptions;
 	private calendarContainer: HTMLElement;
-	private eventsLastMonth: InternalClndrEvent[];
-	private eventsNextMonth: InternalClndrEvent[];
-	private eventsThisInterval: InternalClndrEvent[];
 	private events: InternalClndrEvent[];
 
 	constructor(element: HTMLElement, options: ClndrOptions) {
 		this.element = element;
-		this.eventsLastMonth = [];
-		this.eventsNextMonth = [];
-		this.eventsThisInterval = [];
 
 		this.options = Clndr.mergeOptions<InternalOptions, ClndrOptions>(defaults, options);
 
@@ -168,9 +160,11 @@ class Clndr {
 			this.options.weekOffset = 0;
 		}
 
-		this.adapter = new adapters[this.options.pagination.scope](
-			{pageSize: this.options.pagination.size, forceSixRows: this.options.forceSixRows}
-		);
+		this.adapter = new adapters[this.options.pagination.scope]({
+			forceSixRows: this.options.forceSixRows,
+			pageSize: this.options.pagination.size,
+			showAdjacent: this.options.showAdjacent,
+		});
 
 		this.constraints = {
 			next: true,
@@ -268,7 +262,7 @@ class Clndr {
 		// This array will contain the data of the entire grid (including blank spaces)
 		return [
 			...dates[0].map(day => {
-				if (this.options.showAdjacentMonths) {
+				if (this.options.showAdjacent) {
 					return this.createDayObject(day, this.events, interval)
 				} else {
 					return this.calendarDay({
@@ -277,10 +271,10 @@ class Clndr {
 				}
 			}),
 			...dates[1].map(date => {
-				return this.createDayObject(date, this.eventsThisInterval, interval)
+				return this.createDayObject(date, this.events, interval)
 			}),
 			...dates[2].map(day => {
-				if (this.options.showAdjacentMonths) {
+				if (this.options.showAdjacent) {
 					return this.createDayObject(day, this.events, interval)
 				} else {
 					return this.calendarDay({
@@ -292,49 +286,28 @@ class Clndr {
 	}
 
 	/**
-	 * Filters the events list to events that are happening last month, this month and next month
-	 * (within the current grid view).
+	 * Filters the events list to events that are happening in the previous scope, the current scope
+	 * and the next scope, so if the adjacent option is on, the events will also be available in the
+	 * template.
 	 */
 	private parseEvents(interval: Interval) {
-		// Filter the events list (if it exists) to events that are happening last month, this month and
-		// next month (within the current grid view).
-		this.eventsLastMonth = [];
-		this.eventsNextMonth = [];
-		this.eventsThisInterval = [];
+		const parsedEvents: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
+			= [[], [], []];
 
-		if (!this.events.length) {
-			return;
-		}
-
-		this.eventsThisInterval = this.events.filter(event => {
+		parsedEvents[1] = this.events.filter(event => {
 			const afterEnd = isAfter(event._clndrStartDateObject, interval[1]);
 			const beforeStart = isBefore(event._clndrEndDateObject, interval[0]);
 
 			return !(beforeStart || afterEnd);
 		});
 
-		if (!this.options.showAdjacentMonths) {
-			return;
-		}
+		const [previousScopeEvents, nextScopeEvents]
+			= this.adapter.aggregateAdjacentScopeEvents(interval, this.events);
 
-		const startOfLastMonth = startOfMonth(subMonths(interval[0], 1));
-		const endOfLastMonth = endOfMonth(startOfLastMonth);
-		const startOfNextMonth = startOfMonth(addMonths(interval[1], 1));
-		const endOfNextMonth = endOfMonth(startOfNextMonth);
+		parsedEvents[0] = previousScopeEvents;
+		parsedEvents[2] = nextScopeEvents;
 
-		this.eventsLastMonth = this.events.filter(event => {
-			const beforeStart = isBefore(event._clndrEndDateObject, startOfLastMonth);
-			const afterEnd = isAfter(event._clndrStartDateObject, endOfLastMonth);
-
-			return !(beforeStart || afterEnd);
-		});
-
-		this.eventsNextMonth = this.events.filter(event => {
-			const beforeStart = isBefore(event._clndrEndDateObject, startOfNextMonth);
-			const afterEnd = isAfter(event._clndrStartDateObject, endOfNextMonth);
-
-			return !(beforeStart || afterEnd);
-		});
+		return parsedEvents;
 	}
 
 	private createDayObject(day: Date, monthEvents: InternalClndrEvent[], interval: Interval) {
@@ -451,18 +424,12 @@ class Clndr {
 			},
 		};
 
-		this.parseEvents(this.interval);
-
 		// TODO: Streamline template data
 		return this.adapter.flushTemplateData.apply(this, [
 			data,
 			this.interval,
 			this.createDaysObject,
-			{
-				eventsThisInterval: this.eventsThisInterval,
-				eventsLastMonth: this.eventsLastMonth,
-				eventsNextMonth: this.eventsNextMonth,
-			},
+			this.parseEvents(this.interval),
 			this.options.pagination.size,
 			this.options.locale,
 		]);

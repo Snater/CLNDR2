@@ -347,7 +347,7 @@ new Clndr(container, {
   selectedDate: null,
 
   // Whether to show the dates of days in months adjacent to the current month.
-  showAdjacentMonths: true,
+  showAdjacent: true,
 
   // Determines which month to display initially by providing either a date string or a Date object.
   // If not provided, today's date is used.

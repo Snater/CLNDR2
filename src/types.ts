@@ -18,7 +18,7 @@ export type InternalOptions = {
 	pagination: Pagination
 	ready?: () => void
 	selectedDate?: Date | string
-	showAdjacentMonths: boolean
+	showAdjacent: boolean
 	startOn?: Date
 	targets: {[key in TargetOption]: string}
 	trackSelectedDate: boolean

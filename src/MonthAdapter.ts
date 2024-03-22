@@ -78,6 +78,36 @@ export class MonthAdapter extends Adapter {
 		return adjustedInterval;
 	}
 
+	aggregateAdjacentScopeEvents(
+		interval: Interval,
+		events: InternalClndrEvent[]
+	): [InternalClndrEvent[], InternalClndrEvent[]] {
+		if (!this.options.showAdjacent) {
+			return [[], []];
+		}
+
+		const startOfLastMonth = startOfMonth(subMonths(interval[0], 1));
+		const endOfLastMonth = endOfMonth(startOfLastMonth);
+		const startOfNextMonth = startOfMonth(addMonths(interval[1], 1));
+		const endOfNextMonth = endOfMonth(startOfNextMonth);
+
+		const eventsPreviousMonth = events.filter(event => {
+			const beforeStart = isBefore(event._clndrEndDateObject, startOfLastMonth);
+			const afterEnd = isAfter(event._clndrStartDateObject, endOfLastMonth);
+
+			return !(beforeStart || afterEnd);
+		});
+
+		const eventsNextMonth = events.filter(event => {
+			const beforeStart = isBefore(event._clndrEndDateObject, startOfNextMonth);
+			const afterEnd = isAfter(event._clndrStartDateObject, endOfNextMonth);
+
+			return !(beforeStart || afterEnd);
+		});
+
+		return [eventsPreviousMonth, eventsNextMonth];
+	}
+
 	aggregateDays(interval: Interval, weekOffset: number): PageDates {
 		return [
 			this.aggregateDaysOfPreviousMonth(interval[0], weekOffset),
@@ -170,11 +200,7 @@ export class MonthAdapter extends Adapter {
 		data: ClndrTemplateData,
 		interval: Interval,
 		createDaysObject: (interval: Interval) => Day[],
-		events: {
-			eventsThisInterval: InternalClndrEvent[],
-			eventsLastMonth: InternalClndrEvent[],
-			eventsNextMonth: InternalClndrEvent[],
-		},
+		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]],
 		pageSize: number,
 		locale: Locale
 	): ClndrTemplateData {
@@ -193,7 +219,7 @@ export class MonthAdapter extends Adapter {
 
 				// Save events processed for each month into a master array of events for this interval
 				eventsThisInterval.push(
-					events.eventsThisInterval.map(event => event.originalEvent)
+					events[1].map(event => event.originalEvent)
 				);
 				data.months.push({
 					days: days,
@@ -210,8 +236,8 @@ export class MonthAdapter extends Adapter {
 
 			data.intervalEnd = interval[1];
 			data.intervalStart = interval[0];
-			data.eventsLastMonth = events.eventsLastMonth.map(event => event.originalEvent);
-			data.eventsNextMonth = events.eventsNextMonth.map(event => event.originalEvent);
+			data.eventsLastMonth = events[0].map(event => event.originalEvent);
+			data.eventsNextMonth = events[2].map(event => event.originalEvent);
 		} else {
 			// Since this is the default "month" view, the interval's start and end will always be the
 			// start and the end of the same month
@@ -219,10 +245,10 @@ export class MonthAdapter extends Adapter {
 
 			data.year = getYear(interval[0]);
 			data.month = format(interval[0], 'MMMM', {locale});
-			data.eventsLastMonth = events.eventsLastMonth.map(event => event.originalEvent);
-			data.eventsNextMonth = events.eventsNextMonth.map(event => event.originalEvent);
+			data.eventsLastMonth = events[0].map(event => event.originalEvent);
+			data.eventsNextMonth = events[2].map(event => event.originalEvent);
 			data.numberOfRows = Math.ceil(data.days.length / 7);
-			data.eventsThisMonth = events.eventsThisInterval.map(event => event.originalEvent);
+			data.eventsThisMonth = events[1].map(event => event.originalEvent);
 		}
 
 		return data;

@@ -280,7 +280,7 @@ describe('Setup', () => {
 	test('Custom week offset while not showing adjacent months', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			showAdjacentMonths: false,
+			showAdjacent: false,
 			weekOffset: 3,
 		});
 
@@ -301,7 +301,7 @@ describe('Setup', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			forceSixRows: true,
-			showAdjacentMonths: false,
+			showAdjacent: false,
 			startOn: new Date('1992-02'),
 		});
 
@@ -353,7 +353,7 @@ describe('Setup', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			events: [{date: '1992-10-15'}],
-			showAdjacentMonths: false,
+			showAdjacent: false,
 			startOn: new Date('1992-10'),
 		});
 
@@ -511,7 +511,7 @@ describe('Navigation', () => {
 	test('Change month by clicking on empty field preceding current month\'s days', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			showAdjacentMonths: false,
+			showAdjacent: false,
 			adjacentDaysChangeMonth: true,
 			startOn: new Date('1992-10'),
 		});
@@ -526,7 +526,7 @@ describe('Navigation', () => {
 	test('Change month by clicking on empty field following current month\'s days', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			showAdjacentMonths: false,
+			showAdjacent: false,
 			adjacentDaysChangeMonth: true,
 			startOn: new Date('1992-09'),
 		});
@@ -1106,7 +1106,7 @@ describe('Events', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			showAdjacentMonths: false,
+			showAdjacent: false,
 			clickEvents: {
 				click: handleClick,
 			},
@@ -1418,7 +1418,7 @@ describe('Handling errors', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			adjacentDaysChangeMonth: true,
-			showAdjacentMonths: false,
+			showAdjacent: false,
 			startOn: new Date('1992-09'),
 		});
 

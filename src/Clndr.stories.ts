@@ -211,7 +211,7 @@ const meta: Meta<ClndrOptions> = {
 				},
 			},
 		},
-		showAdjacentMonths: {
+		showAdjacent: {
 			description: 'Whether days of the preceding and following month should be displayed.',
 			table: {
 				defaultValue: {
@@ -372,7 +372,7 @@ function getDateOfCurrentMonth(day: number) {
 export const Default: Story = {
 	args: {
 		adjacentDaysChangeMonth: false,
-		showAdjacentMonths: true,
+		showAdjacent: true,
 	},
 	render: args => {
 		const container = document.createElement('div');

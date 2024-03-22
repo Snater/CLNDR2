@@ -52,6 +52,12 @@ export class DayAdapter extends Adapter {
 		return adjustedInterval;
 	}
 
+	aggregateAdjacentScopeEvents(): [InternalClndrEvent[], InternalClndrEvent[]] {
+		// Since "day" is the smallest unit, there is no point in having an implementation for this
+		// scope as there will never be adjacent days visible.
+		return [[], []];
+	}
+
 	aggregateDays(interval: Interval): PageDates {
 		const days: Date[] = [];
 		// console.log('aggregateDays', interval, differenceInDays(interval[1], interval[0]));
@@ -92,18 +98,14 @@ export class DayAdapter extends Adapter {
 		data: ClndrTemplateData,
 		interval: Interval,
 		createDaysObject: (interval: Interval) => Day[],
-		events: {
-			eventsThisInterval: InternalClndrEvent[],
-			eventsLastMonth: InternalClndrEvent[],
-			eventsNextMonth: InternalClndrEvent[],
-		}
+		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
 	): ClndrTemplateData {
 		data.days = createDaysObject.apply(this, [interval]);
 		data.intervalEnd = interval[1];
 		data.numberOfRows = Math.ceil(data.days.length / 7);
 		data.intervalStart = interval[0];
 
-		data.eventsThisInterval = events.eventsThisInterval.map(
+		data.eventsThisInterval = events[1].map(
 			event => event.originalEvent
 		);
 

@@ -11,6 +11,7 @@ import {Locale} from 'date-fns';
 export type AdapterOptions = {
 	forceSixRows: boolean
 	pageSize: number
+	showAdjacent: boolean
 }
 
 export abstract class Adapter {
@@ -26,6 +27,11 @@ export abstract class Adapter {
 	abstract initStartConstraint(constraintStart: Date, interval: Interval): Interval;
 	abstract initEndConstraint(constraintEnd: Date, interval: Interval): Interval;
 
+	abstract aggregateAdjacentScopeEvents(
+		interval: Interval,
+		events: InternalClndrEvent[]
+	): [InternalClndrEvent[], InternalClndrEvent[]]
+
 	abstract aggregateDays(interval: Interval, weekOffset?: number): PageDates;
 
 	abstract isAdjacent(day: Date, interval: Interval): Adjacent
@@ -40,11 +46,7 @@ export abstract class Adapter {
 		data: ClndrTemplateData,
 		interval: Interval,
 		createDaysObject: (interval: Interval) => Day[],
-		events: {
-			eventsThisInterval: InternalClndrEvent[],
-			eventsLastMonth: InternalClndrEvent[],
-			eventsNextMonth: InternalClndrEvent[],
-		},
+		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]],
 		pageSize?: number,
 		locale?: Locale
 	): ClndrTemplateData
