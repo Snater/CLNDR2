@@ -11,7 +11,6 @@ import {
 	isAfter,
 	isBefore,
 	setMonth,
-	setYear,
 	startOfMonth,
 	subDays,
 	subMonths,
@@ -42,17 +41,11 @@ export class MonthAdapter extends Adapter {
 		const adjustedInterval: Interval = [interval[0], interval[1]];
 
 		if (isBefore(adjustedInterval[0], subMonths(constraintStart, 1))) {
-			adjustedInterval[0] = setYear(
-				setMonth(adjustedInterval[0], getMonth(constraintStart)),
-				getYear(constraintStart)
-			);
+			adjustedInterval[0] = startOfMonth(constraintStart);
 		}
 
 		if (isBefore(adjustedInterval[1], subMonths(constraintStart, 1))) {
-			adjustedInterval[1] = setYear(
-				setMonth(adjustedInterval[1], getMonth(constraintStart)),
-				getYear(constraintStart)
-			);
+			adjustedInterval[1] = endOfMonth(constraintStart);
 		}
 
 		return adjustedInterval;
@@ -62,17 +55,11 @@ export class MonthAdapter extends Adapter {
 		const adjustedInterval: Interval = [interval[0], interval[1]];
 
 		if (isAfter(adjustedInterval[1], addMonths(constraintEnd, 1))) {
-			adjustedInterval[1] = setYear(
-				setMonth(adjustedInterval[1], getMonth(constraintEnd)),
-				getYear(constraintEnd)
-			);
+			adjustedInterval[1] = endOfMonth(constraintEnd);
 		}
 
 		if (isAfter(adjustedInterval[0], addMonths(constraintEnd, 1))) {
-			adjustedInterval[0] = setYear(
-				setMonth(adjustedInterval[0], getMonth(constraintEnd)),
-				getYear(constraintEnd)
-			);
+			adjustedInterval[0] = startOfMonth(constraintEnd);
 		}
 
 		return adjustedInterval;
