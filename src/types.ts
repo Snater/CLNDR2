@@ -114,20 +114,19 @@ type DayStatus = 'past'
 	| 'adjacentMonth'
 
 export type ClndrTemplateData = {
-	days: Day[]
-	months: Month[]
-	year: number | null
-	month: string | null
-	eventsLastMonth: ClndrEvent[]
-	eventsNextMonth: ClndrEvent[]
-	eventsThisMonth: ClndrEvent[]
-	extras: unknown | null
+	interval: Interval
+	days: Day[] | Day[][]
+	month: Date | null
+	months: Date[] | null
+	events: {
+		currentPage: ClndrEvent[] | ClndrEvent[][]
+		previousScope: ClndrEvent[]
+		nextScope: ClndrEvent[]
+	}
 	daysOfTheWeek: string[]
 	numberOfRows: number
-	intervalStart: Date | null
-	intervalEnd: Date | null
-	eventsThisInterval: ClndrEvent[] | ClndrEvent[][]
 	format: (date: Date, formatStr: string, options: FormatOptions) => string
+	extras: unknown | null
 }
 
 export type Day = {
@@ -142,11 +141,6 @@ export type DayProperties = {
 	isToday: boolean
 	isInactive: boolean
 	isAdjacentMonth: boolean
-}
-
-type Month = {
-	days: Day[]
-	month: Date
 }
 
 export type ClndrNavigationOptions = {withCallbacks?: boolean}

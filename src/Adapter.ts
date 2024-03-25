@@ -6,7 +6,6 @@ import type {
 	Interval,
 	PageDates,
 } from './types';
-import {Locale} from 'date-fns';
 
 export type AdapterOptions = {
 	forceSixRows: boolean
@@ -44,10 +43,8 @@ export abstract class Adapter {
 
 	abstract flushTemplateData(
 		data: ClndrTemplateData,
-		interval: Interval,
 		createDaysObject: (interval: Interval) => Day[],
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]],
-		pageSize?: number,
-		locale?: Locale
+		pageSize?: number
 	): ClndrTemplateData
 }

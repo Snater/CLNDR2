@@ -2,6 +2,7 @@ import {
 	addDays,
 	addWeeks,
 	differenceInDays,
+	eachMonthOfInterval,
 	endOfDay,
 	endOfWeek,
 	getDay,
@@ -60,7 +61,6 @@ export class DayAdapter extends Adapter {
 
 	aggregateDays(interval: Interval): PageDates {
 		const days: Date[] = [];
-		// console.log('aggregateDays', interval, differenceInDays(interval[1], interval[0]));
 		for (let i = 0; i <= differenceInDays(interval[1], interval[0]); i++) {
 			days.push(addDays(interval[0], i));
 		}
@@ -96,18 +96,15 @@ export class DayAdapter extends Adapter {
 
 	flushTemplateData(
 		data: ClndrTemplateData,
-		interval: Interval,
 		createDaysObject: (interval: Interval) => Day[],
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
 	): ClndrTemplateData {
-		data.days = createDaysObject(interval);
-		data.intervalEnd = interval[1];
-		data.numberOfRows = Math.ceil(data.days.length / 7);
-		data.intervalStart = interval[0];
 
-		data.eventsThisInterval = events[1].map(
-			event => event.originalEvent
-		);
+		data.month = data.interval[0];
+		data.months = eachMonthOfInterval({start: data.interval[0], end: data.interval[1]});
+		data.days = createDaysObject.apply(this, [data.interval]);
+		data.numberOfRows = Math.ceil(data.days.length / 7);
+		data.events.currentPage = events[1].map(event => event.originalEvent);
 
 		return data;
 	}

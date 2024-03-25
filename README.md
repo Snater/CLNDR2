@@ -21,8 +21,7 @@ It is the unofficial successor to awesome [CLNDR](https://github.com/kylestetz/C
   - [Mixing Multi-day and Single-day Events](#mixing-multi-day-and-single-day-events)
 - [All Options](#all-options)
 - [Data provided to the Template](#data-provided-to-the-template)
-  - [Default Configuration](#default-configuration)
-  - [When a Custom Interval is configured](#when-a-custom-interval-is-configured)
+  - [All Parameters](#all-parameters)
   - [The "days" Array](#the-days-array)
 - [Custom CSS Classes](#custom-css-classes)
 - [Constraints & Date Pickers](#constraints--date-pickers)
@@ -81,7 +80,7 @@ Here's a typical CLNDR2 template for EJS, Underscore and lodash. It's got a cont
 ```html
 <div class="clndr-controls">
   <div class="clndr-previous-button">&lsaquo;</div>
-  <div class="month"><%= month %></div>
+  <div class="month"><%= format(interval[0], 'MMMM') %></div>
   <div class="clndr-next-button">&rsaquo;</div>
 </div>
 <div class="clndr-grid">
@@ -380,86 +379,61 @@ new Clndr(container, {
 
 ## Data provided to the Template
 
-The data passed to the template depends on whether custom pagination is configured (using the `pagination` option).
+While the properties of the data being passed to the template will always be defined, the population of some of the data properties depends on whether custom pagination is configured (using the `pagination` option).
 
-### Default Configuration
-
-Without a custom interval being configured, the calendar is configured for viewing one month at a time. In that case, the data passed to the template would look like this:
+### All Parameters
 
 ```typescript
-// The `days` array, documented in more detail below;
-days: [{day, classes, events, date, properties}, ...]
+// A tuple of Date objects representing the start and end of the current page's
+// interval.
+interval: [Date, Date]
 
-months: []
+// The `days` array, documented in more detail below; when `pagination.scope`
+// is set to `month` and `pagination.size` is greater than 1, this is a
+// multi-dimensional array, one array of `Day` objects per month.
+days: Day[] | Day[][]
 
-// The year that the calendar is currently focused ond
-year: 2013
+// A Date object representing the current month. This is an convenience
+// parameter euqal to interval[0].
+month: Date
 
-// The month name, localised according to the `locale` option (if provided)
-month: "May"
+// An array of Date objects representing the months of the current page,
+// particularly useful if `pagination.scope` is set to `month` and
+// `pagination.size` is greater than 1. In that case, use this property
+// to loop over the months and render the days per month, i.e.
+// ```
+// months.forEach((month, monthIndex) => {
+//   ... days[monthIndex].forEach(day => ...) ...
+// )}
+// ```
+months: Date[]
 
-// All of the events happening this month.
-eventsThisMonth: [...]
-// All of the events happening last month.
-eventsLastMonth: [...]
-// All of the events happening next month.
-eventsNextMonth: [...]
+// The events of the current page as well as the events of the previous and
+// next scope. `events.currentPage` is a multi-dimensional array if
+// `pagination.scope` is `month` and `pagination.size` is greater than 1.
+// `events.previousScope` and `events.nextScope` may be used to get the events
+// if the `showAdjacentMonths` option is turned on. Both are empty if
+// `pagination.scope` is set to `day`.
+events: {
+  currentPage: ClndrEvent[] | ClndrEvent[][]
+  previousScope: ClndrEvent[]
+  nextScope: ClndrEvent[]
+}
 
-// Anything passed per the `extras` options when creating the calendar
-extras: {}
+// An array of day-of-the-week abbreviations, shifted as configured by the
+// `weekOffset` parameter, i.e. `['S', 'M', 'T', etc...]`.
+daysOfTheWeek: string[]
 
-// An array of day-of-the-week abbreviations, shifted as configured by the `weekOffset` parameter
-daysOfTheWeek: ['S', 'M', 'T', etc...]
+// The number of 7-block calendar rows, in case of wanting to do some looping
+// with it.
+numberOfRows: number
 
-// The number of 7-block calendar rows, in case of wanting to do some looping with it
-numberOfRows: 5
+// A proxy for date-fns' `format` function being equiped with the locale
+// provided to the `locale` option.
+format: (date: Date, formatStr: string, options: FormatOptions) => string
 
-intervalStart: null
-intervalEnd: null
-eventsThisInterval: []
-
-// A proxy for date-fns' `format` function being equiped with the locale provided to the `locale`
-// option
-format: (date: Date, formatStr: string, options: FormatOptions = {}): string => {...}
-```
-
-### When a Custom Interval is configured
-
-Having a custom pagination configured per the `pagination` option, the data provided to the template would look like this:
-
-```typescript
-// The `days` array, documented in more detail below; only populated if `pagination.scope === 'day'`
-days: [{day, classes, events, date, properties}, ...]
-
-// Array of month objects, ech containing a `days` array as well as a Date object referring to the
-// month; only populated when `pagination.scope === 'month'`
-months: [{days, month}, ...]
-
-year: null
-month: null
-eventsThisMonth: []
-eventsLastMonth: []
-eventsNextMonth: []
-
-// Anything passed per the `extras` options when creating the calendar
-extras: {}
-
-// An array of day-of-the-week abbreviations, shifted as configured by the `weekOffset` parameter
-daysOfTheWeek: ['S', 'M', 'T', etc...]
-
-// The number of 7-block calendar rows, in case of wanting to do some looping with it
-numberOfRows: 5
-
-// Date objects referencing start and end of the currenty rendered interval
-intervalStart: Date(...)
-intervalEnd: Date(...)
-
-// All events happening within the currently rendered interval
-eventsThisInterval: [...]
-
-// A proxy for date-fns' `format` function being equiped with the locale provided to the `locale`
-// option
-format: (date: Date, formatStr: string, options: FormatOptions = {}): string => {...}
+// Anything passed per the `extras` options when creating the calendar.
+extras: unknown | null
 ```
 
 ### The "days" Array

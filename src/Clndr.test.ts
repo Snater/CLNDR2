@@ -12,7 +12,7 @@ const defaultTemplate = `
 		<div class="clndr-control-button">
 			<span class="clndr-previous-button" role="button">previous</span>
 		</div>
-		<div class="month"><%= month %> <%= year %></div>
+		<div class="month"><%= format(month, 'MMMM') %> <%= interval[0].getFullYear() %></div>
 		<div class="clndr-control-button">
 			<span class="clndr-next-button" role="button">next</span>
 		</div>
@@ -20,16 +20,16 @@ const defaultTemplate = `
 	<table class="clndr-table">
 		<thead>
 			<tr class="header-days">
-				<% for(var i = 0; i < daysOfTheWeek.length; i++) { %>
+				<% for(let i = 0; i < daysOfTheWeek.length; i++) { %>
 					<td class="header-day"><%= daysOfTheWeek[i] %></td>
 				<% } %>
 			</tr>
 		</thead>
 		<tbody>
-			<% for(var i = 0; i < numberOfRows; i++){ %>
+			<% for(let i = 0; i < numberOfRows; i++){ %>
 				<tr>
-					<% for(var j = 0; j < 7; j++){ %>
-						<% var d = j + i * 7; %>
+					<% for(let j = 0; j < 7; j++){ %>
+						<% const d = j + i * 7; %>
 						<td class="<%= days[d].classes %>">
 							<div class="day-contents"><%= days[d].day %></div>
 						</td>
@@ -42,7 +42,7 @@ const defaultTemplate = `
 const simpleTemplate = `
 	<div class="clndr-controls">
 		<div class="clndr-previous-button">&lsaquo;</div>
-		<div class="month"><%= month %></div>
+		<div class="month"><%= format(month, 'MMMM') %></div>
 		<div class="clndr-next-button">&rsaquo;</div>
 	</div>
 	<div class="clndr-grid">
@@ -63,7 +63,7 @@ const oneWeekTemplate = `
 	<div class="clndr-controls">
 		<div class="clndr-previous-button">&lsaquo;</div>
 		<div class="month">
-			<%= format(intervalStart, 'MM/dd') %> - <%= format(intervalEnd, 'MM/dd') %>
+			<%= format(interval[0], 'MM/dd') %> - <%= format(interval[1], 'MM/dd') %>
 		</div>
 		<div class="clndr-next-button">&rsaquo;</div>
 	</div>
@@ -87,9 +87,9 @@ const multiMonthTemplate = `
 		--><div class="clndr-next-button quarter-button right-align">&rsaquo;</div><!--
 		--><div class="clndr-next-year-button quarter-button right-align">&raquo;</div>
 	</div>
-	<% months.forEach(oneMonth => { %>
+	<% months.forEach((month, monthIndex) => { %>
 		<div class="clndr-controls">
-			<div class="month"><%= format(oneMonth.month, 'MMMM yyyy') %></div>
+			<div class="month"><%= format(month, 'MMMM yyyy') %></div>
 		</div>
 		<div class="clndr-grid">
 			<div class="days-of-the-week">
@@ -97,7 +97,7 @@ const multiMonthTemplate = `
 					<div class="header-day"><%= day %></div>
 				<% }); %>
 				<div class="days">
-					<% oneMonth.days.forEach(day => { %>
+					<% days[monthIndex].forEach(day => { %>
 						<div class="<%= day.classes %>"><%= day.day %></div>
 					<% }); %>
 				</div>
@@ -1312,6 +1312,119 @@ describe('Custom interval', () => {
 		expect(container.querySelector('.calendar-day-1992-10-15')).toHaveClass('event');
 		expect(container.querySelector('.calendar-day-1992-10-22')).not.toBeInTheDocument();
 	});
+
+});
+
+describe('Events passed to the template', () => {
+	test('Events of previous, next and current page, a page being one month', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(`
+				<div>
+					<% events.previousScope.forEach(event => { %>
+						<%= event.title %>
+					<% }) %>
+				</div>
+				<div>
+					<% events.currentPage.forEach(event => { %>
+						<%= event.title %>
+					<% }) %>
+				</div>
+				<div>
+					<% events.nextScope.forEach(event => { %>
+						<%= event.title %>
+					<% }) %>
+				</div>
+			`),
+			events: [
+				{date: '1992-08-15', title: 'event out of range'},
+				{date: '1992-09-15', title: 'event on previous page'},
+				{date: '1992-10-15', title: 'event on current page'},
+				{date: '1992-11-15', title: 'event on next page'},
+				{date: '1992-12-15', title: 'event out of range'},
+			],
+			startOn: new Date('1992-10'),
+		});
+
+		expect(screen.queryByText('event out of range')).toBeNull();
+		expect(screen.getByText('event on previous page')).toBeInTheDocument();
+		expect(screen.getByText('event on current page')).toBeInTheDocument();
+		expect(screen.getByText('event on next page')).toBeInTheDocument();
+	});
+
+	test('Events of previous, next and current page, a page being multiple months', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(`
+				<div>
+					<% events.previousScope.forEach(event => { %>
+						<div><%= event.title %></div>
+					<% }) %>
+					<% events.currentPage.forEach(monthEvents => { %>
+						<div>
+							<% monthEvents.forEach(event => { %>
+								<div><%= event.title %></div>
+							<% }) %>
+						</div>
+					<% }) %>
+					<% events.nextScope.forEach(event => { %>
+						<div><%= event.title %></div>
+					<% }) %>
+				</div>
+			`),
+			events: [
+				{date: '1992-07-15', title: 'event out of range'},
+				{date: '1992-08-15', title: 'first event on previous page'},
+				{date: '1992-09-15', title: 'second event on previous page'},
+				{date: '1992-10-15', title: 'first event on current page'},
+				{date: '1992-11-15', title: 'second event on current page'},
+				{date: '1992-12-15', title: 'first event on next page'},
+				{date: '1993-01-15', title: 'second event on next page'},
+				{date: '1993-02-15', title: 'event out of range'},
+			],
+			pagination: {scope: 'month', size: 2},
+			startOn: new Date('1992-10'),
+		});
+
+		expect(screen.queryByText('event out of range')).toBeNull();
+		expect(screen.queryByText('first event on previous page')).toBeNull();
+		expect(screen.getByText('second event on previous page')).toBeInTheDocument();
+		expect(screen.getByText('first event on current page')).toBeInTheDocument();
+		expect(screen.getByText('second event on current page')).toBeInTheDocument();
+		expect(screen.getByText('first event on next page')).toBeInTheDocument();
+		expect(screen.queryByText('second event on next page')).toBeNull();
+	});
+
+	test('Events with page being multiple days', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(`
+				<div>
+					<% events.previousScope.forEach(event => { %>
+						<%= event.title %>
+					<% }) %>
+				</div>
+				<div>
+					<% events.currentPage.forEach(event => { %>
+						<%= event.title %>
+					<% }) %>
+				</div>
+				<div>
+					<% events.nextScope.forEach(event => { %>
+						<%= event.title %>
+					<% }) %>
+				</div>
+			`),
+			events: [
+				{date: '1992-10-12', title: 'event out of range'},
+				{date: '1992-10-15', title: 'event on current page'},
+				{date: '1992-12-21', title: 'event out of range'},
+			],
+			pagination: {scope: 'day', size: 7},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.queryByText('event out of range')).toBeNull();
+		expect(screen.getByText('event on current page')).toBeInTheDocument();
+	});
+
 });
 
 describe('Constraints', () => {
@@ -1454,7 +1567,7 @@ describe('Handling errors', () => {
 		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
 
 		clndr = new Clndr(container, {
-			render: provideRender(multiMonthTemplate),
+			render: provideRender(),
 			dateParameter: 'wrong',
 			events: [{date: '2024-02-19'}],
 		});
@@ -1467,7 +1580,7 @@ describe('Handling errors', () => {
 		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
 
 		clndr = new Clndr(container, {
-			render: provideRender(multiMonthTemplate),
+			render: provideRender(),
 			dateParameter: 'wrong',
 			events: [{date: '2024-02-19'}],
 		});
@@ -1480,7 +1593,7 @@ describe('Handling errors', () => {
 		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
 
 		clndr = new Clndr(container, {
-			render: provideRender(multiMonthTemplate),
+			render: provideRender(),
 			dateParameter: {
 				date: 'wrong',
 				startDate: 'startDate',
@@ -1502,7 +1615,7 @@ describe('Handling errors', () => {
 		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
 
 		clndr = new Clndr(container, {
-			render: provideRender(multiMonthTemplate),
+			render: provideRender(),
 			// @ts-expect-error Intentionally provide invalid dateParameter configuration
 			dateParameter: {
 				date: 'wrong',

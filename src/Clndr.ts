@@ -178,8 +178,7 @@ class Clndr {
 		// comparisons while looping over the event dates
 		this.events = this.parseToInternalEvents(this.options.events);
 
-		// To support arbitrary lengths of time, the current range is stored in addition to the current
-		// month
+		// To support arbitrary lengths of time, the current range is stored
 		this.interval = this.adapter.initInterval(this.options.startOn, this.options.weekOffset);
 
 		// If there are constraints, make sure the interval is within them
@@ -411,17 +410,16 @@ class Clndr {
 		const data: ClndrTemplateData = {
 			days: [],
 			months: [],
-			year: null,
 			month: null,
-			eventsThisMonth: [],
-			eventsLastMonth: [],
-			eventsNextMonth: [],
+			events: {
+				currentPage: [],
+				previousScope: [],
+				nextScope: [],
+			},
 			extras: this.options.extras,
 			daysOfTheWeek: this.daysOfTheWeek,
 			numberOfRows: 0,
-			intervalStart: null,
-			intervalEnd: null,
-			eventsThisInterval: [],
+			interval: this.interval,
 			format: (date: Date, formatStr: string, options: FormatOptions = {}) => {
 				return format(date, formatStr, {locale: this.options.locale || undefined, ...options});
 			},
@@ -429,14 +427,11 @@ class Clndr {
 
 		const parsedEvents = this.parseEvents(this.interval);
 
-		// TODO: Streamline template data
 		return this.adapter.flushTemplateData.apply(this, [
 			data,
-			this.interval,
 			(interval: Interval) => this.createDaysObject(interval, parsedEvents),
 			parsedEvents,
 			this.options.pagination.size,
-			this.options.locale,
 		]);
 	}
 

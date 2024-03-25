@@ -1,10 +1,8 @@
 import {
-	Locale,
 	addDays,
 	addMonths,
 	differenceInDays,
 	endOfMonth,
-	format,
 	getDay,
 	getMonth,
 	getYear,
@@ -185,55 +183,51 @@ export class MonthAdapter extends Adapter {
 
 	flushTemplateData(
 		data: ClndrTemplateData,
-		interval: Interval,
 		createDaysObject: (interval: Interval) => Day[],
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]],
-		pageSize: number,
-		locale: Locale
+		pageSize: number
 	): ClndrTemplateData {
 
-		if (pageSize > 1) {
-			// TODO: Merge `this.options.lengthOfTime.months > 1` and `else`
-			const eventsThisInterval: ClndrEvent[][] = [];
+		data.month = data.interval[0];
+		data.days = [] as Day[][];
+		const currentPageEvents: ClndrEvent[][] = [];
+		data.months = [];
 
-			for (let i = 0; i < pageSize; i++) {
-				const currentIntervalStart = addMonths(interval[0], i);
-				const currentIntervalEnd = endOfMonth(currentIntervalStart);
-				const days = createDaysObject([currentIntervalStart, currentIntervalEnd]);
+		for (let i = 0; i < pageSize; i++) {
+			const currentIntervalStart = addMonths(data.interval[0], i);
+			const currentIntervalEnd = endOfMonth(currentIntervalStart);
 
-				// Save events processed for each month into a master array of events for this interval
-				eventsThisInterval.push(
-					events[1].map(event => event.originalEvent)
-				);
-				data.months.push({
-					days: days,
-					month: currentIntervalStart,
-				});
-			}
+			data.months.push(currentIntervalStart);
 
-			data.eventsThisInterval = eventsThisInterval;
+			data.days.push(createDaysObject.apply(this, [[currentIntervalStart, currentIntervalEnd]]));
 
-			// Get the total number of rows across all months
-			data.months.forEach(month => {
-				data.numberOfRows += Math.ceil(month.days.length / 7);
-			});
+			// Save events processed for each month into a master array of events for this interval
+			currentPageEvents.push(
+				events[1].filter(event => {
+					const beforeStart = isBefore(event._clndrEndDateObject, currentIntervalStart);
+					const afterEnd = isAfter(event._clndrStartDateObject, currentIntervalEnd);
 
-			data.intervalEnd = interval[1];
-			data.intervalStart = interval[0];
-			data.eventsLastMonth = events[0].map(event => event.originalEvent);
-			data.eventsNextMonth = events[2].map(event => event.originalEvent);
-		} else {
-			// Since this is the default "month" view, the interval's start and end will always be the
-			// start and the end of the same month
-			data.days = createDaysObject(interval);
-
-			data.year = getYear(interval[0]);
-			data.month = format(interval[0], 'MMMM', {locale});
-			data.eventsLastMonth = events[0].map(event => event.originalEvent);
-			data.eventsNextMonth = events[2].map(event => event.originalEvent);
-			data.numberOfRows = Math.ceil(data.days.length / 7);
-			data.eventsThisMonth = events[1].map(event => event.originalEvent);
+					return !(beforeStart || afterEnd);
+				}).map(event => event.originalEvent)
+			);
 		}
+
+		data.events.currentPage = currentPageEvents;
+
+		// Get the total number of rows across all months
+		data.months.forEach((_, i) => {
+			data.numberOfRows += Math.ceil((data.days[i] as Day[]).length / 7);
+		});
+
+		data.events.previousScope = events[0].map(event => event.originalEvent);
+		data.events.nextScope = events[2].map(event => event.originalEvent);
+
+		if (pageSize > 1) {
+			return data;
+		}
+
+		data.events.currentPage = data.events.currentPage[0];
+		data.days = data.days[0];
 
 		return data;
 	}

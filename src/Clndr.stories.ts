@@ -17,7 +17,10 @@ const meta: Meta<ClndrOptions> = {
 				defaultValue: {
 					summary: 'undefined',
 				},
-				type: '(data: ClndrTemplateData) => string',
+				type: {
+					summary: '(data: ClndrTemplateData) => string',
+					detail: 'See Readme for details on the template data.',
+				},
 			},
 		},
 		adjacentDaysChangeMonth: {
@@ -287,7 +290,7 @@ const meta: Meta<ClndrOptions> = {
 				<div class="clndr-control-button">
 					<span class="clndr-previous-button" role="button">previous</span>
 				</div>
-				<div class="month"><%= month %> <%= year %></div>
+				<div class="month"><%= format(month, 'MMMM') %> <%= interval[0].getFullYear() %></div>
 				<div class="clndr-control-button">
 					<span class="clndr-next-button" role="button">next</span>
 				</div>
@@ -295,16 +298,16 @@ const meta: Meta<ClndrOptions> = {
 			<table class="clndr-table">
 				<thead>
 					<tr class="header-days">
-						<% for(var i = 0; i < daysOfTheWeek.length; i++) { %>
+						<% for(let i = 0; i < daysOfTheWeek.length; i++) { %>
 							<td class="header-day"><%= daysOfTheWeek[i] %></td>
 						<% } %>
 					</tr>
 				</thead>
 				<tbody>
-					<% for(var i = 0; i < numberOfRows; i++){ %>
+					<% for(let i = 0; i < numberOfRows; i++){ %>
 						<tr>
-							<% for(var j = 0; j < 7; j++){ %>
-								<% var d = j + i * 7; %>
+							<% for(let j = 0; j < 7; j++){ %>
+								<% const d = j + i * 7; %>
 								<td class="<%= days[d].classes %>">
 									<div class="day-contents"><%= days[d].day %></div>
 								</td>
@@ -398,7 +401,7 @@ export const FullCalendar: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lt;</div>
-				<div class="current-month"><%= month %> <%= year %></div>
+				<div class="current-month"><%= format(month, 'MMMM') %> <%= interval[0].getFullYear() %></div>
 				<div class="clndr-next-button" role="button">&gt;</div>
 			</div>
 			<div class="clndr-content">
@@ -416,7 +419,7 @@ export const FullCalendar: Story = {
 				</div>
 				<div class="event-listing">
 					<div class="event-listing-title">EVENTS THIS MONTH</div>
-					<% eventsThisMonth.forEach(event => { %>
+					<% events.currentPage.forEach(event => { %>
 						<div class="event-item">
 							<div class="event-item-name"><%= event.title %></div>
 							<div class="event-item-location"><%= event.location %></div>
@@ -457,7 +460,7 @@ export const MiniCalendarWithClickEvent: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lsaquo;</div>
-				<div class="month"><%= month %></div>
+				<div class="month"><%= format(month, 'MMMM') %></div>
 				<div class="clndr-next-button" role="button">&rsaquo;</div>
 			</div>
 			<div class="clndr-grid">
@@ -601,9 +604,9 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 				<div class="clndr-previous-button" role="button">&lsaquo;</div>
 				<div class="clndr-next-button" role="button">&rsaquo;</div>
 			</div>
-			<% months.forEach(cal => { %>
+			<% months.forEach((month, monthIndex) => { %>
 				<div class="cal">
-					<div class="month"><%= format(cal.month, 'MMMM') %></div>
+					<div class="month"><%= format(month, 'MMMM') %></div>
 					<div class="clndr-grid">
 						<div class="days-of-the-week">
 							<% daysOfTheWeek.forEach(day => { %>
@@ -611,7 +614,7 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 							<% }); %>
 						</div>
 						<div class="days">
-							<% cal.days.forEach(day => { %>
+							<% days[monthIndex].forEach(day => { %>
 									<div class="<%= day.classes %>"><%= day.day %></div>
 							<% }); %>
 						</div>
