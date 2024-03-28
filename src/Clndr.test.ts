@@ -30,8 +30,8 @@ const defaultTemplate = `
 				<tr>
 					<% for(let j = 0; j < 7; j++){ %>
 						<% const d = j + i * 7; %>
-						<td class="<%= days[d].classes %>">
-							<div class="day-contents"><%= days[d].day %></div>
+						<td class="<%= items[d].classes %>">
+							<div class="day-contents"><%= items[d].day %></div>
 						</td>
 					<% } %>
 				</tr>
@@ -51,7 +51,7 @@ const simpleTemplate = `
 				<div class="header-day"><%= day %></div>
 			<% }); %>
 			<div class="days">
-				<% days.forEach(day => { %>
+				<% items.forEach(day => { %>
 					<div class="<%= day.classes %>"><%= day.day %></div>
 				<% }); %>
 			</div>
@@ -73,7 +73,7 @@ const oneWeekTemplate = `
 				<div class="header-day"><%= day %></div>
 			<% }); %>
 			<div class="days">
-				<% days.forEach(day => { %>
+				<% items.forEach(day => { %>
 					<div class="<%= day.classes %>"><%= day.day %></div>
 				<% }); %>
 			</div>
@@ -97,7 +97,7 @@ const multiMonthTemplate = `
 					<div class="header-day"><%= day %></div>
 				<% }); %>
 				<div class="days">
-					<% days[monthIndex].forEach(day => { %>
+					<% items[monthIndex].forEach(day => { %>
 						<div class="<%= day.classes %>"><%= day.day %></div>
 					<% }); %>
 				</div>
@@ -311,7 +311,7 @@ describe('Setup', () => {
 	test('Selected date', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			selectedDate: '1992-10-15',
+			selectedDate: new Date('1992-10-15'),
 			startOn: new Date('1992-10'),
 		});
 
@@ -471,11 +471,11 @@ describe('Setup', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			classes: {
-				today: 'custom-today-class',
+				now: 'custom-now-class',
 			},
 		});
 
-		expect(container.querySelectorAll('.custom-today-class').length).toBe(1);
+		expect(container.querySelectorAll('.custom-now-class').length).toBe(1);
 	});
 
 });
@@ -667,7 +667,7 @@ describe('Navigation', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			constraints: {
-				startDate: '1992-10-15',
+				startDate: new Date('1992-10-15'),
 			},
 			startOn: new Date('1992-10'),
 		});
@@ -692,7 +692,7 @@ describe('Navigation', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			constraints: {
-				endDate: '1992-10-15',
+				endDate: new Date('1992-10-15'),
 			},
 			startOn: new Date('1992-10'),
 		});
@@ -1433,8 +1433,8 @@ describe('Constraints', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			constraints: {
-				endDate: '1992-11-15',
-				startDate: '1992-10-15',
+				endDate: new Date('1992-11-15'),
+				startDate: new Date('1992-10-15'),
 			},
 		});
 
@@ -1453,8 +1453,8 @@ describe('Constraints', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
 			constraints: {
-				endDate: '2100-01-06',
-				startDate: '2100-01-01',
+				endDate: new Date('2100-01-06'),
+				startDate: new Date('2100-01-01'),
 			},
 			pagination: {scope: 'day', size: 7, step: 7},
 		});
@@ -1475,8 +1475,8 @@ describe('Constraints', () => {
 			render: provideRender(oneWeekTemplate),
 			pagination: {scope: 'day', size: 7, step: 7},
 			constraints: {
-				startDate: '1992-09-01',
-				endDate: '1992-09-15',
+				startDate: new Date('1992-09-01'),
+				endDate: new Date('1992-09-15'),
 			},
 			startOn: new Date('1992-10-15'),
 		});
@@ -1489,8 +1489,8 @@ describe('Constraints', () => {
 			render: provideRender(multiMonthTemplate),
 			pagination: {scope: 'month', size: 3, step: 7},
 			constraints: {
-				startDate: '1993-11-30',
-				endDate: '1992-11-15',
+				startDate: new Date('1993-11-30'),
+				endDate: new Date('1992-11-15'),
 			},
 			startOn: new Date('1992-10-15'),
 		});
@@ -1537,7 +1537,7 @@ describe('Handling errors', () => {
 
 		const emptyElement = container.querySelector('.empty');
 		expect(emptyElement).not.toBeNull();
-		(emptyElement as Element).classList.remove('last-month');
+		(emptyElement as Element).classList.remove('previous');
 		await user.click(emptyElement as Element);
 	});
 
@@ -1552,6 +1552,7 @@ describe('Handling errors', () => {
 				click: handleClick,
 			},
 			startOn: new Date('1992-10'),
+			trackSelectedDate: true,
 		});
 
 		const dayElement = screen.getByText('15').parentNode;

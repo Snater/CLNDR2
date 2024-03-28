@@ -5,6 +5,7 @@ import {
 	eachMonthOfInterval,
 	endOfDay,
 	endOfWeek,
+	format,
 	getDay,
 	isAfter,
 	isBefore,
@@ -16,8 +17,14 @@ import {
 	subWeeks,
 } from 'date-fns';
 import {Adapter} from './Adapter';
-import {InternalClndrEvent} from './types';
-import type {Adjacent, ClndrTemplateData, Day, Interval, PageDates} from './types';
+import type {
+	Adjacent,
+	ClndrItem,
+	ClndrTemplateData,
+	InternalClndrEvent,
+	Interval,
+	PageDates,
+} from './types';
 
 export class DayAdapter extends Adapter {
 
@@ -59,7 +66,7 @@ export class DayAdapter extends Adapter {
 		return [[], []];
 	}
 
-	aggregateDays(interval: Interval): PageDates {
+	aggregateScopeItems(interval: Interval): PageDates {
 		const days: Date[] = [];
 		for (let i = 0; i <= differenceInDays(interval[1], interval[0]); i++) {
 			days.push(addDays(interval[0], i));
@@ -69,6 +76,18 @@ export class DayAdapter extends Adapter {
 
 	isAdjacent(): Adjacent {
 		return null;
+	}
+
+	getIntervalForDate(date: Date): Interval {
+		return [startOfDay(date), endOfDay(date)];
+	}
+
+	getIdClasses(interval: Interval): string[] {
+		return [
+			`calendar-day-${format(interval[0], 'yyyy-MM-dd')}`,
+			// Day of week
+			`calendar-dow-${getDay(interval[0])}`,
+		];
 	}
 
 	setDay(day: Date, startOn?: Date): Interval {
@@ -96,14 +115,14 @@ export class DayAdapter extends Adapter {
 
 	flushTemplateData(
 		data: ClndrTemplateData,
-		createDaysObject: (interval: Interval) => Day[],
+		createDaysObject: (interval: Interval) => ClndrItem[],
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
 	): ClndrTemplateData {
 
 		data.month = data.interval[0];
 		data.months = eachMonthOfInterval({start: data.interval[0], end: data.interval[1]});
-		data.days = createDaysObject.apply(this, [data.interval]);
-		data.numberOfRows = Math.ceil(data.days.length / 7);
+		data.items = createDaysObject.apply(this, [data.interval]);
+		data.numberOfRows = Math.ceil(data.items.length / 7);
 		data.events.currentPage = events[1].map(event => event.originalEvent);
 
 		return data;

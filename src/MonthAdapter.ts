@@ -2,13 +2,15 @@ import {
 	addDays,
 	addMonths,
 	differenceInDays,
+	endOfDay,
 	endOfMonth,
+	format,
 	getDay,
 	getMonth,
 	getYear,
 	isAfter,
 	isBefore,
-	setMonth,
+	setMonth, startOfDay,
 	startOfMonth,
 	subDays,
 	subMonths,
@@ -17,8 +19,8 @@ import {Adapter} from './Adapter';
 import type {
 	Adjacent,
 	ClndrEvent,
+	ClndrItem,
 	ClndrTemplateData,
-	Day,
 	InternalClndrEvent,
 	Interval,
 	PageDates,
@@ -93,7 +95,7 @@ export class MonthAdapter extends Adapter {
 		return [eventsPreviousMonth, eventsNextMonth];
 	}
 
-	aggregateDays(interval: Interval, weekOffset: number): PageDates {
+	aggregateScopeItems(interval: Interval, weekOffset: number): PageDates {
 		return [
 			this.aggregateDaysOfPreviousMonth(interval[0], weekOffset),
 			this.aggregateDaysOfCurrentPage(interval),
@@ -152,13 +154,25 @@ export class MonthAdapter extends Adapter {
 		return days;
 	}
 
-	isAdjacent(day: Date, interval: Interval): Adjacent {
-		if (getMonth(interval[0]) > getMonth(day)) {
-			return getYear(interval[0]) === getYear(day) ? 'before' : 'after';
-		} else if (getMonth(interval[0]) < getMonth(day)) {
-			return getYear(interval[0]) === getYear(day) ? 'after' : 'before';
+	isAdjacent(itemInterval: Interval, interval: Interval): Adjacent {
+		if (getMonth(interval[0]) > getMonth(itemInterval[1])) {
+			return getYear(interval[0]) >= getYear(itemInterval[1]) ? 'before' : 'after';
+		} else if (getMonth(interval[0]) < getMonth(itemInterval[0])) {
+			return getYear(interval[0]) <= getYear(itemInterval[0]) ? 'after' : 'before';
 		}
 		return null;
+	}
+
+	getIntervalForDate(date: Date): Interval {
+		return [startOfDay(date), endOfDay(date)];
+	}
+
+	getIdClasses(interval: Interval): string[] {
+		return [
+			`calendar-day-${format(interval[0], 'yyyy-MM-dd')}`,
+			// Day of week
+			`calendar-dow-${getDay(interval[0])}`,
+		];
 	}
 
 	setDay(day: Date): Interval {
@@ -183,13 +197,13 @@ export class MonthAdapter extends Adapter {
 
 	flushTemplateData(
 		data: ClndrTemplateData,
-		createDaysObject: (interval: Interval) => Day[],
+		createDaysObject: (interval: Interval) => ClndrItem[],
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]],
 		pageSize: number
 	): ClndrTemplateData {
 
 		data.month = data.interval[0];
-		data.days = [] as Day[][];
+		data.items = [] as ClndrItem[][];
 		const currentPageEvents: ClndrEvent[][] = [];
 		data.months = [];
 
@@ -199,7 +213,7 @@ export class MonthAdapter extends Adapter {
 
 			data.months.push(currentIntervalStart);
 
-			data.days.push(createDaysObject.apply(this, [[currentIntervalStart, currentIntervalEnd]]));
+			data.items.push(createDaysObject.apply(this, [[currentIntervalStart, currentIntervalEnd]]));
 
 			// Save events processed for each month into a master array of events for this interval
 			currentPageEvents.push(
@@ -216,7 +230,7 @@ export class MonthAdapter extends Adapter {
 
 		// Get the total number of rows across all months
 		data.months.forEach((_, i) => {
-			data.numberOfRows += Math.ceil((data.days[i] as Day[]).length / 7);
+			data.numberOfRows += Math.ceil((data.items[i] as ClndrItem[]).length / 7);
 		});
 
 		data.events.previousScope = events[0].map(event => event.originalEvent);
@@ -227,7 +241,7 @@ export class MonthAdapter extends Adapter {
 		}
 
 		data.events.currentPage = data.events.currentPage[0];
-		data.days = data.days[0];
+		data.items = data.items[0];
 
 		return data;
 	}

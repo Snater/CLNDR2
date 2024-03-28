@@ -3,7 +3,7 @@ import {FormatOptions, Locale} from 'date-fns';
 export type InternalOptions = {
 	render: (data: ClndrTemplateData) => string
 	adjacentDaysChangeMonth: boolean
-	classes: {[key in DayStatus]: string}
+	classes: {[key in ItemStatus]: string}
 	clickEvents: ClickEvents
 	constraints?: Constraints
 	dateParameter: DateParameterDefinition
@@ -17,7 +17,7 @@ export type InternalOptions = {
 	locale?: Locale
 	pagination: Pagination
 	ready?: () => void
-	selectedDate?: Date | string
+	selectedDate?: Date
 	showAdjacent: boolean
 	startOn?: Date
 	targets: {[key in TargetOption]: string}
@@ -28,7 +28,7 @@ export type InternalOptions = {
 
 export type ClndrOptions = Partial<
 	Omit<InternalOptions, 'classes' | 'pagination' | 'render' | 'targets'> & {
-		classes?: {[key in DayStatus]?: string}
+		classes?: {[key in ItemStatus]?: string}
 		pagination?: Pagination
 		targets?: {[key in TargetOption]?: string}
 	}
@@ -58,8 +58,8 @@ export type InternalClndrEvent = {
 export type WeekOffset = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
 export type Constraints = {
-	startDate?: string | Date
-	endDate?: string | Date
+	startDate?: Date
+	endDate?: Date
 }
 
 export type DaysOfTheWeek = [string, string, string, string, string, string, string]
@@ -104,18 +104,18 @@ export type TargetOption = 'day'
 	| 'nextYearButton'
 	| 'previousYearButton'
 
-type DayStatus = 'past'
-	| 'today'
+type ItemStatus = 'past'
+	| 'now'
 	| 'event'
 	| 'inactive'
 	| 'selected'
-	| 'lastMonth'
-	| 'nextMonth'
-	| 'adjacentMonth'
+	| 'previous'
+	| 'next'
+	| 'adjacent'
 
 export type ClndrTemplateData = {
 	interval: Interval
-	days: Day[] | Day[][]
+	items: ClndrItem[] | ClndrItem[][]
 	month: Date | null
 	months: Date[] | null
 	events: {
@@ -129,18 +129,19 @@ export type ClndrTemplateData = {
 	extras: unknown | null
 }
 
-export type Day = {
-	day?: number
+export type ClndrItem = {
+	interval?: Interval
 	date?: Date
+	day?: number
 	events?: ClndrEvent[]
 	classes: string
-	properties?: DayProperties
+	properties?: ClndrItemProperties
 }
 
-export type DayProperties = {
-	isToday: boolean
+export type ClndrItemProperties = {
+	isNow: boolean
 	isInactive: boolean
-	isAdjacentMonth: boolean
+	isAdjacent: boolean
 }
 
 export type ClndrNavigationOptions = {withCallbacks?: boolean}

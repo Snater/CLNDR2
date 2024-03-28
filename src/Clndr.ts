@@ -6,13 +6,13 @@ import {
 	endOfDay,
 	format,
 	getDate,
-	getDay,
 	getMonth,
 	getYear,
 	isAfter,
 	isBefore,
 	isSameDay,
 	isSameMonth,
+	isWithinInterval,
 	setDay,
 	setYear,
 	subMonths,
@@ -23,13 +23,13 @@ import {DayAdapter} from './DayAdapter';
 import {MonthAdapter} from './MonthAdapter';
 import type {
 	ClndrEvent,
+	ClndrItem,
+	ClndrItemProperties,
 	ClndrNavigationOptions,
 	ClndrOptions,
 	ClndrTarget,
 	ClndrTemplateData,
 	Constraints,
-	Day,
-	DayProperties,
 	DaysOfTheWeek,
 	InternalClndrEvent,
 	InternalOptions,
@@ -48,13 +48,13 @@ const defaults: InternalOptions = {
 	adjacentDaysChangeMonth: false,
 	classes: {
 		past: 'past',
-		today: 'today',
+		now: 'now',
 		event: 'event',
 		inactive: 'inactive',
 		selected: 'selected',
-		lastMonth: 'last-month',
-		nextMonth: 'next-month',
-		adjacentMonth: 'adjacent-month',
+		previous: 'previous',
+		next: 'next',
+		adjacent: 'adjacent',
 	},
 	clickEvents: {},
 	dateParameter: {
@@ -254,33 +254,33 @@ class Clndr {
 		return adjustedDaysOfTheWeek;
 	}
 
-	private createDaysObject(
+	private createScopeObjects(
 		interval: Interval,
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
 	) {
 
-		const dates = this.adapter.aggregateDays(interval, this.options.weekOffset);
+		const dates = this.adapter.aggregateScopeItems(interval, this.options.weekOffset);
 
 		// This array will contain the data of the entire grid (including blank spaces)
 		return [
-			...dates[0].map(day => {
+			...dates[0].map(date => {
 				if (this.options.showAdjacent) {
-					return this.createDayObject(day, events[0], interval)
+					return this.createScopeObject(date, events[0], interval)
 				} else {
-					return this.calendarDay({
-						classes: [this.options.targets.empty, this.options.classes.lastMonth].join(' '),
+					return this.compileClndrItem({
+						classes: [this.options.targets.empty, this.options.classes.previous].join(' '),
 					})
 				}
 			}),
 			...dates[1].map(date => {
-				return this.createDayObject(date, events[1], interval)
+				return this.createScopeObject(date, events[1], interval)
 			}),
-			...dates[2].map(day => {
+			...dates[2].map(date => {
 				if (this.options.showAdjacent) {
-					return this.createDayObject(day, events[2], interval)
+					return this.createScopeObject(date, events[2], interval)
 				} else {
-					return this.calendarDay({
-						classes: [this.options.targets.empty, this.options.classes.nextMonth].join(' '),
+					return this.compileClndrItem({
+						classes: [this.options.targets.empty, this.options.classes.next].join(' '),
 					})
 				}
 			}),
@@ -312,82 +312,83 @@ class Clndr {
 		return parsedEvents;
 	}
 
-	private createDayObject(day: Date, monthEvents: InternalClndrEvent[], interval: Interval) {
+	private createScopeObject(date: Date, events: InternalClndrEvent[], interval: Interval) {
 		const now = new Date();
-		const dayEnd = endOfDay(day);
 		const classes = [this.options.targets.day];
-		const properties: DayProperties = {
-			isToday: false,
+		const properties: ClndrItemProperties = {
+			isNow: false,
 			isInactive: false,
-			isAdjacentMonth: false,
+			isAdjacent: false,
 		};
 
-		const eventsToday = monthEvents.filter(event => {
-			const start = event._clndrStartDateObject;
-			const end = event._clndrEndDateObject;
+		const itemInterval = this.adapter.getIntervalForDate(date);
 
-			return !isAfter(start, dayEnd) && !isAfter(day, end);
-		});
-
-		if (isSameDay(now, day)) {
-			classes.push(this.options.classes.today);
-			properties.isToday = true;
+		if (isWithinInterval(now, {start: itemInterval[0], end: itemInterval[1]})) {
+			classes.push(this.options.classes.now);
+			properties.isNow = true;
 		}
 
-		if (isBefore(day, now)) {
+		if (isBefore(itemInterval[1], now)) {
 			classes.push(this.options.classes.past);
 		}
 
-		if (eventsToday.length) {
+		const eventsOfCurrentItem = events.filter(event => {
+			const start = event._clndrStartDateObject;
+			const end = event._clndrEndDateObject;
+
+			return !isAfter(start, itemInterval[1]) && !isAfter(itemInterval[0], end);
+		});
+
+		if (eventsOfCurrentItem.length) {
 			classes.push(this.options.classes.event);
 		}
 
-		const adjacent = this.adapter.isAdjacent(day, interval);
+		const adjacent = this.adapter.isAdjacent(itemInterval, interval);
 
 		if (adjacent) {
-			// TODO: Change to generic classes
-			classes.push(this.options.classes.adjacentMonth);
-			properties.isAdjacentMonth = true;
+			classes.push(this.options.classes.adjacent);
+			properties.isAdjacent = true;
 		}
 
 		if (adjacent === 'before') {
-			classes.push(this.options.classes.lastMonth);
+			classes.push(this.options.classes.previous);
 		} else if (adjacent === 'after') {
-			classes.push(this.options.classes.nextMonth);
+			classes.push(this.options.classes.next);
 		}
 
 		// If there are constraints, the inactive class needs to be added to the days outside of them
 		if (this.options.constraints) {
-			const endDate = this.options.constraints.endDate
-				&& new Date(this.options.constraints.endDate);
-			const startDate = this.options.constraints.startDate
-				&& new Date(this.options.constraints.startDate);
+			const constraintStart = this.options.constraints.startDate;
+			const constraintEnd = this.options.constraints.endDate;
 
-			if (startDate && isBefore(day, startDate)) {
+			if (constraintStart && isBefore(interval[1], constraintStart)) {
 				classes.push(this.options.classes.inactive);
 				properties.isInactive = true;
 			}
 
-			if (endDate && isAfter(day, endDate)) {
+			if (constraintEnd && isAfter(interval[0], constraintEnd)) {
 				classes.push(this.options.classes.inactive);
 				properties.isInactive = true;
 			}
 		}
 
-		if (this.options.selectedDate && isSameDay(day, new Date(this.options.selectedDate))) {
+		if (
+			this.options.selectedDate
+			&& isWithinInterval(
+				this.options.selectedDate,
+				{start: itemInterval[0], end: itemInterval[1]}
+			)
+		) {
 			classes.push(this.options.classes.selected);
 		}
 
-		classes.push(`calendar-day-${format(day, 'yyyy-MM-dd')}`);
-		// Day of week
-		classes.push(`calendar-dow-${getDay(day)}`);
-
-		return this.calendarDay({
-			date: day,
-			day: getDate(day),
-			events: eventsToday.map(event => event.originalEvent),
+		return this.compileClndrItem({
+			interval: itemInterval,
+			date,
+			day: getDate(date),
+			events: eventsOfCurrentItem.map(event => event.originalEvent),
 			properties: properties,
-			classes: classes.join(' '),
+			classes: [...classes, ...this.adapter.getIdClasses(itemInterval)].join(' '),
 		});
 	}
 
@@ -408,7 +409,7 @@ class Clndr {
 
 	private aggregateTemplateData() {
 		const data: ClndrTemplateData = {
-			days: [],
+			items: [],
 			months: [],
 			month: null,
 			events: {
@@ -429,7 +430,7 @@ class Clndr {
 
 		return this.adapter.flushTemplateData.apply(this, [
 			data,
-			(interval: Interval) => this.createDaysObject(interval, parsedEvents),
+			(interval: Interval) => this.createScopeObjects(interval, parsedEvents),
 			parsedEvents,
 			this.options.pagination.size,
 		]);
@@ -573,9 +574,9 @@ class Clndr {
 			return;
 		}
 
-		if (target.classList.contains(this.options.classes.lastMonth)) {
+		if (target.classList.contains(this.options.classes.previous)) {
 			this.back({withCallbacks: true});
-		} else if (target.classList.contains(this.options.classes.nextMonth)) {
+		} else if (target.classList.contains(this.options.classes.next)) {
 			this.forward({withCallbacks: true});
 		}
 	}
@@ -593,11 +594,15 @@ class Clndr {
 			return;
 		}
 
-		this.options.selectedDate = this.getTargetDateString(target);
+		const dateString = this.getTargetDateString(target);
+		this.options.selectedDate = dateString ? new Date(dateString) : undefined;
 		this.element.querySelectorAll('.' + this.options.classes.selected)
 			.forEach(node => node.classList.remove(this.options.classes.selected));
-		this.element.querySelector('.calendar-day-' + this.options.selectedDate)?.classList
-			.add(this.options.classes.selected);
+
+		if (this.options.selectedDate) {
+			const id = `.calendar-day-${format(this.options.selectedDate, 'yyyy-MM-dd')}`;
+			this.element.querySelector(id)?.classList.add(this.options.classes.selected);
+		}
 	}
 
 	/**
@@ -619,9 +624,9 @@ class Clndr {
 		}
 
 		if (this.options.adjacentDaysChangeMonth) {
-			if (currentTarget.classList.contains(this.options.classes.lastMonth)) {
+			if (currentTarget.classList.contains(this.options.classes.previous)) {
 				this.back({withCallbacks: true});
-			} else if (currentTarget.classList.contains(this.options.classes.nextMonth)) {
+			} else if (currentTarget.classList.contains(this.options.classes.next)) {
 				this.forward({withCallbacks: true});
 			}
 		}
@@ -801,14 +806,14 @@ class Clndr {
 		}).filter(event => !!event) as InternalClndrEvent[];
 	}
 
-	private calendarDay(options: Day) {
-		const defaults: Day = {
+	private compileClndrItem(options: ClndrItem) {
+		const defaults: ClndrItem = {
 			date: undefined,
 			events: [],
 			classes: this.options.targets.empty,
 		};
 
-		return Clndr.mergeOptions<Day>(defaults, options);
+		return Clndr.mergeOptions<ClndrItem>(defaults, options);
 	}
 
 	/**

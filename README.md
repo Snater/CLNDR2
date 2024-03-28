@@ -22,7 +22,7 @@ It is the unofficial successor to awesome [CLNDR](https://github.com/kylestetz/C
 - [All Options](#all-options)
 - [Data provided to the Template](#data-provided-to-the-template)
   - [All Parameters](#all-parameters)
-  - [The "days" Array](#the-days-array)
+  - [The "items" Array](#the-items-array)
 - [Custom CSS Classes](#custom-css-classes)
 - [Constraints & Date Pickers](#constraints--date-pickers)
 - [Public API](#public-api)
@@ -89,7 +89,7 @@ Here's a typical CLNDR2 template for EJS, Underscore and lodash. It's got a cont
     <div class="header-day"><%= day %></div>
   <% }) %>
     <div class="days">
-    <% days.forEach(day => { %>
+    <% items.forEach(day => { %>
       <div class="<%= day.classes %>"><%= day.day %></div>
     <% }) %>
     </div>
@@ -99,7 +99,7 @@ Here's a typical CLNDR2 template for EJS, Underscore and lodash. It's got a cont
 
 ### Configuration using CSS Classes
 
-Applying `day.classes`, the class on a day is set to, for example, `'calendar-day-2024-01-18'`. This class is used to determine the date when a user clicks on it. Thus, click events will only work if `days.classes` is included in your day element's `class` attribute as seen above.
+Applying `day.classes`, the class on a day is set to, for example, `'calendar-day-2024-01-18'`. This class is used to determine the date when a user clicks on it. Thus, click events will only work if `items.classes` is included in your day element's `class` attribute as seen above.
 
 ### Template Rendering Engine
 
@@ -134,7 +134,7 @@ events: ClndrEvent[] = [{
 }]
 ```
 
-CLNDR2 looks through the objects in your events array for a `date` field unless you specify otherwise using the `dateParameter` option. In your template, the `days` array will contain these event objects in their entirety.
+CLNDR2 looks through the objects in your events array for a `date` field unless you specify otherwise using the `dateParameter` option. In your template, the `items` array will contain these event objects in their entirety.
 
 ### Multi-day Events
 
@@ -388,10 +388,10 @@ While the properties of the data being passed to the template will always be def
 // interval.
 interval: [Date, Date]
 
-// The `days` array, documented in more detail below; when `pagination.scope`
+// The `items` array, documented in more detail below; when `pagination.scope`
 // is set to `month` and `pagination.size` is greater than 1, this is a
-// multi-dimensional array, one array of `Day` objects per month.
-days: Day[] | Day[][]
+// multi-dimensional array, one array of `ClndrItem` objects per month.
+items: Day[] | Day[][]
 
 // A Date object representing the current month. This is an convenience
 // parameter euqal to interval[0].
@@ -403,7 +403,7 @@ month: Date
 // to loop over the months and render the days per month, i.e.
 // ```
 // months.forEach((month, monthIndex) => {
-//   ... days[monthIndex].forEach(day => ...) ...
+//   ... items[monthIndex].forEach(day => ...) ...
 // )}
 // ```
 months: Date[]
@@ -436,12 +436,13 @@ format: (date: Date, formatStr: string, options: FormatOptions) => string
 extras: unknown | null
 ```
 
-### The "days" Array
+### The "items" Array
 
-The `days` array contains most of the data needed to render the calendar. Its structure looks like this:
+The `items` array contains most of the data needed to render the calendar. Its structure looks like this:
 
 ```typescript
-type Day = {
+type ClndrItem = {
+  interval?: [Date, Date]
   day?: number
   date?: Date
   events?: ClndrEvent[]
@@ -450,6 +451,7 @@ type Day = {
 }
 ```
 
+- `interval`: Start and end date of the day.
 - `day`: The day of the month.
 - `date`: A `Date` object representing the day.
 - `events`: The events assigned to this day with all data provided from when the events had been passed to the calendar instance.
@@ -458,7 +460,7 @@ type Day = {
 
 ## Custom CSS Classes
 
-The CSS classes that get added to a `day` object can be customized to avoid styling conflicts. The `classes` option accepts `today`, `event`, `past`, `lastMonth`, `nextMonth`, `adjacentMonth`, and `inactive`. Pass in only the classnames you wish to override and the rest will be set to their defaults.
+The CSS classes that get added to a `day` object can be customized to avoid styling conflicts. The `classes` option accepts `now`, `event`, `past`, `previous`, `next`, `adjacent`, and `inactive`. Pass in only the classnames you wish to override and the rest will be set to their defaults.
 
 In this example a `my-` prefix is added to all classes:
 
@@ -467,12 +469,12 @@ new Clndr(container, {
   render: ...,
   classes: {
     past: 'my-past',
-    today: 'my-today',
+    now: 'my-now',
     event: 'my-event',
     inactive: 'my-inactive',
-    lastMonth: 'my-last-month',
-    nextMonth: 'my-next-month',
-    adjacentMonth: 'my-adjacent-month',
+    previous: 'my-previous',
+    next: 'my-next',
+    adjacent: 'my-adjacent',
   }
 });
 ```
@@ -488,8 +490,8 @@ the `constraints` options can be set with `startDate`, `endDate`, or both specif
 new Clndr(container, {
   render: ...,
   constraints: {
-    startDate: '1992-10-15',
-    endDate: '2024-10-15',
+    startDate: new Date('1992-10-15'),
+    endDate: new Date('2024-10-15'),
   }
 });
 ```
@@ -502,8 +504,8 @@ The days in the grid that are outside the range will also have the `inactive` cl
 new Clndr(container, {
   render: ...,
   constraints: {
-    startDate: '1992-10-15',
-    endDate: '2024-10-15',
+    startDate: new Date('1992-10-15'),
+    endDate: new Date('2024-10-15'),
   },
   clickEvents: {
     click: target => {

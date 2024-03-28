@@ -1,7 +1,7 @@
 import type {
 	Adjacent,
+	ClndrItem,
 	ClndrTemplateData,
-	Day,
 	InternalClndrEvent,
 	Interval,
 	PageDates,
@@ -15,25 +15,28 @@ export type AdapterOptions = {
 
 export abstract class Adapter {
 
-	protected readonly options: AdapterOptions;
+	protected readonly options: AdapterOptions
 
 	constructor(options: AdapterOptions) {
 		this.options = options;
 	}
 
-	abstract initInterval(startOn?: Date, weekOffset?: number): Interval;
+	abstract initInterval(startOn?: Date, weekOffset?: number): Interval
 
-	abstract initStartConstraint(constraintStart: Date, interval: Interval): Interval;
-	abstract initEndConstraint(constraintEnd: Date, interval: Interval): Interval;
+	abstract initStartConstraint(constraintStart: Date, interval: Interval): Interval
+	abstract initEndConstraint(constraintEnd: Date, interval: Interval): Interval
 
 	abstract aggregateAdjacentScopeEvents(
 		interval: Interval,
 		events: InternalClndrEvent[]
 	): [InternalClndrEvent[], InternalClndrEvent[]]
 
-	abstract aggregateDays(interval: Interval, weekOffset?: number): PageDates;
+	abstract aggregateScopeItems(interval: Interval, weekOffset?: number): PageDates
 
-	abstract isAdjacent(day: Date, interval: Interval): Adjacent
+	abstract isAdjacent(itemInterval: Interval, interval: Interval): Adjacent
+
+	abstract getIntervalForDate(date: Date): Interval
+	abstract getIdClasses(interval: Interval): string[]
 
 	abstract setDay(day: Date, startOn?: Date): Interval
 	abstract setMonth(newMonth: number, interval: Interval): Interval
@@ -43,7 +46,7 @@ export abstract class Adapter {
 
 	abstract flushTemplateData(
 		data: ClndrTemplateData,
-		createDaysObject: (interval: Interval) => Day[],
+		createDaysObject: (interval: Interval) => ClndrItem[],
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]],
 		pageSize?: number
 	): ClndrTemplateData
