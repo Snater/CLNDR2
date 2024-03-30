@@ -460,11 +460,11 @@ describe('Setup', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			targets: {
-				day: 'custom-day-class',
+				item: 'custom-item-class',
 			},
 		});
 
-		expect(container.querySelectorAll('.custom-day-class').length).toBeGreaterThan(0);
+		expect(container.querySelectorAll('.custom-item-class').length).toBeGreaterThan(0);
 	});
 
 	test('Custom day status class', () => {
@@ -663,7 +663,7 @@ describe('Navigation', () => {
 		expect(screen.getByText('October 1991')).toBeInTheDocument();
 	});
 
-	test('Prevent changing to previous year if constraint prohibits', async () => {
+	test('Prevent navigating backward if constraint prohibits', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			constraints: {
@@ -672,6 +672,8 @@ describe('Navigation', () => {
 			startOn: new Date('1992-10'),
 		});
 
+		expect(screen.getByText('October 1992')).toBeInTheDocument();
+		clndr.previous();
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
 		clndr.previousYear();
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -688,7 +690,7 @@ describe('Navigation', () => {
 		expect(screen.getByText('October 1993')).toBeInTheDocument();
 	})
 
-	test('Prevent changing to next year if constraint prohibits', async () => {
+	test('Prevent navigating forward if constraint prohibits', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			constraints: {
@@ -697,6 +699,8 @@ describe('Navigation', () => {
 			startOn: new Date('1992-10'),
 		});
 
+		expect(screen.getByText('October 1992')).toBeInTheDocument();
+		clndr.next();
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
 		clndr.nextYear();
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -1311,6 +1315,280 @@ describe('Custom interval', () => {
 		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
 		expect(container.querySelector('.calendar-day-1992-10-15')).toHaveClass('event');
 		expect(container.querySelector('.calendar-day-1992-10-22')).not.toBeInTheDocument();
+	});
+
+});
+
+describe('pagination.scope set to `year`', () => {
+	const oneYearTemplate = `
+		<div class="clndr-controls">
+			<div class="clndr-previous-button" role="button">previous</div>
+			<div class="year"><%= year.getFullYear() %></div>
+			<div class="clndr-next-button" role="button">next</div>
+		</div>
+		<div class="clndr-grid">
+			<% items.forEach(month => { %>
+				<div class="<%= month.classes %>" role="button"><%= format(month.date, 'MMMM') %></div>
+			<% }); %>
+		</div>
+		<div class="clndr-today-button" role="button">Current year</div>
+	`;
+
+	const multiYearTemplate = `
+		<div class="clndr-controls">
+			<div class="clndr-previous-button" role="button">previous</div>
+			<div class="clndr-next-button" role="button">next</div>
+		</div>
+		<div class="clndr-years">
+			<% years.forEach((year, yearIndex) => { %>
+				<div class="clndr-year">
+					<div class="clndr-year-title"><%= year.getFullYear() %></div>
+					<div class="clndr-grid">
+						<% items[yearIndex].forEach(month => { %>
+							<div class="<%= month.classes %>" role="button"><%= format(month.date, 'MMMM') %></div>
+						<% }); %>
+					</div>
+				</div>
+			<% }) %>
+		</div>
+		<div class="clndr-today-button" role="button">Current year</div>
+	`;
+
+	test('Rendering plain calendar', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneYearTemplate),
+			pagination: {scope: 'year', size: 1},
+		});
+
+		expect(screen.getByText('2024')).toBeInTheDocument();
+		expect(screen.getByText('January')).toBeInTheDocument();
+		expect(screen.getByText('February')).toBeInTheDocument();
+		expect(screen.getByText('March')).toBeInTheDocument();
+		expect(screen.getByText('April')).toBeInTheDocument();
+		expect(screen.getByText('May')).toBeInTheDocument();
+		expect(screen.getByText('June')).toBeInTheDocument();
+		expect(screen.getByText('July')).toBeInTheDocument();
+		expect(screen.getByText('August')).toBeInTheDocument();
+		expect(screen.getByText('September')).toBeInTheDocument();
+		expect(screen.getByText('October')).toBeInTheDocument();
+		expect(screen.getByText('November')).toBeInTheDocument();
+		expect(screen.getByText('December')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-month-2024-01')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-month-2024-02')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-month-2024-03')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-month-2024-04')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-month-2024-05')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-month-2024-06')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-month-2024-07')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-month-2024-08')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-month-2024-09')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-month-2024-10')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-month-2024-11')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-month-2024-12')).toBeInTheDocument();
+	});
+
+	test('Programmatic navigation', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneYearTemplate),
+			pagination: {scope: 'year', size: 1},
+		});
+
+		expect(screen.getByText('2024')).toBeInTheDocument();
+		clndr.setMonth(4);
+		// setMonth does of course not change the year, but need to check if the behaviour is indeed as
+		// expected when calling setMonth.
+		expect(screen.getByText('2024')).toBeInTheDocument();
+
+		clndr.setIntervalStart(new Date('1992-10-15'));
+		expect(screen.getByText('1992')).toBeInTheDocument();
+	});
+
+	test('Start and end constraints', async () => {
+		const handleIntervalChange = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneYearTemplate),
+			clickEvents: {
+				onIntervalChange: handleIntervalChange,
+			},
+			constraints: {
+				startDate: new Date('1991'),
+				endDate: new Date('1994'),
+			},
+			pagination: {scope: 'year', size: 1},
+			startOn: new Date('1992-10-15'),
+		});
+
+		await user.click(screen.getByText('previous'));
+		expect(screen.getByText('1991')).toBeInTheDocument();
+		expect(handleIntervalChange).toHaveBeenCalledTimes(1);
+		await user.click(screen.getByText('previous'));
+		expect(screen.getByText('1991')).toBeInTheDocument();
+		expect(handleIntervalChange).toHaveBeenCalledTimes(1);
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('1992')).toBeInTheDocument();
+		expect(handleIntervalChange).toHaveBeenCalledTimes(2);
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('1993')).toBeInTheDocument();
+		expect(handleIntervalChange).toHaveBeenCalledTimes(3);
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('1994')).toBeInTheDocument();
+		expect(handleIntervalChange).toHaveBeenCalledTimes(4);
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('1994')).toBeInTheDocument();
+		expect(handleIntervalChange).toHaveBeenCalledTimes(4);
+	});
+
+	test('Start date before start constraint', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneYearTemplate),
+			constraints: {
+				startDate: new Date('1993'),
+			},
+			pagination: {scope: 'year', size: 1},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.getByText('1993')).toBeInTheDocument();
+	});
+
+	test('End date before start constraint', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneYearTemplate),
+			constraints: {
+				startDate: new Date('1993'),
+			},
+			pagination: {scope: 'year', size: 1},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.getByText('1993')).toBeInTheDocument();
+	});
+
+	test('Start date after end constraint', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneYearTemplate),
+			constraints: {
+				endDate: new Date('1991'),
+			},
+			pagination: {scope: 'year', size: 1},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.getByText('1991')).toBeInTheDocument();
+	});
+
+	test('End date date after end constraint', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneYearTemplate),
+			constraints: {
+				endDate: new Date('1991'),
+			},
+			pagination: {scope: 'year', size: 1},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.getByText('1991')).toBeInTheDocument();
+	});
+
+	test('Click event handlers', async () => {
+		const handleClick = jest.fn(target => {
+			expect(target.date.getMonth()).toBe(6);
+		});
+		const handleIntervalChange = jest.fn();
+		const handlePreviousInterval = jest.fn();
+		const handleNextInterval = jest.fn();
+		const handleMonthChange = jest.fn();
+		const handlePreviousMonth = jest.fn();
+		const handleNextMonth = jest.fn();
+		const handleYearChange = jest.fn();
+		const handlePreviousYear = jest.fn();
+		const handleNextYear = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneYearTemplate),
+			clickEvents: {
+				click: handleClick,
+				onIntervalChange: handleIntervalChange,
+				previousInterval: handlePreviousInterval,
+				nextInterval: handleNextInterval,
+				onMonthChange: handleMonthChange,
+				previousMonth: handlePreviousMonth,
+				nextMonth: handleNextMonth,
+				onYearChange: handleYearChange,
+				previousYear: handlePreviousYear,
+				nextYear: handleNextYear,
+			},
+			pagination: {scope: 'year', size: 1},
+			startOn: new Date('1992-10-15'),
+		});
+
+		await user.click(screen.getByText('next'));
+		await user.click(screen.getByText('previous'));
+
+		expect(handleIntervalChange).toHaveBeenCalledTimes(2);
+		expect(handlePreviousInterval).toHaveBeenCalledTimes(1);
+		expect(handleNextInterval).toHaveBeenCalledTimes(1);
+		expect(handleMonthChange).toHaveBeenCalledTimes(2);
+		expect(handlePreviousMonth).toHaveBeenCalledTimes(0);
+		expect(handleNextMonth).toHaveBeenCalledTimes(0);
+		expect(handleYearChange).toHaveBeenCalledTimes(2);
+		expect(handlePreviousYear).toHaveBeenCalledTimes(1);
+		expect(handleNextYear).toHaveBeenCalledTimes(1);
+
+		await user.click(screen.getByText('July'));
+
+		expect(handleClick).toHaveBeenCalledTimes(1);
+	});
+
+	test('Events', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneYearTemplate),
+			events: [
+				{date: '1991-10-15', title: 'event out of range'},
+				{date: '1992-10-15', title: 'event on current page'},
+				{date: '1993-10-15', title: 'event out of range'},
+			],
+			pagination: {scope: 'year', size: 1},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.getByText('September').classList.contains('event')).toBeFalsy();
+		expect(screen.getByText('October').classList.contains('event')).toBeTruthy();
+		expect(screen.getByText('November').classList.contains('event')).toBeFalsy();
+	});
+
+	test('Multiple years on one page', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(multiYearTemplate),
+			pagination: {scope: 'year', size: 2},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.getByText('1992')).toBeInTheDocument();
+		expect(screen.getByText('1993')).toBeInTheDocument();
+	});
+
+	test('Click on a month while the identifier class is unexpectedly not assigned', async() => {
+		const handleClick = jest.fn(data => {
+			expect(data.date).toBeNull();
+		});
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneYearTemplate),
+			clickEvents: {
+				click: handleClick,
+			},
+			pagination: {scope: 'year', size: 1},
+			trackSelectedDate: true,
+		});
+
+		const monthElement = screen.getByText('October');
+		expect(monthElement instanceof Element).toBeTruthy();
+		(monthElement as Element).classList.remove('calendar-month-2024-10');
+		await user.click(monthElement as Element);
+
+		expect(handleClick).toHaveBeenCalledTimes(1);
 	});
 
 });

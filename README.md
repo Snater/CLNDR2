@@ -317,7 +317,7 @@ new Clndr(container, {
   // Customize the calendar's pagination. That is, if the calendar should
   // render more than one month, or a certain amount of days at once.
   pagination: {
-    // May be set to either `month` or `day`
+    // May be set to either `day`, `month`, or `year`.
     scope: 'month',
 
     // Adjust to render more than one month at the same time (when
@@ -355,7 +355,7 @@ new Clndr(container, {
   // The target classnames that the calendar will look for to bind events.
   // These are the defaults:
   targets: {
-    day: 'day',
+    item: 'item',
     empty: 'empty',
     nextButton: 'clndr-next-button',
     todayButton: 'clndr-today-button',
@@ -389,9 +389,10 @@ While the properties of the data being passed to the template will always be def
 interval: [Date, Date]
 
 // The `items` array, documented in more detail below; when `pagination.scope`
-// is set to `month` and `pagination.size` is greater than 1, this is a
-// multi-dimensional array, one array of `ClndrItem` objects per month.
-items: Day[] | Day[][]
+// is set to `month` or `year`, while `pagination.size` is greater than 1, this
+// is a multi-dimensional array, one array of `ClndrItem` objects per
+// month or year according to `pagination.scope`.
+items: ClndrItem[] | ClndrItem[][]
 
 // A Date object representing the current month. This is an convenience
 // parameter euqal to interval[0].
@@ -407,6 +408,21 @@ month: Date
 // )}
 // ```
 months: Date[]
+
+// A Date object representing the current year. This is an convenience
+// parameter euqal to interval[0].
+year: Date
+
+// An array of Date objects representing the years of the current page,
+// particularly useful if `pagination.scope` is set to `year` and
+// `pagination.size` is greater than 1. In that case, use this property
+// to loop over the years and render the months per year, i.e.
+// ```
+// years.forEach((year, yearIndex) => {
+//   ... items[yearIndex].forEach(month => ...) ...
+// )}
+// ```
+years: Date[]
 
 // The events of the current page as well as the events of the previous and
 // next scope. `events.currentPage` is a multi-dimensional array if
@@ -479,7 +495,7 @@ new Clndr(container, {
 });
 ```
 
-To configure the `day`, `empty`, as well as `next`/`previous`/`today` etc. button classes, the `targets` option can be used.
+To configure the `item`, `empty`, as well as `next`/`previous`/`today` etc. button classes, the `targets` option can be used.
 
 ## Constraints & Date Pickers
 

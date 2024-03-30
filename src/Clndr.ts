@@ -3,14 +3,13 @@ import {
 	Locale,
 	addMonths,
 	addYears,
-	endOfDay,
+	areIntervalsOverlapping,
 	format,
 	getDate,
 	getMonth,
 	getYear,
 	isAfter,
 	isBefore,
-	isSameDay,
 	isSameMonth,
 	isWithinInterval,
 	setDay,
@@ -19,8 +18,9 @@ import {
 	subYears,
 } from 'date-fns';
 import {Adapter, AdapterOptions} from './Adapter';
-import {DayAdapter} from './DayAdapter';
-import {MonthAdapter} from './MonthAdapter';
+import DayAdapter from './DayAdapter';
+import MonthAdapter from './MonthAdapter';
+import YearAdapter from './YearAdapter';
 import type {
 	ClndrEvent,
 	ClndrItem,
@@ -68,7 +68,7 @@ const defaults: InternalOptions = {
 	pagination: {scope: 'month', size: 1},
 	showAdjacent: true,
 	targets: {
-		day: 'day',
+		item: 'item',
 		empty: 'empty',
 		nextButton: 'clndr-next-button',
 		todayButton: 'clndr-today-button',
@@ -82,6 +82,7 @@ const defaults: InternalOptions = {
 };
 
 const adapters: Record<Scope, new (options: AdapterOptions) => Adapter> = {
+	year: YearAdapter,
 	month: MonthAdapter,
 	day: DayAdapter,
 } as const;
@@ -314,7 +315,7 @@ class Clndr {
 
 	private createScopeObject(date: Date, events: InternalClndrEvent[], interval: Interval) {
 		const now = new Date();
-		const classes = [this.options.targets.day];
+		const classes = [this.options.targets.item];
 		const properties: ClndrItemProperties = {
 			isNow: false,
 			isInactive: false,
@@ -410,8 +411,10 @@ class Clndr {
 	private aggregateTemplateData() {
 		const data: ClndrTemplateData = {
 			items: [],
+			month: this.interval[0],
 			months: [],
-			month: null,
+			year: this.interval[0],
+			years: [],
 			events: {
 				currentPage: [],
 				previousScope: [],
@@ -446,7 +449,7 @@ class Clndr {
 
 		// Remove all "inactive" class assignments to start with a clean state
 		for (const target in this.options.targets) {
-			if (target !== 'day') {
+			if (target !== 'item') {
 				this.element
 					.querySelectorAll('.' + this.options.targets[target as TargetOption])
 					.forEach(element => element.classList.remove(this.options.classes.inactive));
@@ -462,12 +465,12 @@ class Clndr {
 			? new Date(this.options.constraints.startDate)
 			: null;
 		const end = this.options.constraints.endDate
-			? new Date(this.options.constraints.endDate)
+			? this.adapter.endOfScope(new Date(this.options.constraints.endDate))
 			: null;
 
 		// Month control
 		// Room to go back?
-		if (start && (isAfter(start, this.interval[0]) || isSameDay(start, this.interval[0]))) {
+		if (start && (isAfter(start, this.interval[0]))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.previousButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -475,7 +478,7 @@ class Clndr {
 		}
 
 		// Room to go forward?
-		if (end && (isBefore(end, this.interval[1]) || isSameDay(end, this.interval[1]))) {
+		if (end && (isBefore(end, this.interval[1]))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.nextButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -549,7 +552,7 @@ class Clndr {
 	private handleDayEvent(event: Event) {
 		const eventTarget = event.target as HTMLElement | null;
 		const currentTarget = eventTarget?.closest(
-			'.' + this.options.targets.day
+			'.' + this.options.targets.item
 		) as HTMLElement | null;
 
 		if (!currentTarget) {
@@ -594,8 +597,7 @@ class Clndr {
 			return;
 		}
 
-		const dateString = this.getTargetDateString(target);
-		this.options.selectedDate = dateString ? new Date(dateString) : undefined;
+		this.options.selectedDate = this.getTargetDate(target) || undefined;
 		this.element.querySelectorAll('.' + this.options.classes.selected)
 			.forEach(node => node.classList.remove(this.options.classes.selected));
 
@@ -636,9 +638,8 @@ class Clndr {
 	 * Creates the object to be returned along click events.
 	 */
 	private buildTargetObject(target: HTMLElement): ClndrTarget {
-		const targetWasDay = target.classList.contains(this.options.targets.day);
-		const dateString = this.getTargetDateString(target);
-		const date = dateString ? new Date(dateString) : null;
+		const targetWasDay = target.classList.contains(this.options.targets.item);
+		const date = this.getTargetDate(target);
 
 		return {
 			date,
@@ -647,16 +648,8 @@ class Clndr {
 		};
 	}
 
-	/**
-	 * Get date string ("YYYY-MM-DD") associated with the given target.
-	 * This method is meant to be called on ".day" elements.
-	 */
-	private getTargetDateString(target: HTMLElement) {
-		const index = target.className.indexOf('calendar-day-');
-
-		return index === -1
-			? undefined
-			: target.className.substring(index + 13, index + 23);
+	private getTargetDate(target: HTMLElement) {
+		return this.adapter.getDateFromClassNames(target.className);
 	}
 
 	private getEventsOfDate(date: Date): ClndrEvent[] {
@@ -664,12 +657,12 @@ class Clndr {
 			return [];
 		}
 
-		const targetEndDate = endOfDay(date);
+		const interval = this.adapter.getIntervalForDate(date);
 
-		return this.events.filter(event => {
-			return !isAfter(event._clndrStartDateObject, targetEndDate)
-				&& !isAfter(date, event._clndrEndDateObject);
-		}).map(event => event.originalEvent);
+		return this.events.filter(event => areIntervalsOverlapping(
+			{start: interval[0], end: interval[1]},
+			{start: event._clndrStartDateObject, end: event._clndrEndDateObject}
+		)).map(event => event.originalEvent);
 	}
 
 	/**
@@ -880,7 +873,7 @@ class Clndr {
 	/**
 	 * Alias of Clndr.forward()
 	 */
-	next(options: ClndrNavigationOptions) {
+	next(options: ClndrNavigationOptions = {}) {
 		return this.forward(options);
 	}
 

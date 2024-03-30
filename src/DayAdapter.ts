@@ -3,9 +3,9 @@ import {
 	addWeeks,
 	differenceInDays,
 	eachMonthOfInterval,
+	eachYearOfInterval,
 	endOfDay,
 	endOfWeek,
-	format,
 	getDay,
 	isAfter,
 	isBefore,
@@ -16,7 +16,7 @@ import {
 	subDays,
 	subWeeks,
 } from 'date-fns';
-import {Adapter} from './Adapter';
+import DayBasedAdapter from './DayBasedAdapter';
 import type {
 	Adjacent,
 	ClndrItem,
@@ -26,7 +26,7 @@ import type {
 	PageDates,
 } from './types';
 
-export class DayAdapter extends Adapter {
+export default class DayAdapter extends DayBasedAdapter {
 
 	initInterval(startOn: Date | undefined, weekOffset: number): Interval {
 		const start = startOfDay(startOn ? startOn : setDay(new Date(), weekOffset));
@@ -82,14 +82,6 @@ export class DayAdapter extends Adapter {
 		return [startOfDay(date), endOfDay(date)];
 	}
 
-	getIdClasses(interval: Interval): string[] {
-		return [
-			`calendar-day-${format(interval[0], 'yyyy-MM-dd')}`,
-			// Day of week
-			`calendar-dow-${getDay(interval[0])}`,
-		];
-	}
-
 	setDay(day: Date, startOn?: Date): Interval {
 		// If there was startOn specified, its weekday should be figured out to use that as the
 		// starting point of the interval. If not, go to today.weekday(0).
@@ -119,8 +111,8 @@ export class DayAdapter extends Adapter {
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
 	): ClndrTemplateData {
 
-		data.month = data.interval[0];
 		data.months = eachMonthOfInterval({start: data.interval[0], end: data.interval[1]});
+		data.years = eachYearOfInterval({start: data.interval[0], end: data.interval[1]});
 		data.items = createDaysObject.apply(this, [data.interval]);
 		data.numberOfRows = Math.ceil(data.items.length / 7);
 		data.events.currentPage = events[1].map(event => event.originalEvent);

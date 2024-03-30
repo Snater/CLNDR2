@@ -74,7 +74,7 @@ export type Pagination = {
 	step?: number
 }
 
-export type Scope = 'month' | 'day'
+export type Scope = 'year' | 'month' | 'day'
 
 type ClickEvents = {
 	click?: (target: ClndrTarget) => void
@@ -96,7 +96,7 @@ export type ClndrTarget = {
 	element: HTMLElement
 }
 
-export type TargetOption = 'day'
+export type TargetOption = 'item'
 	| 'empty'
 	| 'nextButton'
 	| 'todayButton'
@@ -116,8 +116,10 @@ type ItemStatus = 'past'
 export type ClndrTemplateData = {
 	interval: Interval
 	items: ClndrItem[] | ClndrItem[][]
-	month: Date | null
-	months: Date[] | null
+	month: Date
+	months: Date[]
+	year: Date
+	years: Date[]
 	events: {
 		currentPage: ClndrEvent[] | ClndrEvent[][]
 		previousScope: ClndrEvent[]

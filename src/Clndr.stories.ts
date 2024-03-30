@@ -241,10 +241,10 @@ const meta: Meta<ClndrOptions> = {
 			description: 'Override the CSS class names applied to the calendar elements for binding the `clickEvents` to.',
 			table: {
 				defaultValue: {
-					summary: '{day: \'day\', empty: \'empty\', nextButton: \'clndr-next-button\', todayButton: \'clndr-today-button\', previousButton: \'clndr-previous-button\', nextYearButton: \'clndr-next-year-button\', previousYearButton: \'clndr-previous-year-button\'}',
+					summary: '{item: \'item\', empty: \'empty\', nextButton: \'clndr-next-button\', todayButton: \'clndr-today-button\', previousButton: \'clndr-previous-button\', nextYearButton: \'clndr-next-year-button\', previousYearButton: \'clndr-previous-year-button\'}',
 				},
 				type: {
-					summary: '{day?: string, empty?: string, nextButton?: string, todayButton?: string, previousButton?: string, nextYearButton?: string, previousYearButton?: string}',
+					summary: '{item?: string, empty?: string, nextButton?: string, todayButton?: string, previousButton?: string, nextYearButton?: string, previousYearButton?: string}',
 				},
 			},
 		},
@@ -632,6 +632,47 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 	render: args => {
 		const container = document.createElement('div');
 		container.classList.add('cal3');
+		new Clndr(container, args);
+		return container;
+	},
+};
+
+export const Year: Story = {
+	args: {
+		render: data => ejs.render(`
+			<div class="clndr-controls">
+				<div class="clndr-previous-button" role="button">&lsaquo;</div>
+				<div class="year"><%= year.getFullYear() %></div>
+				<div class="clndr-next-button" role="button">&rsaquo;</div>
+			</div>
+			<div class="clndr-grid">
+				<% items.forEach(month => { %>
+					<div class="<%= month.classes %>" role="button"><%= format(month.date, 'MMMM') %></div>
+				<% }); %>
+			</div>
+			<div class="clndr-today-button" role="button">Current year</div>
+		`, data),
+		events: [
+			{
+				title: 'Multi-Day Event',
+				startDate: new Date().getFullYear() + '-01-20',
+				endDate: new Date().getFullYear() + '-01-21',
+			}, {
+				title: 'Another Multi-Day Event',
+				startDate: new Date().getFullYear() + '-06-20',
+				endDate: new Date().getFullYear() + '-07-03',
+			},
+		],
+		startOn: new Date('1992-10-15'),
+		pagination: {
+			scope: 'year',
+			size: 1,
+			step: 1,
+		},
+	},
+	render: args => {
+		const container = document.createElement('div');
+		container.classList.add('cal-year');
 		new Clndr(container, args);
 		return container;
 	},

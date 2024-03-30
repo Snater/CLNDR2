@@ -33,10 +33,13 @@ export abstract class Adapter {
 
 	abstract aggregateScopeItems(interval: Interval, weekOffset?: number): PageDates
 
+	abstract endOfScope(date: Date): Date
+
 	abstract isAdjacent(itemInterval: Interval, interval: Interval): Adjacent
 
 	abstract getIntervalForDate(date: Date): Interval
 	abstract getIdClasses(interval: Interval): string[]
+	abstract getDateFromClassNames(classNames: string): Date | null
 
 	abstract setDay(day: Date, startOn?: Date): Interval
 	abstract setMonth(newMonth: number, interval: Interval): Interval

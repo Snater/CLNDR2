@@ -1,10 +1,9 @@
 import {
 	addDays,
 	addMonths,
-	differenceInDays,
+	differenceInDays, eachYearOfInterval,
 	endOfDay,
 	endOfMonth,
-	format,
 	getDay,
 	getMonth,
 	getYear,
@@ -15,7 +14,7 @@ import {
 	subDays,
 	subMonths,
 } from 'date-fns';
-import {Adapter} from './Adapter';
+import DayBasedAdapter from './DayBasedAdapter';
 import type {
 	Adjacent,
 	ClndrEvent,
@@ -26,7 +25,7 @@ import type {
 	PageDates,
 } from './types';
 
-export class MonthAdapter extends Adapter {
+export default class MonthAdapter extends DayBasedAdapter {
 
 	initInterval(startOn?: Date): Interval {
 		const start = startOfMonth(startOn || new Date());
@@ -167,14 +166,6 @@ export class MonthAdapter extends Adapter {
 		return [startOfDay(date), endOfDay(date)];
 	}
 
-	getIdClasses(interval: Interval): string[] {
-		return [
-			`calendar-day-${format(interval[0], 'yyyy-MM-dd')}`,
-			// Day of week
-			`calendar-dow-${getDay(interval[0])}`,
-		];
-	}
-
 	setDay(day: Date): Interval {
 		const start = startOfMonth(day);
 		return [start, endOfMonth(subDays(addMonths(start, this.options.pageSize), 1))];
@@ -203,6 +194,7 @@ export class MonthAdapter extends Adapter {
 	): ClndrTemplateData {
 
 		data.month = data.interval[0];
+		data.years = eachYearOfInterval({start: data.interval[0], end: data.interval[1]});
 		data.items = [] as ClndrItem[][];
 		const currentPageEvents: ClndrEvent[][] = [];
 		data.months = [];
