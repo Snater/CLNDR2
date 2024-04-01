@@ -11,6 +11,7 @@ import {
 	isBefore,
 	setDay,
 	setMonth,
+	setYear,
 	startOfDay,
 	startOfWeek,
 	subDays,
@@ -28,8 +29,8 @@ import type {
 
 export default class DayAdapter extends DayBasedAdapter {
 
-	initInterval(startOn: Date | undefined, weekOffset: number): Interval {
-		const start = startOfDay(startOn ? startOn : setDay(new Date(), weekOffset));
+	initInterval(startOn?: Date): Interval {
+		const start = startOfDay(startOn ? startOn : setDay(new Date(), this.options.weekOffset));
 		const end = endOfDay(addDays(start, this.options.pageSize - 1));
 
 		return [start, end];
@@ -91,7 +92,12 @@ export default class DayAdapter extends DayBasedAdapter {
 	}
 
 	setMonth(newMonth: number, interval: Interval): Interval {
-		const start = setMonth(interval[0], newMonth);
+		const start = setDay(setMonth(interval[0], newMonth), this.options.weekOffset);
+		return [start, endOfDay(addDays(start, this.options.pageSize - 1))];
+	}
+
+	setYear(newYear: number, interval: Interval): Interval {
+		const start = setDay(setYear(interval[0], newYear), this.options.weekOffset);
 		return [start, endOfDay(addDays(start, this.options.pageSize - 1))];
 	}
 

@@ -11,6 +11,7 @@ export type AdapterOptions = {
 	forceSixRows: boolean
 	pageSize: number
 	showAdjacent: boolean
+	weekOffset: number
 }
 
 export abstract class Adapter {
@@ -21,7 +22,7 @@ export abstract class Adapter {
 		this.options = options;
 	}
 
-	abstract initInterval(startOn?: Date, weekOffset?: number): Interval
+	abstract initInterval(startOn?: Date): Interval
 
 	abstract initStartConstraint(constraintStart: Date, interval: Interval): Interval
 	abstract initEndConstraint(constraintEnd: Date, interval: Interval): Interval
@@ -35,6 +36,7 @@ export abstract class Adapter {
 
 	abstract endOfScope(date: Date): Date
 
+	abstract isToday(date: Date): boolean
 	abstract isAdjacent(itemInterval: Interval, interval: Interval): Adjacent
 
 	abstract getIntervalForDate(date: Date): Interval
@@ -43,6 +45,7 @@ export abstract class Adapter {
 
 	abstract setDay(day: Date, startOn?: Date): Interval
 	abstract setMonth(newMonth: number, interval: Interval): Interval
+	abstract setYear(newYear: number, interval: Interval): Interval
 
 	abstract back(interval: Interval, step: number): Interval
 	abstract forward(interval: Interval, step: number): Interval

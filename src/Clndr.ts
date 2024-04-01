@@ -6,14 +6,13 @@ import {
 	areIntervalsOverlapping,
 	format,
 	getDate,
-	getMonth,
-	getYear,
 	isAfter,
 	isBefore,
+	isSameDay,
 	isSameMonth,
+	isSameYear,
 	isWithinInterval,
 	setDay,
-	setYear,
 	subMonths,
 	subYears,
 } from 'date-fns';
@@ -23,11 +22,10 @@ import MonthAdapter from './MonthAdapter';
 import YearAdapter from './YearAdapter';
 import type {
 	ClndrEvent,
-	ClndrItem,
+	ClndrItem, ClndrItemEventParameters,
 	ClndrItemProperties,
 	ClndrNavigationOptions,
 	ClndrOptions,
-	ClndrTarget,
 	ClndrTemplateData,
 	Constraints,
 	DaysOfTheWeek,
@@ -114,13 +112,15 @@ class Clndr {
 				});
 			} else if (source[key] instanceof Date) {
 				targetObject[key] = new Date(source[key] as Date);
+			} else if (source[key] instanceof HTMLElement) {
+				targetObject[key] = source[key];
 			} else if (Clndr.isObject(source[key])) {
 				if (!Clndr.isObject(targetObject[key])) {
 					Object.assign(targetObject, {[key]: {}});
 				}
 				Clndr.mergeDeep(
-					targetObject[key] as {[k: string]: unknown},
-					source[key] as {[k: string]: unknown}
+					targetObject[key] as { [k: string]: unknown },
+					source[key] as { [k: string]: unknown }
 				);
 			} else {
 				Object.assign(target, {[key]: source[key]});
@@ -165,6 +165,7 @@ class Clndr {
 			forceSixRows: this.options.forceSixRows,
 			pageSize: this.options.pagination.size,
 			showAdjacent: this.options.showAdjacent,
+			weekOffset: this.options.weekOffset,
 		});
 
 		this.constraints = {
@@ -179,8 +180,8 @@ class Clndr {
 		// comparisons while looping over the event dates
 		this.events = this.parseToInternalEvents(this.options.events);
 
-		// To support arbitrary lengths of time, the current range is stored
-		this.interval = this.adapter.initInterval(this.options.startOn, this.options.weekOffset);
+		// For supporting arbitrary lengths of time, the current range is stored
+		this.interval = this.adapter.initInterval(this.options.startOn);
 
 		// If there are constraints, make sure the interval is within them
 		if (this.options.constraints) {
@@ -470,7 +471,7 @@ class Clndr {
 
 		// Month control
 		// Room to go back?
-		if (start && (isAfter(start, this.interval[0]))) {
+		if (start && (!isBefore(start, this.interval[0]))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.previousButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -478,7 +479,7 @@ class Clndr {
 		}
 
 		// Room to go forward?
-		if (end && (isBefore(end, this.interval[1]))) {
+		if (end && (!isAfter(end, this.interval[1]))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.nextButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -487,7 +488,7 @@ class Clndr {
 
 		// Year control
 		// Room to go back?
-		if (start && isAfter(start, subYears(this.interval[0], 1))) {
+		if (start && !isBefore(start, subYears(this.interval[0], 1))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.previousYearButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -495,7 +496,7 @@ class Clndr {
 		}
 
 		// Room to for forward?
-		if (end && isBefore(end, addYears(this.interval[1], 1))) {
+		if (end && !isAfter(end, addYears(this.interval[1], 1))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.nextYearButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -505,7 +506,8 @@ class Clndr {
 		// Today
 		// Constraints could be updated programmatically. Therefore, this check cannot be just run on
 		// initialization.
-		if (start && isAfter(start, addMonths(new Date(), 1))
+		if (
+			start && isAfter(start, addMonths(new Date(), 1))
 			|| end && isBefore(end, subMonths(new Date(), 1))
 		) {
 			this.element
@@ -520,29 +522,30 @@ class Clndr {
 	 */
 	private handleEvent(event: Event) {
 		const targets = this.options.targets;
-		const eventTarget = event.target as HTMLElement;
+		const element = event.target as HTMLElement;
+		const options: ClndrNavigationOptions = {element, withCallbacks: true};
 
 		this.handleDayEvent(event);
 		this.handleEmptyEvent(event);
 
-		if (eventTarget.closest('.' + targets.todayButton)) {
-			this.today({withCallbacks: true});
+		if (element.closest('.' + targets.todayButton)) {
+			this.today(options);
 		}
 
-		if (eventTarget.closest('.' + targets.nextButton)) {
-			this.forward({withCallbacks: true});
+		if (element.closest('.' + targets.nextButton)) {
+			this.forward(options);
 		}
 
-		if (eventTarget.closest('.' + targets.previousButton)) {
-			this.back({withCallbacks: true});
+		if (element.closest('.' + targets.previousButton)) {
+			this.back(options);
 		}
 
-		if (eventTarget.closest('.' + targets.nextYearButton)) {
-			this.nextYear({withCallbacks: true});
+		if (element.closest('.' + targets.nextYearButton)) {
+			this.nextYear(options);
 		}
 
-		if (eventTarget.closest('.' + targets.previousYearButton)) {
-			this.previousYear({withCallbacks: true});
+		if (element.closest('.' + targets.previousYearButton)) {
+			this.previousYear(options);
 		}
 	}
 
@@ -561,11 +564,17 @@ class Clndr {
 
 		this.navigatePerAdjacentDay(currentTarget);
 
+		const previouslySelectedDate = this.options.selectedDate
+			&& new Date(this.options.selectedDate);
+
 		this.updateSelectedDate(currentTarget);
 
-		if (this.options.clickEvents.click) {
-			const target = this.buildTargetObject(currentTarget);
-			this.options.clickEvents.click.apply(this, [target]);
+		if (this.options.clickEvents.onClick) {
+			const target = this.aggregateInteractionEventParameters(
+				currentTarget,
+				previouslySelectedDate
+			);
+			this.options.clickEvents.onClick.apply(this, [target]);
 		}
 	}
 
@@ -578,9 +587,9 @@ class Clndr {
 		}
 
 		if (target.classList.contains(this.options.classes.previous)) {
-			this.back({withCallbacks: true});
+			this.back({element: target, withCallbacks: true});
 		} else if (target.classList.contains(this.options.classes.next)) {
-			this.forward({withCallbacks: true});
+			this.forward({element: target, withCallbacks: true});
 		}
 	}
 
@@ -597,6 +606,7 @@ class Clndr {
 			return;
 		}
 
+		// TODO: Do not overwrite option
 		this.options.selectedDate = this.getTargetDate(target) || undefined;
 		this.element.querySelectorAll('.' + this.options.classes.selected)
 			.forEach(node => node.classList.remove(this.options.classes.selected));
@@ -620,16 +630,16 @@ class Clndr {
 			return;
 		}
 
-		if (this.options.clickEvents.click) {
-			const target = this.buildTargetObject(currentTarget);
-			this.options.clickEvents.click.apply(this, [target]);
+		if (this.options.clickEvents.onClick) {
+			const target = this.aggregateInteractionEventParameters(currentTarget);
+			this.options.clickEvents.onClick.apply(this, [target]);
 		}
 
 		if (this.options.adjacentDaysChangeMonth) {
 			if (currentTarget.classList.contains(this.options.classes.previous)) {
-				this.back({withCallbacks: true});
+				this.back({element: currentTarget, withCallbacks: true});
 			} else if (currentTarget.classList.contains(this.options.classes.next)) {
-				this.forward({withCallbacks: true});
+				this.forward({element: currentTarget, withCallbacks: true});
 			}
 		}
 	}
@@ -637,19 +647,26 @@ class Clndr {
 	/**
 	 * Creates the object to be returned along click events.
 	 */
-	private buildTargetObject(target: HTMLElement): ClndrTarget {
+	private aggregateInteractionEventParameters(
+		target: HTMLElement,
+		previouslySelectedDate?: Date
+	): ClndrItemEventParameters {
 		const targetWasDay = target.classList.contains(this.options.targets.item);
 		const date = this.getTargetDate(target);
 
 		return {
 			date,
 			events: targetWasDay && date ? this.getEventsOfDate(date) : [],
+			selectedDateChanged: !!date && (
+				!previouslySelectedDate || !isSameDay(date, previouslySelectedDate)
+			),
+			isToday: !!date && this.adapter.isToday(date),
 			element: target,
 		};
 	}
 
 	private getTargetDate(target: HTMLElement) {
-		return this.adapter.getDateFromClassNames(target.className);
+		return this.adapter.getDateFromClassNames(target.className) || undefined;
 	}
 
 	private getEventsOfDate(date: Date): ClndrEvent[] {
@@ -668,71 +685,22 @@ class Clndr {
 	/**
 	 * Triggers any applicable events given a change in the calendar's start and end dates.
 	 * @param orig Contains the original start and end dates.
+	 * @param element The event's source element.
 	 */
-	private triggerEvents(orig: Interval) {
-		const eventsOpt = this.options.clickEvents;
+	private triggerEvents(orig: Interval, element?: HTMLElement) {
 		const newInt: Interval = [this.interval[0], this.interval[1]];
 
-		// If any of the change conditions have been hit, trigger the relevant events
-		const nextMonth = isAfter(newInt[0], orig[0])
-			&& (
-				Math.abs(getMonth(newInt[0]) - getMonth(orig[0])) === 1
-				|| (getMonth(orig[0]) === 11 && getMonth(newInt[0]) === 0)
-			);
-		const prevMonth = isBefore(newInt[0], orig[0])
-			&& (
-				Math.abs(getMonth(orig[0]) - getMonth(newInt[0])) === 1
-				|| (getMonth(orig[0]) === 0 && getMonth(newInt[0]) === 11)
-			);
-		const monthChanged = getMonth(newInt[0]) !== getMonth(orig[0])
-			|| getYear(newInt[0]) !== getYear(orig[0]);
-		const nextYear = getYear(newInt[0]) - getYear(orig[0]) === 1
-			|| getYear(newInt[1]) - getYear(orig[1]) === 1;
-		const prevYear = getYear(orig[0]) - getYear(newInt[0]) === 1
-			|| getYear(orig[1]) - getYear(newInt[1]) === 1;
-		const yearChanged = getYear(newInt[0]) !== getYear(orig[0]);
-
-		const nextInterval = isAfter(newInt[0], orig[0]);
-		const prevInterval = isBefore(newInt[0], orig[0]);
-		const intervalChanged = nextInterval || prevInterval;
-		const intervalArg: [Date, Date] = this.interval;
-
-		if (nextInterval && eventsOpt.nextInterval) {
-			eventsOpt.nextInterval.apply(this, intervalArg);
+		const eventParameters = {
+			interval: this.interval,
+			isBefore: isBefore(newInt[0], orig[0]),
+			isAfter: isAfter(newInt[0], orig[0]),
+			monthChanged: !isSameMonth(newInt[0], orig[0]),
+			yearChanged: !isSameYear(newInt[0], orig[0]),
+			element,
 		}
 
-		if (prevInterval && eventsOpt.previousInterval) {
-			eventsOpt.previousInterval.apply(this, intervalArg);
-		}
-
-		if (intervalChanged && eventsOpt.onIntervalChange) {
-			eventsOpt.onIntervalChange.apply(this, intervalArg);
-		}
-
-		const monthArg: [Date] = [this.interval[0]];
-
-		if (nextMonth && eventsOpt.nextMonth) {
-			eventsOpt.nextMonth.apply(this, monthArg);
-		}
-
-		if (prevMonth && eventsOpt.previousMonth) {
-			eventsOpt.previousMonth.apply(this, monthArg);
-		}
-
-		if (monthChanged && eventsOpt.onMonthChange) {
-			eventsOpt.onMonthChange.apply(this, monthArg);
-		}
-
-		if (nextYear && eventsOpt.nextYear) {
-			eventsOpt.nextYear.apply(this, monthArg);
-		}
-
-		if (prevYear && eventsOpt.previousYear) {
-			eventsOpt.previousYear.apply(this, monthArg);
-		}
-
-		if (yearChanged && eventsOpt.onYearChange) {
-			eventsOpt.onYearChange.apply(this, monthArg);
+		if (this.options.clickEvents.onNavigate) {
+			this.options.clickEvents.onNavigate.apply(this, [eventParameters]);
 		}
 	}
 
@@ -830,7 +798,7 @@ class Clndr {
 		this.render();
 
 		if (options.withCallbacks) {
-			this.triggerEvents(orig);
+			this.triggerEvents(orig, options.element);
 		}
 
 		return this;
@@ -864,7 +832,7 @@ class Clndr {
 		this.render();
 
 		if (options.withCallbacks) {
-			this.triggerEvents(orig);
+			this.triggerEvents(orig, options.element);
 		}
 
 		return this;
@@ -896,7 +864,7 @@ class Clndr {
 		this.render();
 
 		if (options.withCallbacks) {
-			this.triggerEvents(orig);
+			this.triggerEvents(orig, options.element);
 		}
 
 		return this;
@@ -921,7 +889,7 @@ class Clndr {
 		this.render();
 
 		if (options.withCallbacks) {
-			this.triggerEvents(orig);
+			this.triggerEvents(orig, options.element);
 		}
 
 		return this;
@@ -943,13 +911,8 @@ class Clndr {
 			this.render();
 		}
 
-		// Fire the today event handler regardless of any change
 		if (options.withCallbacks) {
-			if (this.options.clickEvents.today) {
-				this.options.clickEvents.today.apply(this, [this.interval[0]]);
-			}
-
-			this.triggerEvents(orig);
+			this.triggerEvents(orig, options.element);
 		}
 	}
 
@@ -964,7 +927,7 @@ class Clndr {
 		this.render();
 
 		if (options && options.withCallbacks) {
-			this.triggerEvents(orig);
+			this.triggerEvents(orig, options.element);
 		}
 
 		return this;
@@ -973,13 +936,12 @@ class Clndr {
 	setYear(newYear: number, options: ClndrNavigationOptions = {}) {
 		const orig: Interval = [this.interval[0], this.interval[1]];
 
-		this.interval[0] = setYear(this.interval[0], newYear);
-		this.interval[1] = setYear(this.interval[1], newYear);
+		this.interval = this.adapter.setYear(newYear, this.interval);
 
 		this.render();
 
 		if (options && options.withCallbacks) {
-			this.triggerEvents(orig);
+			this.triggerEvents(orig, options.element);
 		}
 
 		return this;
@@ -996,7 +958,7 @@ class Clndr {
 		this.render();
 
 		if (options && options.withCallbacks) {
-			this.triggerEvents(orig);
+			this.triggerEvents(orig, options.element);
 		}
 
 		return this;

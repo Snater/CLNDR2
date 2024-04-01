@@ -1,4 +1,4 @@
-import {endOfDay, format, getDay} from 'date-fns';
+import {endOfDay, format, getDay, isSameDay} from 'date-fns';
 import {Adapter} from './Adapter';
 import type {Interval} from './types';
 
@@ -6,6 +6,10 @@ export default abstract class DayBasedAdapter extends Adapter {
 
 	endOfScope(date: Date): Date {
 		return endOfDay(date);
+	}
+
+	isToday(date: Date): boolean {
+		return isSameDay(date, new Date());
 	}
 
 	getIdClasses(interval: Interval): string[] {

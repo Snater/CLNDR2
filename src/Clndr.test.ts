@@ -1,10 +1,10 @@
 import '@testing-library/jest-dom';
+import {endOfDay, startOfDay} from 'date-fns';
 import {fireEvent, screen} from '@testing-library/dom';
 import userEvent, {UserEvent} from '@testing-library/user-event';
 import Clndr from './Clndr';
 import {de} from 'date-fns/locale';
 import ejs from 'ejs';
-
 import type {ClndrTemplateData} from './types';
 
 const defaultTemplate = `
@@ -308,14 +308,32 @@ describe('Setup', () => {
 		expect(container.querySelectorAll('.empty').length).toBeGreaterThan(0);
 	})
 
-	test('Selected date', () => {
+	test('Selected date', async () => {
+		const handleClick = jest.fn();
+
 		clndr = new Clndr(container, {
 			render: provideRender(),
+			clickEvents: {
+				onClick: handleClick,
+			},
 			selectedDate: new Date('1992-10-15'),
 			startOn: new Date('1992-10'),
+			trackSelectedDate: true,
 		});
 
 		expect(container.querySelector('.calendar-day-1992-10-15')).toHaveClass('selected');
+
+		await user.click(screen.getByText('1'));
+
+		expect(container.querySelector('.calendar-day-1992-10-01')).toHaveClass('selected');
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: new Date('1992-10-01'),
+			events: [],
+			selectedDateChanged: true,
+			isToday: false,
+			element: screen.getByText('1').parentNode,
+		})
 	});
 
 	test('Custom day interval while providing start month', () => {
@@ -365,7 +383,7 @@ describe('Setup', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
 			clickEvents: {
-				click: jest.fn(),
+				onClick: jest.fn(),
 			},
 			pagination: {scope: 'month', size: 3},
 			locale: de,
@@ -375,21 +393,21 @@ describe('Setup', () => {
 	});
 
 	test('Use touch events', () => {
-		const handleIntervalChange = jest.fn();
+		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
-				onIntervalChange: handleIntervalChange,
+				onNavigate: handleNavigate,
 			},
 			useTouchEvents: true,
 		});
 
 		fireEvent.touchStart(screen.getByText('next'));
-		expect(handleIntervalChange).toHaveBeenCalledTimes(1);
+		expect(handleNavigate).toHaveBeenCalledTimes(1);
 	});
 
-	test('Track selected date while inactive days should be ignored in selection', async() => {
+	test('Track selected date while inactive days should be ignored in selection', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			ignoreInactiveDaysInSelection: true,
@@ -405,7 +423,7 @@ describe('Setup', () => {
 		expect(screen.getByText('31').parentNode).toHaveClass('selected');
 	});
 
-	test('Track selected date while inactive days should be ignored in selection and adjacent month\'s days change the month', async() => {
+	test('Track selected date while inactive days should be ignored in selection and adjacent month\'s days change the month', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			adjacentDaysChangeMonth: true,
@@ -423,7 +441,7 @@ describe('Setup', () => {
 		expect(screen.getByText('12').parentNode).not.toHaveClass('selected');
 	});
 
-	test('Define just a date after the current date', async() => {
+	test('Define just a date after the current date', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			events: [{date: '1992-10-15'}],
@@ -540,7 +558,7 @@ describe('Navigation', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
 			clickEvents: {
-				click: jest.fn(),
+				onClick: jest.fn(),
 			},
 			startOn: new Date('1992-10'),
 			pagination: {scope: 'month', size: 3},
@@ -555,7 +573,7 @@ describe('Navigation', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
 			clickEvents: {
-				click: jest.fn(),
+				onClick: jest.fn(),
 			},
 			startOn: new Date('1992-10'),
 			pagination: {scope: 'month', size: 3},
@@ -624,7 +642,7 @@ describe('Navigation', () => {
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
 	});
 
-	test('Programmatically change month by calling forward() and back() with custom day page size', async () => {
+	test('Programmatically change day scope by calling forward() and back() with custom day page size', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
 			pagination: {scope: 'day', size: 7},
@@ -638,7 +656,7 @@ describe('Navigation', () => {
 		expect(screen.getByText('09/01 - 09/07')).toBeInTheDocument();
 	});
 
-	test('Programmatically change month by calling forward() and back() with custom day pagination, including step', async () => {
+	test('Programmatically change day scope by calling forward() and back() with custom day pagination, including step', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
 			pagination: {scope: 'day', size: 7, step: 1},
@@ -706,37 +724,58 @@ describe('Navigation', () => {
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
 	});
 
-	test('Programmatically trigger today()', () => {
-		clndr = new Clndr(container, {
-			render: provideRender(),
-			startOn: new Date('1992-10'),
-		});
-
-		expect(container.querySelector('.calendar-day-1992-10-15')).toBeInTheDocument();
-		clndr.today({withCallbacks: true});
-		expect(container.querySelector('.calendar-day-2024-01-18')).toBeInTheDocument();
-	});
-
-	test('Programmatically trigger today() with callbacks', () => {
+	test('Click on today', async () => {
+		const handleClick = jest.fn();
+		const handleNavigate = jest.fn();
 		const handleToday = jest.fn();
-		const handleIntervalChange = jest.fn();
-		const handleYearChange = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
-				onIntervalChange: handleIntervalChange,
-				onYearChange: handleYearChange,
-				today: handleToday,
+				onClick: handleClick,
+				onNavigate: handleNavigate,
+			},
+			trackSelectedDate: true,
+		});
+
+		await user.click(screen.getByText('18'));
+
+		expect(handleClick).toHaveBeenCalledTimes(1);
+		expect(handleNavigate).toHaveBeenCalledTimes(0);
+		expect(handleToday).toHaveBeenCalledTimes(0);
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: new Date('2024-01-18'),
+			events: [],
+			selectedDateChanged: true,
+			isToday: true,
+			element: screen.getByText('18').parentNode,
+		});
+	});
+
+	test('Programmatically trigger today() with callbacks', () => {
+		const handleNavigate = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			clickEvents: {
+				onNavigate: handleNavigate,
 			},
 			startOn: new Date('1992-10'),
 		});
 
 		clndr.today({withCallbacks: true});
 
-		expect(handleToday).toHaveBeenCalledTimes(1);
-		expect(handleYearChange).toHaveBeenCalledTimes(1);
-		expect(handleIntervalChange).toHaveBeenCalledTimes(1);
+		expect(handleNavigate).toHaveBeenCalledTimes(1);
+
+		expect(handleNavigate.mock.calls[0][0]).toEqual({
+			interval: [startOfDay(new Date('2024-01-01')), endOfDay(new Date('2024-01-31'))],
+			isBefore: false,
+			isAfter: true,
+			monthChanged: true,
+			yearChanged: true,
+			element: undefined,
+		});
 	});
 
 	test('Go to today while having a custom interval with a start date being set', () => {
@@ -765,29 +804,37 @@ describe('Navigation', () => {
 	});
 
 	test('Click today button', async () => {
-		const handleToday = jest.fn();
+		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(simpleTemplate),
 			clickEvents: {
-				today: handleToday,
+				onNavigate: handleNavigate,
 			},
+			startOn: new Date('1992-10'),
 		});
 
 		await user.click(screen.getByText('Today'));
 
-		expect(handleToday).toHaveBeenCalledTimes(1);
+		expect(handleNavigate).toHaveBeenCalledTimes(1);
+
+		expect(handleNavigate.mock.calls[0][0]).toEqual({
+			interval: [startOfDay(new Date('2024-01-01')), endOfDay(new Date('2024-01-31'))],
+			isBefore: false,
+			isAfter: true,
+			monthChanged: true,
+			yearChanged: true,
+			element: screen.getByText('Today'),
+		});
 	})
 
 	test('Programmatically set month with callbacks', () => {
-		const handleIntervalChange = jest.fn();
-		const handleMonthChange = jest.fn();
+		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
-				onIntervalChange: handleIntervalChange,
-				onMonthChange: handleMonthChange,
+				onNavigate: handleNavigate,
 			},
 			startOn: new Date('1992-10'),
 		});
@@ -796,19 +843,25 @@ describe('Navigation', () => {
 		clndr.setMonth(0, {withCallbacks: true});
 		expect(screen.getByText('January 1992')).toBeInTheDocument();
 
-		expect(handleIntervalChange).toHaveBeenCalledTimes(1);
-		expect(handleMonthChange).toHaveBeenCalledTimes(1);
+		expect(handleNavigate).toHaveBeenCalledTimes(1);
+
+		expect(handleNavigate.mock.calls[0][0]).toEqual({
+			interval: [startOfDay(new Date('1992-01-01')), endOfDay(new Date('1992-01-31'))],
+			isBefore: true,
+			isAfter: false,
+			monthChanged: true,
+			yearChanged: false,
+			element: undefined,
+		});
 	});
 
 	test('Programmatically set month with empty options', () => {
-		const handleIntervalChange = jest.fn();
-		const handleMonthChange = jest.fn();
+		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
-				onIntervalChange: handleIntervalChange,
-				onMonthChange: handleMonthChange,
+				onNavigate: handleNavigate,
 			},
 			startOn: new Date('1992-10'),
 		});
@@ -817,8 +870,7 @@ describe('Navigation', () => {
 		clndr.setMonth(0, {});
 		expect(screen.getByText('January 1992')).toBeInTheDocument();
 
-		expect(handleIntervalChange).toHaveBeenCalledTimes(0);
-		expect(handleMonthChange).toHaveBeenCalledTimes(0);
+		expect(handleNavigate).toHaveBeenCalledTimes(0);
 	});
 
 	test('Programmatically set month while having configured a custom month interval', () => {
@@ -844,18 +896,16 @@ describe('Navigation', () => {
 
 		expect(screen.getByText('10/01 - 10/07')).toBeInTheDocument();
 		clndr.setMonth(4);
-		expect(screen.getByText('05/01 - 05/07')).toBeInTheDocument();
+		expect(screen.getByText('04/26 - 05/02')).toBeInTheDocument();
 	});
 
 	test('Programmatically set year with callbacks', () => {
-		const handleIntervalChange = jest.fn();
-		const handleYearChange = jest.fn();
+		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
-				onIntervalChange: handleIntervalChange,
-				onYearChange: handleYearChange,
+				onNavigate: handleNavigate,
 			},
 			startOn: new Date('1992-10'),
 		});
@@ -864,19 +914,53 @@ describe('Navigation', () => {
 		clndr.setYear(1991, {withCallbacks: true});
 		expect(screen.getByText('October 1991')).toBeInTheDocument();
 
-		expect(handleIntervalChange).toHaveBeenCalledTimes(1);
-		expect(handleYearChange).toHaveBeenCalledTimes(1);
+		expect(handleNavigate).toHaveBeenCalledTimes(1);
+
+		expect(handleNavigate.mock.calls[0][0]).toEqual({
+			interval: [startOfDay(new Date('1991-10-01')), endOfDay(new Date('1991-10-31'))],
+			isBefore: true,
+			isAfter: false,
+			monthChanged: true,
+			yearChanged: true,
+			element: undefined,
+		});
+	});
+
+	test('Programmatically set year on day scope with callbacks', () => {
+		const handleNavigate = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneWeekTemplate),
+			clickEvents: {
+				onNavigate: handleNavigate,
+			},
+			pagination: {scope: 'day', size: 7},
+		});
+
+		expect(screen.getByText('01/14 - 01/20')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-day-2024-01-18')).toBeInTheDocument();
+		clndr.setYear(1992, {withCallbacks: true});
+		expect(screen.getByText('01/12 - 01/18')).toBeInTheDocument();
+
+		expect(handleNavigate).toHaveBeenCalledTimes(1);
+
+		expect(handleNavigate.mock.calls[0][0]).toEqual({
+			interval: [startOfDay(new Date('1992-01-12')), endOfDay(new Date('1992-01-18'))],
+			isBefore: true,
+			isAfter: false,
+			monthChanged: true,
+			yearChanged: true,
+			element: undefined,
+		});
 	});
 
 	test('Programmatically set year with empty options', () => {
-		const handleIntervalChange = jest.fn();
-		const handleYearChange = jest.fn();
+		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
-				onIntervalChange: handleIntervalChange,
-				onYearChange: handleYearChange,
+				onNavigate: handleNavigate,
 			},
 			startOn: new Date('1992-10'),
 		});
@@ -885,8 +969,7 @@ describe('Navigation', () => {
 		clndr.setYear(1991);
 		expect(screen.getByText('October 1991')).toBeInTheDocument();
 
-		expect(handleIntervalChange).toHaveBeenCalledTimes(0);
-		expect(handleYearChange).toHaveBeenCalledTimes(0);
+		expect(handleNavigate).toHaveBeenCalledTimes(0);
 	});
 
 	test('Programmatically set new interval on default configuration', () => {
@@ -901,12 +984,12 @@ describe('Navigation', () => {
 	});
 
 	test('Programmatically set new interval with having a custom month interval configured', () => {
-		const handleIntervalChange = jest.fn();
+		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
 			clickEvents: {
-				onIntervalChange: handleIntervalChange,
+				onNavigate: handleNavigate,
 			},
 			pagination: {scope: 'month', size: 3},
 			startOn: new Date('1992-10'),
@@ -915,7 +998,16 @@ describe('Navigation', () => {
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
 		clndr.setIntervalStart('2000-06-01', {withCallbacks: true});
 		expect(screen.getByText('June 2000')).toBeInTheDocument();
-		expect(handleIntervalChange).toHaveBeenCalledTimes(1);
+		expect(handleNavigate).toHaveBeenCalledTimes(1);
+
+		expect(handleNavigate.mock.calls[0][0]).toEqual({
+			interval: [startOfDay(new Date('2000-06-01')), endOfDay(new Date('2000-08-31'))],
+			isBefore: false,
+			isAfter: true,
+			monthChanged: true,
+			yearChanged: true,
+			element: undefined,
+		});
 	});
 
 	test('Programmatically set new interval with having a custom month interval configured', () => {
@@ -970,77 +1062,32 @@ describe('Events', () => {
 		const handleClick = jest.fn();
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			clickEvents: {click: handleClick},
+			clickEvents: {onClick: handleClick},
 			startOn: new Date('1992-10'),
 		});
 
 		await user.click(screen.getByText('15'));
 
 		expect(handleClick).toHaveBeenCalledTimes(1);
-	});
 
-	test('Trigger interval change callbacks', () => {
-		const handlePreviousInterval = jest.fn();
-		const handleNextInterval = jest.fn();
-		const handleIntervalChange = jest.fn();
-
-		const clndr = new Clndr(container, {
-			render: provideRender(multiMonthTemplate),
-			clickEvents: {
-				previousInterval: handlePreviousInterval,
-				nextInterval: handleNextInterval,
-				onIntervalChange: handleIntervalChange,
-			},
-			pagination: {scope: 'month', size: 3},
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: new Date('1992-10-15'),
+			events: [],
+			selectedDateChanged: true,
+			isToday: false,
+			element: screen.getByText('15').parentNode,
 		});
-
-		clndr.back({withCallbacks: true});
-		clndr.next({withCallbacks: true});
-
-		expect(handlePreviousInterval).toHaveBeenCalledTimes(1);
-		expect(handleNextInterval).toHaveBeenCalledTimes(1);
-		expect(handleIntervalChange).toHaveBeenCalledTimes(2);
 	});
 
-	test('Trigger default change callbacks', () => {
-		const handleIntervalChange = jest.fn();
-		const handleMonthChange = jest.fn();
-		const handlePreviousMonth = jest.fn();
-		const handleNextMonth = jest.fn();
-		const handleYearChange = jest.fn();
-		const handlePreviousYear = jest.fn();
-		const handleNextYear = jest.fn();
+	test('Trigger onNavigate callbacks', () => {
+		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
-				onIntervalChange: function() {
+				onNavigate: function(params) {
 					expect(this).toBeInstanceOf(Clndr);
-					handleIntervalChange();
-				},
-				onMonthChange: function() {
-					expect(this).toBeInstanceOf(Clndr);
-					handleMonthChange();
-				},
-				previousMonth: function() {
-					expect(this).toBeInstanceOf(Clndr);
-					handlePreviousMonth();
-				},
-				nextMonth: function() {
-					expect(this).toBeInstanceOf(Clndr);
-					handleNextMonth();
-				},
-				onYearChange: function() {
-					expect(this).toBeInstanceOf(Clndr);
-					handleYearChange();
-				},
-				previousYear: function() {
-					expect(this).toBeInstanceOf(Clndr);
-					handlePreviousYear();
-				},
-				nextYear: function() {
-					expect(this).toBeInstanceOf(Clndr);
-					handleNextYear();
+					handleNavigate(params);
 				},
 			},
 			startOn: new Date('1992-12'),
@@ -1049,16 +1096,28 @@ describe('Events', () => {
 		clndr.next({withCallbacks: true});
 		clndr.back({withCallbacks: true});
 
-		expect(handleIntervalChange).toHaveBeenCalledTimes(2);
-		expect(handleMonthChange).toHaveBeenCalledTimes(2);
-		expect(handlePreviousMonth).toHaveBeenCalledTimes(1);
-		expect(handleNextMonth).toHaveBeenCalledTimes(1);
-		expect(handleYearChange).toHaveBeenCalledTimes(2);
-		expect(handlePreviousYear).toHaveBeenCalledTimes(1);
-		expect(handleNextYear).toHaveBeenCalledTimes(1);
+		expect(handleNavigate).toHaveBeenCalledTimes(2);
+
+		expect(handleNavigate.mock.calls[0][0]).toEqual({
+			interval: [startOfDay(new Date('1993-01-01')), endOfDay(new Date('1993-01-31'))],
+			isBefore: false,
+			isAfter: true,
+			monthChanged: true,
+			yearChanged: true,
+			element: undefined,
+		});
+
+		expect(handleNavigate.mock.calls[1][0]).toEqual({
+			interval: [startOfDay(new Date('1992-12-01')), endOfDay(new Date('1992-12-31'))],
+			isBefore: true,
+			isAfter: false,
+			monthChanged: true,
+			yearChanged: true,
+			element: undefined,
+		});
 	});
 
-	test('Click on a day with an event', async() => {
+	test('Click on a day with an event', async () => {
 		const handleClick = jest.fn(data => {
 			expect(data.events[0].title).toBe('This is an event');
 		});
@@ -1066,7 +1125,7 @@ describe('Events', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
-				click: handleClick,
+				onClick: handleClick,
 			},
 			events: [{
 				title: 'This is an event',
@@ -1077,9 +1136,17 @@ describe('Events', () => {
 
 		await user.click(screen.getByText('15'));
 		expect(handleClick).toHaveBeenCalledTimes(1);
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: new Date('1992-10-15'),
+			events: [{title: 'This is an event', date: '1992-10-15'}],
+			selectedDateChanged: true,
+			isToday: false,
+			element: screen.getByText('15').parentNode,
+		});
 	});
 
-	test('Click on a day of a multi-day event', async() => {
+	test('Click on a day of a multi-day event', async () => {
 		const handleClick = jest.fn(data => {
 			expect(data.events[0].title).toBe('Multi-day event');
 		});
@@ -1087,7 +1154,7 @@ describe('Events', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
-				click: handleClick,
+				onClick: handleClick,
 			},
 			dateParameter: {
 				startDate: 'startDate',
@@ -1103,6 +1170,18 @@ describe('Events', () => {
 
 		await user.click(screen.getByText('15'));
 		expect(handleClick).toHaveBeenCalledTimes(1);
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: new Date('1992-10-15'),
+			events: [{
+				title: 'Multi-day event',
+				startDate: '1992-10-12',
+				endDate: '1992-10-17',
+			}],
+			selectedDateChanged: true,
+			isToday: false,
+			element: screen.getByText('15').parentNode,
+		});
 	});
 
 	test('Click on empty calendar box', async () => {
@@ -1112,7 +1191,7 @@ describe('Events', () => {
 			render: provideRender(),
 			showAdjacent: false,
 			clickEvents: {
-				click: handleClick,
+				onClick: handleClick,
 			},
 		});
 
@@ -1120,6 +1199,14 @@ describe('Events', () => {
 		expect(emptyElement).not.toBeNull();
 		await user.click(emptyElement as Element);
 		expect(handleClick).toHaveBeenCalledTimes(1);
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: undefined,
+			events: [],
+			selectedDateChanged: false,
+			isToday: false,
+			element: emptyElement,
+		});
 	});
 
 });
@@ -1401,15 +1488,18 @@ describe('pagination.scope set to `year`', () => {
 
 		clndr.setIntervalStart(new Date('1992-10-15'));
 		expect(screen.getByText('1992')).toBeInTheDocument();
+
+		clndr.setYear(2000);
+		expect(screen.getByText('2000')).toBeInTheDocument();
 	});
 
 	test('Start and end constraints', async () => {
-		const handleIntervalChange = jest.fn();
+		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneYearTemplate),
 			clickEvents: {
-				onIntervalChange: handleIntervalChange,
+				onNavigate: handleNavigate,
 			},
 			constraints: {
 				startDate: new Date('1991'),
@@ -1421,22 +1511,22 @@ describe('pagination.scope set to `year`', () => {
 
 		await user.click(screen.getByText('previous'));
 		expect(screen.getByText('1991')).toBeInTheDocument();
-		expect(handleIntervalChange).toHaveBeenCalledTimes(1);
+		expect(handleNavigate).toHaveBeenCalledTimes(1);
 		await user.click(screen.getByText('previous'));
 		expect(screen.getByText('1991')).toBeInTheDocument();
-		expect(handleIntervalChange).toHaveBeenCalledTimes(1);
+		expect(handleNavigate).toHaveBeenCalledTimes(1);
 		await user.click(screen.getByText('next'));
 		expect(screen.getByText('1992')).toBeInTheDocument();
-		expect(handleIntervalChange).toHaveBeenCalledTimes(2);
+		expect(handleNavigate).toHaveBeenCalledTimes(2);
 		await user.click(screen.getByText('next'));
 		expect(screen.getByText('1993')).toBeInTheDocument();
-		expect(handleIntervalChange).toHaveBeenCalledTimes(3);
+		expect(handleNavigate).toHaveBeenCalledTimes(3);
 		await user.click(screen.getByText('next'));
 		expect(screen.getByText('1994')).toBeInTheDocument();
-		expect(handleIntervalChange).toHaveBeenCalledTimes(4);
+		expect(handleNavigate).toHaveBeenCalledTimes(4);
 		await user.click(screen.getByText('next'));
 		expect(screen.getByText('1994')).toBeInTheDocument();
-		expect(handleIntervalChange).toHaveBeenCalledTimes(4);
+		expect(handleNavigate).toHaveBeenCalledTimes(4);
 	});
 
 	test('Start date before start constraint', async () => {
@@ -1495,29 +1585,13 @@ describe('pagination.scope set to `year`', () => {
 		const handleClick = jest.fn(target => {
 			expect(target.date.getMonth()).toBe(6);
 		});
-		const handleIntervalChange = jest.fn();
-		const handlePreviousInterval = jest.fn();
-		const handleNextInterval = jest.fn();
-		const handleMonthChange = jest.fn();
-		const handlePreviousMonth = jest.fn();
-		const handleNextMonth = jest.fn();
-		const handleYearChange = jest.fn();
-		const handlePreviousYear = jest.fn();
-		const handleNextYear = jest.fn();
+		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneYearTemplate),
 			clickEvents: {
-				click: handleClick,
-				onIntervalChange: handleIntervalChange,
-				previousInterval: handlePreviousInterval,
-				nextInterval: handleNextInterval,
-				onMonthChange: handleMonthChange,
-				previousMonth: handlePreviousMonth,
-				nextMonth: handleNextMonth,
-				onYearChange: handleYearChange,
-				previousYear: handlePreviousYear,
-				nextYear: handleNextYear,
+				onClick: handleClick,
+				onNavigate: handleNavigate,
 			},
 			pagination: {scope: 'year', size: 1},
 			startOn: new Date('1992-10-15'),
@@ -1526,19 +1600,51 @@ describe('pagination.scope set to `year`', () => {
 		await user.click(screen.getByText('next'));
 		await user.click(screen.getByText('previous'));
 
-		expect(handleIntervalChange).toHaveBeenCalledTimes(2);
-		expect(handlePreviousInterval).toHaveBeenCalledTimes(1);
-		expect(handleNextInterval).toHaveBeenCalledTimes(1);
-		expect(handleMonthChange).toHaveBeenCalledTimes(2);
-		expect(handlePreviousMonth).toHaveBeenCalledTimes(0);
-		expect(handleNextMonth).toHaveBeenCalledTimes(0);
-		expect(handleYearChange).toHaveBeenCalledTimes(2);
-		expect(handlePreviousYear).toHaveBeenCalledTimes(1);
-		expect(handleNextYear).toHaveBeenCalledTimes(1);
+		expect(handleNavigate).toHaveBeenCalledTimes(2);
+
+		expect(handleNavigate.mock.calls[0][0]).toEqual({
+			interval: [startOfDay(new Date('1993-01-01')), endOfDay(new Date('1993-12-31'))],
+			isBefore: false,
+			isAfter: true,
+			monthChanged: true,
+			yearChanged: true,
+			element: screen.getByText('next'),
+		});
+
+		expect(handleNavigate.mock.calls[1][0]).toEqual({
+			interval: [startOfDay(new Date('1992-01-01')), endOfDay(new Date('1992-12-31'))],
+			isBefore: true,
+			isAfter: false,
+			monthChanged: true,
+			yearChanged: true,
+			element: screen.getByText('previous'),
+		});
 
 		await user.click(screen.getByText('July'));
 
 		expect(handleClick).toHaveBeenCalledTimes(1);
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: new Date('1992-07'),
+			events: [],
+			selectedDateChanged: true,
+			isToday: false,
+			element: screen.getByText('July'),
+		});
+
+		await user.click(screen.getByText('Current year'));
+
+		expect(handleClick).toHaveBeenCalledTimes(1);
+		expect(handleNavigate).toHaveBeenCalledTimes(3);
+
+		expect(handleNavigate.mock.calls[2][0]).toEqual({
+			interval: [startOfDay(new Date('2024-01-01')), endOfDay(new Date('2024-12-31'))],
+			isBefore: false,
+			isAfter: true,
+			monthChanged: true,
+			yearChanged: true,
+			element: screen.getByText('Current year'),
+		});
 	});
 
 	test('Events', () => {
@@ -1569,15 +1675,15 @@ describe('pagination.scope set to `year`', () => {
 		expect(screen.getByText('1993')).toBeInTheDocument();
 	});
 
-	test('Click on a month while the identifier class is unexpectedly not assigned', async() => {
+	test('Click on a month while the identifier class is unexpectedly not assigned', async () => {
 		const handleClick = jest.fn(data => {
-			expect(data.date).toBeNull();
+			expect(data.date).toBeUndefined();
 		});
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneYearTemplate),
 			clickEvents: {
-				click: handleClick,
+				onClick: handleClick,
 			},
 			pagination: {scope: 'year', size: 1},
 			trackSelectedDate: true,
@@ -1589,6 +1695,14 @@ describe('pagination.scope set to `year`', () => {
 		await user.click(monthElement as Element);
 
 		expect(handleClick).toHaveBeenCalledTimes(1);
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: undefined,
+			events: [],
+			selectedDateChanged: false,
+			isToday: false,
+			element: monthElement,
+		});
 	});
 
 });
@@ -1805,7 +1919,7 @@ describe('Handling errors', () => {
 		expect(mockWarn).toHaveBeenCalledTimes(1);
 	});
 
-	test('Missing CSS classes to detect month change when not showing adjacent months', async() => {
+	test('Missing CSS classes to detect month change when not showing adjacent months', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			adjacentDaysChangeMonth: true,
@@ -1819,15 +1933,15 @@ describe('Handling errors', () => {
 		await user.click(emptyElement as Element);
 	});
 
-	test('Click on a day while the day identifier class is unexpectedly not assigned', async() => {
+	test('Click on a day while the day identifier class is unexpectedly not assigned', async () => {
 		const handleClick = jest.fn(data => {
-			expect(data.date).toBeNull();
+			expect(data.date).toBeUndefined();
 		});
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			clickEvents: {
-				click: handleClick,
+				onClick: handleClick,
 			},
 			startOn: new Date('1992-10'),
 			trackSelectedDate: true,
@@ -1839,6 +1953,14 @@ describe('Handling errors', () => {
 		await user.click(dayElement as Element);
 
 		expect(handleClick).toHaveBeenCalledTimes(1);
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: undefined,
+			events: [],
+			selectedDateChanged: false,
+			isToday: false,
+			element: dayElement,
+		});
 	});
 
 	test('Specifying wrong dateParameter option', () => {

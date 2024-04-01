@@ -77,23 +77,26 @@ export type Pagination = {
 export type Scope = 'year' | 'month' | 'day'
 
 type ClickEvents = {
-	click?: (target: ClndrTarget) => void
-	today?: (month: Date) => void
-	nextYear?: (month: Date) => void
-	nextMonth?: (month: Date) => void
-	nextInterval?: (intervalStart: Date, intervalEnd: Date) => void
-	previousYear?: (month: Date) => void
-	onYearChange?: (month: Date) => void
-	previousMonth?: (month: Date) => void
-	onMonthChange?: (month: Date) => void
-	previousInterval?: (intervalStart: Date, intervalEnd: Date) => void
-	onIntervalChange?: (intervalStart: Date, intervalEnd: Date) => void
+	onClick?: (parameters: ClndrItemEventParameters) => void
+	onNavigate?: (parameters: NavigationEventParameters) => void
 }
 
-export type ClndrTarget = {
-	date: Date | null
+// TODO: This will need to contain the scope when being able to switch the scope
+export type ClndrItemEventParameters = {
+	date?: Date
 	events: ClndrEvent[]
-	element: HTMLElement
+	selectedDateChanged: boolean
+	isToday: boolean
+	element?: HTMLElement
+}
+
+export type NavigationEventParameters = {
+	interval: Interval
+	isBefore: boolean
+	isAfter: boolean
+	monthChanged: boolean
+	yearChanged: boolean
+	element?: HTMLElement
 }
 
 export type TargetOption = 'item'
@@ -146,7 +149,7 @@ export type ClndrItemProperties = {
 	isAdjacent: boolean
 }
 
-export type ClndrNavigationOptions = {withCallbacks?: boolean}
+export type ClndrNavigationOptions = {element?: HTMLElement, withCallbacks?: boolean}
 
 export type NavigationConstraint = 'next' | 'today' | 'previous' | 'nextYear' | 'previousYear'
 export type NavigationConstraints = {[key in NavigationConstraint]: boolean}

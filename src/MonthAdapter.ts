@@ -1,7 +1,8 @@
 import {
 	addDays,
 	addMonths,
-	differenceInDays, eachYearOfInterval,
+	differenceInDays,
+	eachYearOfInterval,
 	endOfDay,
 	endOfMonth,
 	getDay,
@@ -9,7 +10,9 @@ import {
 	getYear,
 	isAfter,
 	isBefore,
-	setMonth, startOfDay,
+	setMonth,
+	setYear,
+	startOfDay,
 	startOfMonth,
 	subDays,
 	subMonths,
@@ -173,6 +176,11 @@ export default class MonthAdapter extends DayBasedAdapter {
 
 	setMonth(newMonth: number, interval: Interval): Interval {
 		const start = startOfMonth(setMonth(interval[0], newMonth));
+		return [start, endOfMonth(subDays(addMonths(start, this.options.pageSize), 1))];
+	}
+
+	setYear(newYear: number, interval: Interval): Interval {
+		const start = setYear(interval[0], newYear);
 		return [start, endOfMonth(subDays(addMonths(start, this.options.pageSize), 1))];
 	}
 

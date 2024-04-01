@@ -224,50 +224,63 @@ new Clndr(container, {
     adjacentMonth: "adjacent-month",
   },
 
-  // Event handlers for the click event. The keyword 'this' is set to the clndr instance in all
-  // callbacks.
+  // Event handlers for the click event. The keyword 'this' is set to the CLNDR
+  // instance in all callbacks.
   clickEvents: {
     // Triggered whenever a calendar box is clicked.
-    click: function(target: ClndrTarget) {...},
+    onClick: function(parameters: {
+      // Date represented by the calendar box. The date is `undefined` when
+      // clicking on an "empty" box.
+      date?: Date,
 
-    // Triggered when a user goes to the current month and year.
-    today: function(month: Date) {...},
+      // The events on the date being clicked as provided by `options.events`.
+      events: ClndrEvent[],
 
-    // Triggered when a user navigates forward a month.
-    nextMonth: function(month: Date) {...},
+      // Whether the clicked triggered changing the selected date.
+      selectedDateChanged: boolean,
 
-    // Triggered when a user navigates back a month.
-    previousMonth: function(month: Date) {...},
+      // Wether the date clicked is today.
+      isToday: boolean,
 
-    // Triggered whenever the month is changed as a result of a click action.
-    onMonthChange: function(month: Date) {...},
+      // The HTML element targeted by the click; `undefined` when navigating
+      // programmatically.
+      element?: HTMLElement,
+    }) {...},
 
-    // Triggered when the next year button is clicked.
-    nextYear: function(month: Date) {...},
+    // Triggered whenever navigating the calendar, which is any operation other
+    // than directly clicking a calendar box, i.e. clicking the "back" and
+    // "forward" buttons, clicking the "today" button etc. 
+    onNavigate: function(parameters: {
+      // The interval of the new page.
+      interval?: [Date, Date],
 
-    // Triggered when the previous year button is clicked.
-    previousYear: function(month: Date) {...},
+      // Whether the new page is before the one previously rendered (i.e.
+      // navigating backward).
+      isBefore: boolean,
 
-    // Triggered whenever the year is changed as a result of a click action. If
-    // onMonthChange is also set, it is fired BEFORE onYearChange.
-    onYearChange: function(month: Date) {...},
+      // Whether the new page is after the one previously rendered (i.e.
+      // navigating forward).
+      isAfter: boolean,
 
-    // Triggered when a user navigates forward an interval.
-    nextInterval: function(start: Date, end: Date) {...},
+      // Whether month was changed (includes navigating to the same month in
+      // another year).
+      monthChanged: boolean,
 
-    // Triggered when a user navigates back an interval.
-    previousInterval: function(start: Date, end: Date) {...},
+      // Wether the year was changed.
+      yearChanged: boolean,
 
-    // Triggered whenever the time period is changed.
-    onIntervalChange: function(start: Date, end: Date) {...},
+      // The HTML element targeted by the click; `undefined` when navigating
+      // programmatically.
+      element?: HTMLElement,
+    }) {...},
   },
 
   // Prevent the user from navigating the calendar outside of a certain date range by specifying
   // (e.g. when configuring a date picker) by specifying either the startDate, endDate, or both in
   // It's possible to change these dynamically after initialization, see API functions below.
   constraints: {
-    startDate: '2017-12-22',
-    endDate: '2018-01-09'
+    startDate: new Date('2017-12-22'),
+    endDate: new Date('2018-01-09'),
   },
 
   // If you're supplying an events array, dateParameter configures which key(s) to look for dates
@@ -524,7 +537,7 @@ new Clndr(container, {
     endDate: new Date('2024-10-15'),
   },
   clickEvents: {
-    click: target => {
+    onClick: target => {
       if (!target.element.classList.contains('inactive')) {
         console.log('You picked a valid date!');
       } else {

@@ -7,6 +7,7 @@ import {
 	format,
 	isAfter,
 	isBefore,
+	isSameMonth,
 	setMonth,
 	startOfMonth,
 	startOfYear,
@@ -77,6 +78,10 @@ export default class YearAdapter extends Adapter {
 		return endOfYear(date);
 	}
 
+	isToday(date: Date): boolean {
+		return isSameMonth(date, new Date());
+	}
+
 	isAdjacent(): Adjacent {
 		return null;
 	}
@@ -96,22 +101,26 @@ export default class YearAdapter extends Adapter {
 
 	setDay(day: Date): Interval {
 		const start = startOfYear(day);
-		return [start, endOfYear(addYears(day, this.options.pageSize))];
+		return [start, endOfYear(addYears(day, this.options.pageSize - 1))];
 	}
 
 	setMonth(newMonth: number, interval: Interval): Interval {
 		const start = startOfYear(setMonth(interval[0], newMonth));
-		return [start, endOfYear(addMonths(start, this.options.pageSize))];
+		return [start, endOfYear(addMonths(start, this.options.pageSize - 1))];
+	}
+
+	setYear(newYear: number): Interval {
+		return [startOfYear(newYear.toString()), endOfYear(newYear.toString())];
 	}
 
 	back(interval: Interval, step: number): Interval {
 		const start = startOfYear(subYears(interval[0], step));
-		return [start, endOfYear(addYears(start, this.options.pageSize))];
+		return [start, endOfYear(addYears(start, this.options.pageSize - 1))];
 	}
 
 	forward(interval: Interval, step: number): Interval {
 		const start = startOfYear(addYears(interval[0], step));
-		return [start, endOfYear(addYears(start, this.options.pageSize))];
+		return [start, endOfYear(addYears(start, this.options.pageSize - 1))];
 	}
 
 	flushTemplateData(

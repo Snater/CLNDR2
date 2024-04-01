@@ -53,7 +53,8 @@ const meta: Meta<ClndrOptions> = {
 					summary: 'undefined',
 				},
 				type: {
-					summary: '{click?: (target: ClndrTarget) => void, today?: (month: Date) => void, nextYear?: (month: Date) => void, nextMonth?: (month: Date) => void, nextInterval?: (intervalStart: Date, intervalEnd: Date) => void, previousYear?: (month: Date) => void, onYearChange?: (month: Date) => void, previousMonth?: (month: Date) => void, onMonthChange?: (month: Date) => void, previousInterval?: (intervalStart: Date, intervalEnd: Date) => void, onIntervalChange?: (intervalStart: Date, intervalEnd: Date) => void}',
+					summary: '{onClick?: (params: ClndrItemEventParameters) => void, onNavigate: (params: NavigationEventParameters) => void}',
+					detail: 'See Readme for details on the template data.',
 				},
 			},
 		},
@@ -318,17 +319,8 @@ const meta: Meta<ClndrOptions> = {
 			</table>`, data),
 		adjacentDaysChangeMonth: false,
 		clickEvents: {
-			click: action('click'),
-			today: action('today'),
-			nextMonth: action('nextMonth'),
-			previousMonth: action('previousMonth'),
-			onMonthChange: action('onMonthChange'),
-			nextYear: action('nextYear'),
-			previousYear: action('previousYear'),
-			onYearChange: action('onYearChange'),
-			nextInterval: action('nextInterval'),
-			previousInterval: action('previousInterval'),
-			onIntervalChange: action('onIntervalChange'),
+			onClick: action('click'),
+			onNavigate: action('navigate'),
 		},
 		dateParameter: {
 			date: 'date',
@@ -475,7 +467,7 @@ export const MiniCalendarWithClickEvent: Story = {
 			</div>
 		`, data),
 		clickEvents: {
-			click: target => {
+			onClick: target => {
 				action('click')(target);
 
 				if (!target.date) {
@@ -512,16 +504,7 @@ export const MiniCalendarWithClickEvent: Story = {
 
 				eventList.innerHTML = html;
 			},
-			today: action('today'),
-			nextMonth: action('nextMonth'),
-			previousMonth: action('previousMonth'),
-			onMonthChange: action('onMonthChange'),
-			nextYear: action('nextYear'),
-			previousYear: action('previousYear'),
-			onYearChange: action('onYearChange'),
-			nextInterval: action('nextInterval'),
-			previousInterval: action('previousInterval'),
-			onIntervalChange: action('onIntervalChange'),
+			onNavigate: action('navigate'),
 		},
 		events: [{
 			title: 'Boogie Night',
@@ -663,12 +646,7 @@ export const Year: Story = {
 				endDate: new Date().getFullYear() + '-07-03',
 			},
 		],
-		startOn: new Date('1992-10-15'),
-		pagination: {
-			scope: 'year',
-			size: 1,
-			step: 1,
-		},
+		pagination: {scope: 'year', size: 1, step: 1},
 	},
 	render: args => {
 		const container = document.createElement('div');
