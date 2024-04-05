@@ -7,6 +7,8 @@ It is the unofficial successor to awesome [CLNDR](https://github.com/kylestetz/C
 
 **👉 Demos and additional documentation: https://clndr2.snater.com**
 
+Check out the [2.0.0 milestone](https://github.com/Snater/CLNDR2/milestone/1) for plans on the next major release. Development is taking place on the [next](https://github.com/Snater/CLNDR2/tree/next) branch.
+
 ---
 
 - [Basic Usage](#basic-usage)
