@@ -86,7 +86,7 @@
 						background: @grey;
 					}
 
-					&.today {
+					&.now {
 						background: @yellow;
 
 						&:hover {
@@ -127,7 +127,7 @@
 				}
 
 				.empty,
-				.adjacent-month {
+				.adjacent {
 					width: 100%;
 					height: inherit;
 					background: @grey;
@@ -232,14 +232,14 @@
 							}
 						}
 
-						&.adjacent-month {
+						&.adjacent {
 							.day-number {
 								opacity: 0.3;
 							}
 						}
 					}
 
-					.today {
+					.now {
 						background-color: white;
 						background-image: none;
 					}
@@ -354,7 +354,7 @@
 						background-color: @green;
 					}
 
-					&.today {
+					&.now {
 						background-color: @yellow;
 					}
 
@@ -472,7 +472,7 @@
 						background-color: @green;
 					}
 
-					&.today {
+					&.now {
 						background-color: @yellow;
 					}
 
@@ -581,7 +581,7 @@
 						background-color: @green;
 					}
 
-					&.today {
+					&.now {
 						background-color: @yellow;
 					}
 
@@ -595,7 +595,7 @@
 				}
 
 				.empty,
-				.adjacent-month {
+				.adjacent {
 					background: @grey;
 					height: @box-size;
 					width: @box-size;
@@ -667,7 +667,7 @@
 					}
 				}
 
-				&.today {
+				&.now {
 					background-color: @yellow;
 				}
 
@@ -689,6 +689,125 @@
 
 			&:hover {
 				background-color: @grey;
+			}
+		}
+	}
+}
+
+.cal-month-year {
+	cursor: default;
+	font-family: Helvetica, 'Segoe UI', Arial, sans-serif;
+	width: 256px;
+	margin: 0 auto;
+	user-select: none;
+
+	[role="button"] {
+		cursor: pointer;
+
+		&:hover {
+			background-color: @grey;
+		}
+	}
+
+	.clndr {
+		.clndr-controls {
+			align-items: baseline;
+			display: flex;
+			justify-content: space-between;
+			width: 100%;
+			margin-bottom: 8px;
+
+			[role="button"] {
+				padding: 3px 8px;
+			}
+
+			.title {
+				font-weight: bold;
+			}
+		}
+
+		.clndr-grid {
+			border: 1px solid @violet;
+			display: flex;
+			flex-direction: column;
+			height: 180px;
+			text-align: center;
+
+			.item {
+				height: 100%;
+
+				&.event {
+					background-color: @green;
+
+					&[role="button"]:hover {
+						background-color: darken(@green, 10%);
+					}
+				}
+
+				&.now {
+					background-color: @yellow;
+
+					&[role="button"]:hover {
+						background-color: darken(@yellow, 10%);
+					}
+				}
+			}
+		}
+
+		.footer-button {
+			justify-content: center;
+			display: flex;
+			margin-top: 8px;
+			padding: 3px 8px;
+		}
+
+		.month-template {
+			.clndr-grid {
+				.grid-template {
+					display: grid;
+					grid-template-columns: repeat(7, 1fr);
+					width: 100%;
+				}
+
+				.days-of-the-week {
+					.header-day {
+						align-items: center;
+						background: @violet;
+						color: @white;
+						display: flex;
+						justify-content: center;
+						padding: 4px 0;
+					}
+				}
+
+				.days {
+					height: 100%;
+
+					> * {
+						align-items: center;
+						display: flex;
+						justify-content: center;
+					}
+
+					.adjacent {
+						background: @grey;
+					}
+				}
+			}
+		}
+
+		.year-template {
+			.clndr-grid {
+				display: grid;
+				grid-auto-flow: column;
+				grid-template-rows: repeat(6, 1fr);
+
+				.item {
+					align-content: center;
+					display: flex;
+					justify-content: center;
+					flex-wrap: wrap;
+				}
 			}
 		}
 	}

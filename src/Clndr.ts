@@ -4,6 +4,7 @@ import {
 	addMonths,
 	addYears,
 	areIntervalsOverlapping,
+	endOfDay,
 	format,
 	getDate,
 	isAfter,
@@ -22,7 +23,8 @@ import MonthAdapter from './MonthAdapter';
 import YearAdapter from './YearAdapter';
 import type {
 	ClndrEvent,
-	ClndrItem, ClndrItemEventParameters,
+	ClndrItem,
+	ClndrItemEventParameters,
 	ClndrItemProperties,
 	ClndrNavigationOptions,
 	ClndrOptions,
@@ -34,6 +36,7 @@ import type {
 	Interval,
 	NavigationConstraint,
 	NavigationConstraints,
+	Pagination,
 	Scope,
 	TargetOption,
 	WeekOffset,
@@ -53,6 +56,7 @@ const defaults: InternalOptions = {
 		previous: 'previous',
 		next: 'next',
 		adjacent: 'adjacent',
+		switch: 'switch',
 	},
 	clickEvents: {},
 	dateParameter: {
@@ -73,11 +77,14 @@ const defaults: InternalOptions = {
 		previousButton: 'clndr-previous-button',
 		nextYearButton: 'clndr-next-year-button',
 		previousYearButton: 'clndr-previous-year-button',
+		switchYearButton: 'clndr-switch-year-button',
 	},
 	trackSelectedDate: false,
 	useTouchEvents: false,
 	weekOffset: 0,
 };
+
+const orderedScopes: Scope[] = ['day', 'month', 'year'] as const;
 
 const adapters: Record<Scope, new (options: AdapterOptions) => Adapter> = {
 	year: YearAdapter,
@@ -138,7 +145,8 @@ class Clndr {
 	}
 
 	private readonly element: HTMLElement;
-	private readonly adapter: Adapter;
+	private readonly availableScopes: Scope[];
+	private adapter: Adapter;
 	/**
 	 * Boolean values used to log whether any constraints are met
 	 */
@@ -160,6 +168,10 @@ class Clndr {
 			);
 			this.options.weekOffset = 0;
 		}
+
+		this.availableScopes = typeof this.options.render === 'function'
+			? [this.options.pagination.scope]
+			: orderedScopes.filter(scope => Object.keys(this.options.render).includes(scope));
 
 		this.adapter = new adapters[this.options.pagination.scope]({
 			forceSixRows: this.options.forceSixRows,
@@ -374,6 +386,12 @@ class Clndr {
 			}
 		}
 
+		const adjacentScope = this.getAdjacentScope(this.options.pagination.scope);
+
+		if(adjacentScope) {
+			classes.push(this.options.classes.switch);
+		}
+
 		if (
 			this.options.selectedDate
 			&& isWithinInterval(
@@ -394,10 +412,25 @@ class Clndr {
 		});
 	}
 
+	private getAdjacentScope(scope: Scope): Scope | undefined {
+		const index = this.availableScopes.indexOf(scope);
+		const adjacentIndex = index - 1;
+		return this.availableScopes[adjacentIndex];
+	}
+
 	private render() {
 		this.calendarContainer.innerHTML = '';
 
-		this.calendarContainer.innerHTML = this.options.render.apply(
+		const renderFn = typeof this.options.render === 'function'
+			? this.options.render
+			: this.options.render[this.options.pagination.scope];
+
+		if (!renderFn) {
+			console.warn(`No render function defined for ${this.options.pagination.scope} scope`);
+			return;
+		}
+
+		this.calendarContainer.innerHTML = renderFn.apply(
 			this,
 			[this.aggregateTemplateData()]
 		);
@@ -405,6 +438,7 @@ class Clndr {
 		this.applyInactiveClasses();
 
 		if (this.options.doneRendering) {
+			// TODO: Pass information about scope along the event
 			this.options.doneRendering.apply(this, []);
 		}
 	}
@@ -547,6 +581,10 @@ class Clndr {
 		if (element.closest('.' + targets.previousYearButton)) {
 			this.previousYear(options);
 		}
+
+		if (element.closest('.' + targets.switchYearButton)) {
+			this.setPagination({scope: 'year'});
+		}
 	}
 
 	/**
@@ -563,6 +601,8 @@ class Clndr {
 		}
 
 		this.navigatePerAdjacentDay(currentTarget);
+
+		this.switchView(currentTarget);
 
 		const previouslySelectedDate = this.options.selectedDate
 			&& new Date(this.options.selectedDate);
@@ -590,6 +630,22 @@ class Clndr {
 			this.back({element: target, withCallbacks: true});
 		} else if (target.classList.contains(this.options.classes.next)) {
 			this.forward({element: target, withCallbacks: true});
+		}
+	}
+
+	/**
+	 * Clicking on an item to switch the scope will always switch to the next smaller scope.
+	 * Switching to a larger scope by clicking on an item does not make a lot of sense.
+	 */
+	private switchView(target: HTMLElement) {
+		if (!target.classList.contains('switch')) {
+			return;
+		}
+
+		const adjacentScope = this.getAdjacentScope(this.options.pagination.scope);
+
+		if (adjacentScope) {
+			this.setPagination({scope: adjacentScope}, this.getTargetDate(target));
 		}
 	}
 
@@ -720,7 +776,7 @@ class Clndr {
 
 				return {
 					_clndrStartDateObject: new Date(event[dateParameter] as Date | string),
-					_clndrEndDateObject: new Date(event[dateParameter] as Date | string),
+					_clndrEndDateObject: endOfDay(new Date(event[dateParameter] as Date | string)),
 					originalEvent: event,
 				};
 			}
@@ -741,7 +797,7 @@ class Clndr {
 
 				return {
 					_clndrStartDateObject: new Date(event[dateParameter.date] as Date | string),
-					_clndrEndDateObject: new Date(event[dateParameter.date] as Date | string),
+					_clndrEndDateObject: endOfDay(new Date(event[dateParameter.date] as Date | string)),
 					originalEvent: event,
 				};
 			} else if (end || start) {
@@ -758,7 +814,7 @@ class Clndr {
 
 				return {
 					_clndrStartDateObject: new Date((start || end) as Date | string),
-					_clndrEndDateObject: new Date((end || start) as Date | string),
+					_clndrEndDateObject: endOfDay(new Date((end || start) as Date | string)),
 					originalEvent: event,
 				};
 			}
@@ -775,6 +831,25 @@ class Clndr {
 		};
 
 		return Clndr.mergeOptions<ClndrItem>(defaults, options);
+	}
+
+	private setPagination(pagination: Partial<Pagination>, date?: Date) {
+		this.options.pagination = {...this.options.pagination, ...pagination};
+
+		this.adapter = new adapters[this.options.pagination.scope]({
+			forceSixRows: this.options.forceSixRows,
+			pageSize: this.options.pagination.size,
+			showAdjacent: this.options.showAdjacent,
+			weekOffset: this.options.weekOffset,
+		});
+
+		this.interval = this.adapter.initInterval(date || this.interval[0]);
+
+		if (this.options.constraints) {
+			this.interval = this.initConstraints(this.options.constraints, this.interval);
+		}
+
+		this.render();
 	}
 
 	/**

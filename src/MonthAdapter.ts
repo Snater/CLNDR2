@@ -98,10 +98,17 @@ export default class MonthAdapter extends DayBasedAdapter {
 	}
 
 	aggregateScopeItems(interval: Interval, weekOffset: number): PageDates {
+		const daysOfPreviousMonth = this.aggregateDaysOfPreviousMonth(interval[0], weekOffset);
+		const daysOfCurrentMonth = this.aggregateDaysOfCurrentPage(interval);
+
 		return [
-			this.aggregateDaysOfPreviousMonth(interval[0], weekOffset),
-			this.aggregateDaysOfCurrentPage(interval),
-			this.aggregateDaysOfNextMonth(interval[1], weekOffset),
+			daysOfPreviousMonth,
+			daysOfCurrentMonth,
+			this.aggregateDaysOfNextMonth(
+				interval[1],
+				weekOffset,
+				daysOfPreviousMonth.length + daysOfCurrentMonth.length
+			),
 		]
 	}
 
@@ -136,7 +143,7 @@ export default class MonthAdapter extends DayBasedAdapter {
 		return days;
 	}
 
-	aggregateDaysOfNextMonth(endDate: Date, weekOffset: number): Date[] {
+	aggregateDaysOfNextMonth(endDate: Date, weekOffset: number, numberOfDays: number): Date[] {
 		const days: Date[] = [];
 		const remainingDaysOfNextMonth = 7 - getDay(endDate) + weekOffset - 1;
 
@@ -145,7 +152,7 @@ export default class MonthAdapter extends DayBasedAdapter {
 		}
 
 		// Add another row if needed when forcing six rows (42 is 6 rows of 7 days)
-		const remainingDaysForSixRows = 42 - days.length;
+		const remainingDaysForSixRows = 42 - (numberOfDays + days.length);
 
 		if (this.options.forceSixRows) {
 			for (let i = 1; i <= remainingDaysForSixRows; i++) {

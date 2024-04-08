@@ -1,7 +1,9 @@
 import {FormatOptions, Locale} from 'date-fns';
 
+type RenderFn = (data: ClndrTemplateData) => string
+
 export type InternalOptions = {
-	render: (data: ClndrTemplateData) => string
+	render: RenderFn | {[key in Scope]?: RenderFn}
 	adjacentDaysChangeMonth: boolean
 	classes: {[key in ItemStatus]: string}
 	clickEvents: ClickEvents
@@ -33,7 +35,7 @@ export type ClndrOptions = Partial<
 		targets?: {[key in TargetOption]?: string}
 	}
 > & {
-	render: (data: ClndrTemplateData) => string
+	render: RenderFn | {[key in Scope]?: RenderFn}
 }
 
 export type ClndrEvent = {
@@ -106,6 +108,7 @@ export type TargetOption = 'item'
 	| 'previousButton'
 	| 'nextYearButton'
 	| 'previousYearButton'
+	| 'switchYearButton'
 
 type ItemStatus = 'past'
 	| 'now'
@@ -115,6 +118,7 @@ type ItemStatus = 'past'
 	| 'previous'
 	| 'next'
 	| 'adjacent'
+	| 'switch'
 
 export type ClndrTemplateData = {
 	interval: Interval

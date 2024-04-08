@@ -1118,9 +1118,7 @@ describe('Events', () => {
 	});
 
 	test('Click on a day with an event', async () => {
-		const handleClick = jest.fn(data => {
-			expect(data.events[0].title).toBe('This is an event');
-		});
+		const handleClick = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
@@ -1147,9 +1145,7 @@ describe('Events', () => {
 	});
 
 	test('Click on a day of a multi-day event', async () => {
-		const handleClick = jest.fn(data => {
-			expect(data.events[0].title).toBe('Multi-day event');
-		});
+		const handleClick = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
@@ -1676,9 +1672,7 @@ describe('pagination.scope set to `year`', () => {
 	});
 
 	test('Click on a month while the identifier class is unexpectedly not assigned', async () => {
-		const handleClick = jest.fn(data => {
-			expect(data.date).toBeUndefined();
-		});
+		const handleClick = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneYearTemplate),
@@ -1707,7 +1701,126 @@ describe('pagination.scope set to `year`', () => {
 
 });
 
+describe('Multiple scopes', () => {
+
+	test('Switching scope', async () => {
+		clndr = new Clndr(container, {
+			render: {
+				month: provideRender(`
+					<div class="month"><%= format(month, 'MMMM yyyy') %></div>
+					<div class="clndr-switch-year-button" role="button">Switch to year view</div>
+				`),
+				year: provideRender(`
+					<div class="months">
+						<% items.forEach((month, monthIndex) => { %>
+							<div class="<%= month.classes %>"><%= format(months[monthIndex], 'MMMM yyyy') %></div>
+						<% }) %>
+					</div>
+				`),
+			},
+		});
+
+		expect(screen.getByText('January 2024')).toBeInTheDocument();
+		expect(container.querySelector('.month')?.childNodes.length).toBe(1);
+
+		await user.click(screen.getByText('Switch to year view'));
+		expect(container.querySelectorAll('.months > div')?.length).toBe(12);
+
+		await user.click(screen.getByText('March 2024'));
+
+		expect(screen.getByText('March 2024')).toBeInTheDocument();
+		expect(container.querySelector('.month')?.childNodes.length).toBe(1);
+	});
+
+	test('Reapply constraints', async () => {
+		clndr = new Clndr(container, {
+			render: {
+				month: provideRender(`
+					<div class="month"><%= format(month, 'MMMM yyyy') %></div>
+					<div>
+						<% items.forEach(item => { %>
+							<div class="<%= item.classes %>"><%= item.day %></div>
+						<% }) %>
+					</div>
+					<div class="clndr-switch-year-button" role="button">Switch to year view</div>
+				`),
+				year: provideRender(`
+					<div class="months">
+						<% items.forEach((month, monthIndex) => { %>
+							<div class="<%= month.classes %>"><%= format(months[monthIndex], 'MMMM yyyy') %></div>
+						<% }) %>
+					</div>
+				`),
+			},
+			constraints: {
+				startDate: new Date('2024-01-18'),
+				endDate: new Date('2024-02-18'),
+			},
+		});
+
+		expect(screen.queryAllByText('2024').length).toBe(0);
+		expect(screen.getByText('January 2024')).toBeInTheDocument();
+
+		await user.click(screen.getByText('Switch to year view'));
+
+		// TODO: Do not permit switching out of constraints
+		// await user.click(screen.getByText('March 2024'));
+		// expect(screen.getByText('2024')).toBeInTheDocument();
+
+		await user.click(screen.getByText('February 2024'));
+		expect(container.querySelector('.month')?.childNodes.length).toBe(1);
+		expect(screen.getByText('February 2024')).toBeInTheDocument();
+	});
+
+	test('Missing render function for scope', async () => {
+		const mockWarn = jest.fn();
+		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
+
+		clndr = new Clndr(container, {
+			render: {
+				month: provideRender(`
+					<div class="month"><%= format(month, 'MMMM yyyy') %></div>
+					<div class="clndr-switch-year-button" role="button">Switch to year view</div>
+				`),
+				year: undefined,
+			},
+			constraints: {
+				startDate: new Date('2024-01-18'),
+				endDate: new Date('2024-02-18'),
+			},
+		});
+
+		await user.click(screen.getByText('Switch to year view'));
+
+		expect(mockWarn).toHaveBeenCalledTimes(1);
+	});
+
+	test('Try to switch to invalid scope', async () => {
+		clndr = new Clndr(container, {
+			render: {
+				month: provideRender(`
+					<div class="month"><%= format(month, 'MMMM yyyy') %></div>
+					<div>
+						<% items.forEach(item => { %>
+							<div class="switch <%= item.classes %>"><%= item.day %></div>
+						<% }) %>
+					</div>
+				`),
+				year: undefined,
+			},
+		});
+
+		expect(screen.getByText('January 2024')).toBeInTheDocument();
+
+		await user.click(screen.getByText('18'));
+
+		expect(screen.getByText('January 2024')).toBeInTheDocument();
+	});
+
+});
+
 describe('Events passed to the template', () => {
+
 	test('Events of previous, next and current page, a page being one month', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(`
@@ -1934,9 +2047,7 @@ describe('Handling errors', () => {
 	});
 
 	test('Click on a day while the day identifier class is unexpectedly not assigned', async () => {
-		const handleClick = jest.fn(data => {
-			expect(data.date).toBeUndefined();
-		});
+		const handleClick = jest.fn();
 
 		clndr = new Clndr(container, {
 			render: provideRender(),

@@ -18,7 +18,7 @@ const meta: Meta<ClndrOptions> = {
 					summary: 'undefined',
 				},
 				type: {
-					summary: '(data: ClndrTemplateData) => string',
+					summary: '(data: ClndrTemplateData) => string | {[key in Scope]?: (data: ClndrTemplateData) => string}',
 					detail: 'See Readme for details on the template data.',
 				},
 			},
@@ -39,10 +39,10 @@ const meta: Meta<ClndrOptions> = {
 			description: 'Custom CSS class names to apply to the calendar elements to be used for styling.',
 			table: {
 				defaultValue: {
-					summary: '{past: \'past\', now: \'now\', event: \'event\', inactive: \'inactive\', selected: \'selected\', previous: \'previous\', next: \'next\', adjacent: \'adjacent\'}',
+					summary: '{past: \'past\', now: \'now\', event: \'event\', inactive: \'inactive\', selected: \'selected\', previous: \'previous\', next: \'next\', adjacent: \'adjacent\', switch: \'switch\'}',
 				},
 				type: {
-					summary: '{past?: string, now?: string, event?: string, inactive?: string, selected?: string, previous?: string, next?: string, adjacent?: string}',
+					summary: '{past?: string, now?: string, event?: string, inactive?: string, selected?: string, previous?: string, next?: string, adjacent?: string, switch?: string}',
 				},
 			},
 		},
@@ -242,10 +242,10 @@ const meta: Meta<ClndrOptions> = {
 			description: 'Override the CSS class names applied to the calendar elements for binding the `clickEvents` to.',
 			table: {
 				defaultValue: {
-					summary: '{item: \'item\', empty: \'empty\', nextButton: \'clndr-next-button\', todayButton: \'clndr-today-button\', previousButton: \'clndr-previous-button\', nextYearButton: \'clndr-next-year-button\', previousYearButton: \'clndr-previous-year-button\'}',
+					summary: '{item: \'item\', empty: \'empty\', nextButton: \'clndr-next-button\', todayButton: \'clndr-today-button\', previousButton: \'clndr-previous-button\', nextYearButton: \'clndr-next-year-button\', previousYearButton: \'clndr-previous-year-button\', switchYearButton: \'clndr-switch-year-button\'}',
 				},
 				type: {
-					summary: '{item?: string, empty?: string, nextButton?: string, todayButton?: string, previousButton?: string, nextYearButton?: string, previousYearButton?: string}',
+					summary: '{item?: string, empty?: string, nextButton?: string, todayButton?: string, previousButton?: string, nextYearButton?: string, previousYearButton?: string, switchYearButton?: string}',
 				},
 			},
 		},
@@ -651,6 +651,75 @@ export const Year: Story = {
 	render: args => {
 		const container = document.createElement('div');
 		container.classList.add('cal-year');
+		new Clndr(container, args);
+		return container;
+	},
+};
+
+export const SwitchBetweenMonthAndYear: Story = {
+	args: {
+		render: {
+			year: data => ejs.render(`
+				<div class="year-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title"><%= year.getFullYear() %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<% items.forEach(month => { %>
+							<div class="<%= month.classes %>" role="button"><%= format(month.date, 'MMM') %></div>
+						<% }); %>
+					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to current year</div>
+				</div>
+			`, data),
+			month: data => ejs.render(`
+				<div class="month-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title"><%= format(month, 'MMMM yyyy') %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<div class="days-of-the-week grid-template">
+							<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }); %>
+						</div>
+						<div class="days grid-template">
+							<% items.forEach(day => { %>
+								<div class="<%= day.classes %>"><%= day.day %></div>
+							<% }); %>
+						</div>
+					</div>
+					<div class="clndr-switch-year-button footer-button" role="button">Switch to year view</div>
+				</div>
+			`, data),
+		},
+		events: [
+			{
+				title: 'Multi-Day Event',
+				startDate: new Date().getFullYear() + '-01-20',
+				endDate: new Date().getFullYear() + '-01-21',
+			}, {
+				title: 'Another Multi-Day Event',
+				startDate: new Date().getFullYear() + '-02-26',
+				endDate: new Date().getFullYear() + '-03-05',
+			}, {
+				title: 'And another Multi-Day Event',
+				startDate: new Date().getFullYear() + '-06-20',
+				endDate: new Date().getFullYear() + '-07-03',
+			}, {
+				title: 'A looong Multi-Day Event',
+				startDate: new Date().getFullYear() + '-09-01',
+				endDate: new Date().getFullYear() + '-10-03',
+			},
+		],
+		forceSixRows: true,
+		pagination: {scope: 'year', size: 1, step: 1},
+	},
+	render: args => {
+		const container = document.createElement('div');
+		container.classList.add('cal-month-year');
 		new Clndr(container, args);
 		return container;
 	},

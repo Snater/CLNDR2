@@ -375,6 +375,7 @@ new Clndr(container, {
     previousButton: 'clndr-previous-button',
     nextYearButton: 'clndr-next-year-button',
     previousYearButton: 'clndr-previous-year-button',
+    switchYearButton: 'clndr-switch-year-button',
   },
 
   // Whether the last clicked day should be tracked, that is applying the `classes.selected` class
@@ -547,6 +548,18 @@ new Clndr(container, {
   }
 });
 ```
+
+## Switching the View
+
+CLNDR2 is capable of switching the view between year view and month view for easing navigation. (Additional views will be added in the future.) In order to activate the capability to switch between views, instead of a single `render` function, a `render` function needs to be provided for each view that should be possible to be switched to:
+
+```typescript
+const clndr = new Clndr(container, {render: {
+  year: data => {...},
+  month: data => {...},
+}});
+```
+
 
 ## Public API
 
