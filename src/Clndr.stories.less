@@ -810,5 +810,20 @@
 				}
 			}
 		}
+
+		.decade-template {
+			.clndr-grid {
+				display: grid;
+				grid-auto-flow: column;
+				grid-template-rows: repeat(5, 1fr);
+
+				.item {
+					align-content: center;
+					display: flex;
+					justify-content: center;
+					flex-wrap: wrap;
+				}
+			}
+		}
 	}
 }

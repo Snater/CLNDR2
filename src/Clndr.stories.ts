@@ -186,7 +186,7 @@ const meta: Meta<ClndrOptions> = {
 					summary: '{scope: \'month\', size: 1}',
 				},
 				type: {
-					summary: '{scope: \'month\' | \'day\', size: number, step?: number}',
+					summary: '{scope: \'decade\' | \'year\' | \'month\' | \'day\', size: number, step?: number}',
 					detail: 'If `step` is not defined, `size` is used as the step size when navigating.',
 				},
 			},
@@ -331,12 +331,12 @@ const meta: Meta<ClndrOptions> = {
 		events: [
 			{
 				title: 'Multi-Day Event',
-				endDate: new Date().toISOString().slice(0, 8) + '14',
 				startDate: new Date().toISOString().slice(0, 8) + '10',
+				endDate: new Date().toISOString().slice(0, 8) + '14',
 			}, {
-				endDate: new Date().toISOString().slice(0, 8) + '23',
-				startDate: new Date().toISOString().slice(0, 8) + '21',
 				title: 'Another Multi-Day Event',
+				startDate: new Date().toISOString().slice(0, 8) + '21',
+				endDate: new Date().toISOString().slice(0, 8) + '23',
 			},
 		],
 		forceSixRows: false,
@@ -656,9 +656,24 @@ export const Year: Story = {
 	},
 };
 
-export const SwitchBetweenMonthAndYear: Story = {
+export const SwitchBetweenViews: Story = {
 	args: {
 		render: {
+			decade: data => ejs.render(`
+				<div class="decade-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title"><%= years[0].getFullYear() %> to <%= years[9].getFullYear() %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<% items.forEach(year => { %>
+							<div class="<%= year.classes %>" role="button"><%= format(year.date, 'yyyy') %></div>
+						<% }); %>
+					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to current decade</div>
+				</div>
+			`, data),
 			year: data => ejs.render(`
 				<div class="year-template">
 					<div class="clndr-controls">
@@ -672,6 +687,7 @@ export const SwitchBetweenMonthAndYear: Story = {
 						<% }); %>
 					</div>
 					<div class="clndr-today-button footer-button" role="button">Go to current year</div>
+					<div class="clndr-switch-decade-button footer-button" role="button">Switch to decade view</div>
 				</div>
 			`, data),
 			month: data => ejs.render(`
@@ -691,7 +707,9 @@ export const SwitchBetweenMonthAndYear: Story = {
 							<% }); %>
 						</div>
 					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to current month</div>
 					<div class="clndr-switch-year-button footer-button" role="button">Switch to year view</div>
+					<div class="clndr-switch-decade-button footer-button" role="button">Switch to decade view</div>
 				</div>
 			`, data),
 		},
@@ -712,6 +730,10 @@ export const SwitchBetweenMonthAndYear: Story = {
 				title: 'A looong Multi-Day Event',
 				startDate: new Date().getFullYear() + '-09-01',
 				endDate: new Date().getFullYear() + '-10-03',
+			}, {
+				title: 'Event in another year',
+				startDate: new Date().getFullYear() + 2 + '-06-01',
+				endDate: new Date().getFullYear() + 3 + '-05-31',
 			},
 		],
 		forceSixRows: true,

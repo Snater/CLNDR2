@@ -76,7 +76,7 @@ export type Pagination = {
 	step?: number
 }
 
-export type Scope = 'year' | 'month' | 'day'
+export type Scope = 'decade' | 'year' | 'month' | 'day'
 
 type ClickEvents = {
 	onClick?: (parameters: ClndrItemEventParameters) => void
@@ -109,6 +109,7 @@ export type TargetOption = 'item'
 	| 'nextYearButton'
 	| 'previousYearButton'
 	| 'switchYearButton'
+	| 'switchDecadeButton'
 
 type ItemStatus = 'past'
 	| 'now'
@@ -127,6 +128,8 @@ export type ClndrTemplateData = {
 	months: Date[]
 	year: Date
 	years: Date[]
+	decade: Date
+	decades: Date[]
 	events: {
 		currentPage: ClndrEvent[] | ClndrEvent[][]
 		previousScope: ClndrEvent[]

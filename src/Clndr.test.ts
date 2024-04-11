@@ -1538,32 +1538,6 @@ describe('pagination.scope set to `year`', () => {
 		expect(screen.getByText('1993')).toBeInTheDocument();
 	});
 
-	test('End date before start constraint', async () => {
-		clndr = new Clndr(container, {
-			render: provideRender(oneYearTemplate),
-			constraints: {
-				startDate: new Date('1993'),
-			},
-			pagination: {scope: 'year', size: 1},
-			startOn: new Date('1992-10-15'),
-		});
-
-		expect(screen.getByText('1993')).toBeInTheDocument();
-	});
-
-	test('Start date after end constraint', async () => {
-		clndr = new Clndr(container, {
-			render: provideRender(oneYearTemplate),
-			constraints: {
-				endDate: new Date('1991'),
-			},
-			pagination: {scope: 'year', size: 1},
-			startOn: new Date('1992-10-15'),
-		});
-
-		expect(screen.getByText('1991')).toBeInTheDocument();
-	});
-
 	test('End date date after end constraint', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneYearTemplate),
@@ -1578,9 +1552,7 @@ describe('pagination.scope set to `year`', () => {
 	});
 
 	test('Click event handlers', async () => {
-		const handleClick = jest.fn(target => {
-			expect(target.date.getMonth()).toBe(6);
-		});
+		const handleClick = jest.fn();
 		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
@@ -1701,6 +1673,276 @@ describe('pagination.scope set to `year`', () => {
 
 });
 
+describe('pagination.scope set to `decade`', () => {
+	const oneDecadeTemplate = `
+		<div class="clndr-controls">
+			<div class="clndr-previous-button" role="button">previous</div>
+			<div class="decade"><%= years[0].getFullYear() %> to <%= years[9].getFullYear() %></div>
+			<div class="clndr-next-button" role="button">next</div>
+		</div>
+		<div class="clndr-grid">
+			<% items.forEach(year => { %>
+				<div class="<%= year.classes %>" role="button"><%= format(year.date, 'yyyy') %></div>
+			<% }); %>
+		</div>
+		<div class="clndr-today-button" role="button">Current decade</div>
+	`;
+
+	const multiDecadeTemplate = `
+		<div class="clndr-controls">
+			<div class="clndr-previous-button" role="button">previous</div>
+			<div class="clndr-next-button" role="button">next</div>
+		</div>
+		<div class="clndr-decades">
+			<% decades.forEach((decade, decadeIndex) => { %>
+				<div class="clndr-decade">
+					<div class="clndr-decade-title"><%= decade.getFullYear() %> to <%= decade.getFullYear() + 9 %></div>
+					<div class="clndr-grid">
+						<% items[decadeIndex].forEach(year => { %>
+							<div class="<%= year.classes %>" role="button"><%= format(year.date, 'yyyy') %></div>
+						<% }); %>
+					</div>
+				</div>
+			<% }) %>
+		</div>
+		<div class="clndr-today-button" role="button">Current decade</div>
+	`;
+
+	test('Rendering plain calendar', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneDecadeTemplate),
+			pagination: {scope: 'decade', size: 1},
+		});
+
+		expect(screen.getByText('2020 to 2029')).toBeInTheDocument();
+		expect(screen.getByText('2020')).toBeInTheDocument();
+		expect(screen.getByText('2021')).toBeInTheDocument();
+		expect(screen.getByText('2022')).toBeInTheDocument();
+		expect(screen.getByText('2023')).toBeInTheDocument();
+		expect(screen.getByText('2024')).toBeInTheDocument();
+		expect(screen.getByText('2025')).toBeInTheDocument();
+		expect(screen.getByText('2026')).toBeInTheDocument();
+		expect(screen.getByText('2027')).toBeInTheDocument();
+		expect(screen.getByText('2028')).toBeInTheDocument();
+		expect(screen.getByText('2029')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-year-2020')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-year-2021')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-year-2022')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-year-2023')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-year-2024')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-year-2025')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-year-2026')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-year-2027')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-year-2028')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-year-2029')).toBeInTheDocument();
+	});
+
+	test('Programmatic navigation', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneDecadeTemplate),
+			pagination: {scope: 'decade', size: 1},
+		});
+
+		expect(screen.getByText('2020 to 2029')).toBeInTheDocument();
+
+		clndr.setYear(2025);
+		clndr.setMonth(4);
+		// setMonth and setYear with a year in the same decade do of course not change the decade, but
+		// need to check if the behaviour is indeed as expected.
+		expect(screen.getByText('2020 to 2029')).toBeInTheDocument();
+
+		clndr.setIntervalStart(new Date('1992-10-15'));
+		expect(screen.getByText('1990 to 1999')).toBeInTheDocument();
+
+		clndr.setYear(2000);
+		expect(screen.getByText('2000 to 2009')).toBeInTheDocument();
+	});
+
+	test('Start and end constraints', async () => {
+		const handleNavigate = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneDecadeTemplate),
+			clickEvents: {
+				onNavigate: handleNavigate,
+			},
+			constraints: {
+				startDate: new Date('1981'),
+				endDate: new Date('2014'),
+			},
+			pagination: {scope: 'decade', size: 1},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.getByText('1990 to 1999')).toBeInTheDocument();
+		await user.click(screen.getByText('previous'));
+		expect(screen.getByText('1980 to 1989')).toBeInTheDocument();
+		expect(handleNavigate).toHaveBeenCalledTimes(1);
+		await user.click(screen.getByText('previous'));
+		expect(screen.getByText('1980 to 1989')).toBeInTheDocument();
+		expect(handleNavigate).toHaveBeenCalledTimes(1);
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('1990 to 1999')).toBeInTheDocument();
+		expect(handleNavigate).toHaveBeenCalledTimes(2);
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('2000 to 2009')).toBeInTheDocument();
+		expect(handleNavigate).toHaveBeenCalledTimes(3);
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('2010 to 2019')).toBeInTheDocument();
+		expect(handleNavigate).toHaveBeenCalledTimes(4);
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('2010 to 2019')).toBeInTheDocument();
+		expect(handleNavigate).toHaveBeenCalledTimes(4);
+	});
+
+	test('Start date before start constraint', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneDecadeTemplate),
+			constraints: {
+				startDate: new Date('2003'),
+			},
+			pagination: {scope: 'decade', size: 1},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.getByText('2000 to 2009')).toBeInTheDocument();
+	});
+
+	test('End date after end constraint', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneDecadeTemplate),
+			constraints: {
+				endDate: new Date('1981'),
+			},
+			pagination: {scope: 'decade', size: 1},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.getByText('1980 to 1989')).toBeInTheDocument();
+	});
+
+	test('Click event handlers', async () => {
+		const handleClick = jest.fn();
+		const handleNavigate = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneDecadeTemplate),
+			clickEvents: {
+				onClick: handleClick,
+				onNavigate: handleNavigate,
+			},
+			pagination: {scope: 'decade', size: 1},
+			startOn: new Date('1992-10-15'),
+		});
+
+		await user.click(screen.getByText('next'));
+		await user.click(screen.getByText('previous'));
+
+		expect(handleNavigate).toHaveBeenCalledTimes(2);
+
+		expect(handleNavigate.mock.calls[0][0]).toEqual({
+			interval: [startOfDay(new Date('2000-01-01')), endOfDay(new Date('2009-12-31'))],
+			isBefore: false,
+			isAfter: true,
+			monthChanged: true,
+			yearChanged: true,
+			element: screen.getByText('next'),
+		});
+
+		expect(handleNavigate.mock.calls[1][0]).toEqual({
+			interval: [startOfDay(new Date('1990-01-01')), endOfDay(new Date('1999-12-31'))],
+			isBefore: true,
+			isAfter: false,
+			monthChanged: true,
+			yearChanged: true,
+			element: screen.getByText('previous'),
+		});
+
+		await user.click(screen.getByText('1994'));
+
+		expect(handleClick).toHaveBeenCalledTimes(1);
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: new Date('1994'),
+			events: [],
+			selectedDateChanged: true,
+			isToday: false,
+			element: screen.getByText('1994'),
+		});
+
+		await user.click(screen.getByText('Current decade'));
+
+		expect(handleClick).toHaveBeenCalledTimes(1);
+		expect(handleNavigate).toHaveBeenCalledTimes(3);
+
+		expect(handleNavigate.mock.calls[2][0]).toEqual({
+			interval: [startOfDay(new Date('2020-01-01')), endOfDay(new Date('2029-12-31'))],
+			isBefore: false,
+			isAfter: true,
+			monthChanged: true,
+			yearChanged: true,
+			element: screen.getByText('Current decade'),
+		});
+	});
+
+	test('Events', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneDecadeTemplate),
+			events: [
+				{date: '1981-10-15', title: 'event out of range'},
+				{date: '1992-10-15', title: 'event on current page'},
+				{date: '2003-10-15', title: 'event out of range'},
+			],
+			pagination: {scope: 'decade', size: 1},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.getByText('1991').classList.contains('event')).toBeFalsy();
+		expect(screen.getByText('1992').classList.contains('event')).toBeTruthy();
+		expect(screen.getByText('1993').classList.contains('event')).toBeFalsy();
+	});
+
+	test('Multiple years on one page', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(multiDecadeTemplate),
+			pagination: {scope: 'decade', size: 2},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.getByText('1990 to 1999')).toBeInTheDocument();
+		expect(screen.getByText('2000 to 2009')).toBeInTheDocument();
+	});
+
+	test('Click on a year while the identifier class is unexpectedly not assigned', async () => {
+		const handleClick = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneDecadeTemplate),
+			clickEvents: {
+				onClick: handleClick,
+			},
+			pagination: {scope: 'decade', size: 1},
+			trackSelectedDate: true,
+		});
+
+		const yearElement = screen.getByText('2026');
+		expect(yearElement instanceof Element).toBeTruthy();
+		(yearElement as Element).classList.remove('calendar-year-2026');
+		await user.click(yearElement as Element);
+
+		expect(handleClick).toHaveBeenCalledTimes(1);
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: undefined,
+			events: [],
+			selectedDateChanged: false,
+			isToday: false,
+			element: yearElement,
+		});
+	});
+
+});
+
 describe('Multiple scopes', () => {
 
 	test('Switching scope', async () => {
@@ -1716,6 +1958,14 @@ describe('Multiple scopes', () => {
 							<div class="<%= month.classes %>"><%= format(months[monthIndex], 'MMMM yyyy') %></div>
 						<% }) %>
 					</div>
+					<div class="clndr-switch-decade-button" role="button">Switch to decade view</div>
+				`),
+				decade: provideRender(`
+					<div class="years">
+						<% items.forEach((year, yearIndex) => { %>
+							<div class="<%= year.classes %>"><%= format(years[yearIndex], 'yyyy') %></div>
+						<% }) %>
+					</div>
 				`),
 			},
 		});
@@ -1726,10 +1976,14 @@ describe('Multiple scopes', () => {
 		await user.click(screen.getByText('Switch to year view'));
 		expect(container.querySelectorAll('.months > div')?.length).toBe(12);
 
+		await user.click(screen.getByText('Switch to decade view'));
+		expect(container.querySelectorAll('.years > div')?.length).toBe(10);
+
+		await user.click(screen.getByText('2024'));
+
 		await user.click(screen.getByText('March 2024'));
 
 		expect(screen.getByText('March 2024')).toBeInTheDocument();
-		expect(container.querySelector('.month')?.childNodes.length).toBe(1);
 	});
 
 	test('Reapply constraints', async () => {

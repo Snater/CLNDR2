@@ -221,7 +221,7 @@ new Clndr(container, {
     inactive: "inactive",
     lastMonth: "last-month",
     nextMonth: "next-month",
-    adjacentMonth: "adjacent-month",
+    adjacent: "adjacent",
   },
 
   // Event handlers for the click event. The keyword 'this' is set to the CLNDR
@@ -330,7 +330,7 @@ new Clndr(container, {
   // Customize the calendar's pagination. That is, if the calendar should
   // render more than one month, or a certain amount of days at once.
   pagination: {
-    // May be set to either `day`, `month`, or `year`.
+    // May be set to either `day`, `month`, `year`, or `decade`.
     scope: 'month',
 
     // Adjust to render more than one month at the same time (when
@@ -376,6 +376,7 @@ new Clndr(container, {
     nextYearButton: 'clndr-next-year-button',
     previousYearButton: 'clndr-previous-year-button',
     switchYearButton: 'clndr-switch-year-button',
+    switchDecadeButton: 'clndr-switch-decade-button',
   },
 
   // Whether the last clicked day should be tracked, that is applying the `classes.selected` class
@@ -437,6 +438,21 @@ year: Date
 // )}
 // ```
 years: Date[]
+
+// A Date object representing the current decade. This is an convenience
+// parameter euqal to interval[0].
+decade: Date
+
+// An array of Date objects representing the decades of the current page,
+// particularly useful if `pagination.scope` is set to `decade` and
+// `pagination.size` is greater than 1. In that case, use this property
+// to loop over the decades and render the years per decade, i.e.
+// ```
+// decades.forEach((decade, decadeIndex) => {
+//   ... items[decadeIndex].forEach(decade => ...) ...
+// )}
+// ```
+decades: Date[]
 
 // The events of the current page as well as the events of the previous and
 // next scope. `events.currentPage` is a multi-dimensional array if

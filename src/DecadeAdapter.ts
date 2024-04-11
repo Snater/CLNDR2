@@ -1,15 +1,15 @@
 import {
-	addMonths,
 	addYears,
 	eachMonthOfInterval,
-	endOfMonth,
+	eachYearOfInterval,
+	endOfDecade,
 	endOfYear,
 	format,
 	isAfter,
 	isBefore,
-	isSameMonth,
+	isSameYear,
 	setMonth,
-	startOfMonth,
+	startOfDecade,
 	startOfYear,
 	subYears,
 } from 'date-fns';
@@ -24,24 +24,24 @@ import type {
 	PageDates,
 } from './types';
 
-export default class YearAdapter extends Adapter {
+export default class DecadeAdapter extends Adapter {
 
 	initInterval(startOn?: Date): Interval {
-		const start = startOfYear(startOn || new Date());
-		const end = endOfYear(addYears(start, this.options.pageSize - 1));
+		const start = startOfDecade(startOn || new Date());
+		const end = endOfDecade(addYears(start, (this.options.pageSize - 1) * 10));
 		return [start, end];
 	}
 
 	initStartConstraint(constraintStart: Date, interval: Interval): Interval {
 		const adjustedInterval: Interval = [interval[0], interval[1]];
-		const start = startOfYear(constraintStart);
+		const start = startOfDecade(constraintStart);
 
 		if (isBefore(adjustedInterval[0], start)) {
 			adjustedInterval[0] = start;
 		}
 
 		if (isBefore(adjustedInterval[1], start)) {
-			adjustedInterval[1] = endOfYear(constraintStart);
+			adjustedInterval[1] = endOfDecade(constraintStart);
 		}
 
 		return adjustedInterval;
@@ -49,14 +49,14 @@ export default class YearAdapter extends Adapter {
 
 	initEndConstraint(constraintEnd: Date, interval: Interval): Interval {
 		const adjustedInterval: Interval = [interval[0], interval[1]];
-		const end = endOfYear(constraintEnd);
+		const end = endOfDecade(constraintEnd);
 
 		if (isAfter(adjustedInterval[1], end)) {
 			adjustedInterval[1] = end;
 		}
 
 		if (isAfter(adjustedInterval[0], end)) {
-			adjustedInterval[0] = startOfYear(constraintEnd);
+			adjustedInterval[0] = startOfDecade(constraintEnd);
 		}
 
 		return adjustedInterval;
@@ -64,24 +64,24 @@ export default class YearAdapter extends Adapter {
 
 	aggregateAdjacentScopeEvents(): [InternalClndrEvent[], InternalClndrEvent[]] {
 		// Since "day" is the smallest unit, there is no point in having an implementation for this
-		// scope as there will never be adjacent months visible.
+		// scope as there will never be adjacent years visible.
 		return [[], []];
 	}
 
 	aggregateScopeItems(interval: Interval): PageDates {
 		return [
 			[],
-			eachMonthOfInterval({start: interval[0], end: interval[1]}),
+			eachYearOfInterval({start: interval[0], end: interval[1]}),
 			[],
 		]
 	}
 
 	endOfScope(date: Date): Date {
-		return endOfYear(date);
+		return endOfDecade(date);
 	}
 
 	isToday(date: Date): boolean {
-		return isSameMonth(date, new Date());
+		return isSameYear(date, new Date());
 	}
 
 	isAdjacent(): Adjacent {
@@ -89,40 +89,40 @@ export default class YearAdapter extends Adapter {
 	}
 
 	getIntervalForDate(date: Date): Interval {
-		return [startOfMonth(date), endOfMonth(date)];
+		return [startOfYear(date), endOfYear(date)];
 	}
 
 	getIdClasses(interval: Interval): string[] {
-		return [`calendar-month-${format(interval[0], 'yyyy-MM')}`];
+		return [`calendar-year-${format(interval[0], 'yyyy')}`];
 	}
 
 	getDateFromClassNames(classNames: string): Date | null {
-		const index = classNames.indexOf('calendar-month-');
-		return index === -1 ? null : new Date(classNames.substring(index + 15, index + 22));
+		const index = classNames.indexOf('calendar-year-');
+		return index === -1 ? null : new Date(classNames.substring(index + 14, index + 18));
 	}
 
 	setDay(day: Date): Interval {
-		const start = startOfYear(day);
-		return [start, endOfYear(addYears(start, this.options.pageSize - 1))];
+		const start = startOfDecade(day);
+		return [start, endOfDecade(addYears(start, (this.options.pageSize - 1) * 10))];
 	}
 
 	setMonth(newMonth: number, interval: Interval): Interval {
-		const start = startOfYear(setMonth(interval[0], newMonth));
-		return [start, endOfYear(addMonths(start, this.options.pageSize - 1))];
+		const start = startOfDecade(setMonth(interval[0], newMonth));
+		return [start, endOfDecade(addYears(start, (this.options.pageSize - 1) * 10))];
 	}
 
 	setYear(newYear: number): Interval {
-		return [startOfYear(new Date(newYear.toString())), endOfYear(new Date(newYear.toString()))];
+		return [startOfDecade(new Date(newYear.toString())), endOfDecade(new Date(newYear.toString()))];
 	}
 
 	back(interval: Interval, step: number): Interval {
-		const start = startOfYear(subYears(interval[0], step));
-		return [start, endOfYear(addYears(start, this.options.pageSize - 1))];
+		const start = startOfDecade(subYears(interval[0], step * 10));
+		return [start, endOfDecade(addYears(start, (this.options.pageSize - 1) * 10))];
 	}
 
 	forward(interval: Interval, step: number): Interval {
-		const start = startOfYear(addYears(interval[0], step));
-		return [start, endOfYear(addYears(start, this.options.pageSize - 1))];
+		const start = startOfDecade(addYears(interval[0], step * 10));
+		return [start, endOfDecade(addYears(start, (this.options.pageSize - 1) * 10))];
 	}
 
 	flushTemplateData(
@@ -136,13 +136,15 @@ export default class YearAdapter extends Adapter {
 		data.items = [] as ClndrItem[][];
 		const currentPageEvents: ClndrEvent[][] = [];
 		data.months = eachMonthOfInterval({start: data.interval[0], end: data.interval[1]});
-		data.years = [];
+		data.years = eachYearOfInterval({start: data.interval[0], end: data.interval[1]});
+		data.decade = data.interval[0];
+		data.decades = [];
 
 		for (let i = 0; i < pageSize; i++) {
-			const currentIntervalStart = addYears(data.interval[0], i);
-			const currentIntervalEnd = endOfYear(currentIntervalStart);
+			const currentIntervalStart = addYears(data.interval[0], i * 10);
+			const currentIntervalEnd = endOfDecade(currentIntervalStart);
 
-			data.years.push(currentIntervalStart);
+			data.decades.push(currentIntervalStart);
 
 			data.items.push(createDaysObject.apply(this, [[currentIntervalStart, currentIntervalEnd]]));
 

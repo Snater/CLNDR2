@@ -19,6 +19,7 @@ import {
 } from 'date-fns';
 import {Adapter, AdapterOptions} from './Adapter';
 import DayAdapter from './DayAdapter';
+import DecadeAdapter from './DecadeAdapter';
 import MonthAdapter from './MonthAdapter';
 import YearAdapter from './YearAdapter';
 import type {
@@ -78,15 +79,17 @@ const defaults: InternalOptions = {
 		nextYearButton: 'clndr-next-year-button',
 		previousYearButton: 'clndr-previous-year-button',
 		switchYearButton: 'clndr-switch-year-button',
+		switchDecadeButton: 'clndr-switch-decade-button',
 	},
 	trackSelectedDate: false,
 	useTouchEvents: false,
 	weekOffset: 0,
 };
 
-const orderedScopes: Scope[] = ['day', 'month', 'year'] as const;
+const orderedScopes: Scope[] = ['day', 'month', 'year', 'decade'] as const;
 
 const adapters: Record<Scope, new (options: AdapterOptions) => Adapter> = {
+	decade: DecadeAdapter,
 	year: YearAdapter,
 	month: MonthAdapter,
 	day: DayAdapter,
@@ -450,6 +453,8 @@ class Clndr {
 			months: [],
 			year: this.interval[0],
 			years: [],
+			decade: this.interval[0],
+			decades: [],
 			events: {
 				currentPage: [],
 				previousScope: [],
@@ -582,8 +587,13 @@ class Clndr {
 			this.previousYear(options);
 		}
 
+		// TODO: Have adapters inject their options and event handlers
 		if (element.closest('.' + targets.switchYearButton)) {
 			this.setPagination({scope: 'year'});
+		}
+
+		if (element.closest('.' + targets.switchDecadeButton)) {
+			this.setPagination({scope: 'decade'});
 		}
 	}
 
