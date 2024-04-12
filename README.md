@@ -375,6 +375,7 @@ new Clndr(container, {
     previousButton: 'clndr-previous-button',
     nextYearButton: 'clndr-next-year-button',
     previousYearButton: 'clndr-previous-year-button',
+    switchMonthButton: 'clndr-switch-month-button',
     switchYearButton: 'clndr-switch-year-button',
     switchDecadeButton: 'clndr-switch-decade-button',
   },

@@ -26,9 +26,22 @@ import type {
 	InternalClndrEvent,
 	Interval,
 	PageDates,
+	Scope,
 } from './types';
 
+export type TargetOption = 'switchMonthButton'
+
 export default class MonthAdapter extends DayBasedAdapter {
+
+	static targets: Record<TargetOption, string> = {
+		switchMonthButton: 'clndr-switch-month-button',
+	}
+
+	static eventListener(element: HTMLElement, callback: ({scope}: {scope: Scope}) => void) {
+		if (element.closest('.' + MonthAdapter.targets.switchMonthButton)) {
+			callback({scope: 'month'});
+		}
+	}
 
 	initInterval(startOn?: Date): Interval {
 		const start = startOfMonth(startOn || new Date());

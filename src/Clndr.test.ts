@@ -1948,6 +1948,10 @@ describe('Multiple scopes', () => {
 	test('Switching scope', async () => {
 		clndr = new Clndr(container, {
 			render: {
+				day: provideRender(`
+					<div class="week"><%= format(items[0].date, 'LL-dd') %> to <%= format(items[items.length -1].date, 'LL-dd') %></div>
+					<div class="clndr-switch-month-button" role="button">Switch to month view</div>
+				`),
 				month: provideRender(`
 					<div class="month"><%= format(month, 'MMMM yyyy') %></div>
 					<div class="clndr-switch-year-button" role="button">Switch to year view</div>
@@ -1968,7 +1972,15 @@ describe('Multiple scopes', () => {
 					</div>
 				`),
 			},
+			pagination: {
+				scope: 'day',
+				// TODO: Allow having different page sizes per scope
+				size: 1,
+			},
 		});
+
+		expect(screen.getByText('01-14 to 01-14')).toBeInTheDocument();
+		await user.click(screen.getByText('Switch to month view'));
 
 		expect(screen.getByText('January 2024')).toBeInTheDocument();
 		expect(container.querySelector('.month')?.childNodes.length).toBe(1);

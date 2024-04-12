@@ -22,9 +22,22 @@ import type {
 	InternalClndrEvent,
 	Interval,
 	PageDates,
+	Scope,
 } from './types';
 
+export type TargetOption = 'switchDecadeButton'
+
 export default class DecadeAdapter extends Adapter {
+
+	static targets: Record<TargetOption, string> = {
+		switchDecadeButton: 'clndr-switch-decade-button',
+	}
+
+	static eventListener(element: HTMLElement, callback: ({scope}: {scope: Scope}) => void) {
+		if (element.closest('.' + DecadeAdapter.targets.switchDecadeButton)) {
+			callback({scope: 'decade'});
+		}
+	}
 
 	initInterval(startOn?: Date): Interval {
 		const start = startOfDecade(startOn || new Date());

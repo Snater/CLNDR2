@@ -1,4 +1,7 @@
 import {FormatOptions, Locale} from 'date-fns';
+import type {TargetOption as DecadeTargetOption} from './DecadeAdapter';
+import type {TargetOption as MonthTargetOption} from './MonthAdapter';
+import type {TargetOption as YearTargetOption} from './YearAdapter';
 
 type RenderFn = (data: ClndrTemplateData) => string
 
@@ -108,8 +111,9 @@ export type TargetOption = 'item'
 	| 'previousButton'
 	| 'nextYearButton'
 	| 'previousYearButton'
-	| 'switchYearButton'
-	| 'switchDecadeButton'
+	| MonthTargetOption
+	| YearTargetOption
+	| DecadeTargetOption
 
 type ItemStatus = 'past'
 	| 'now'

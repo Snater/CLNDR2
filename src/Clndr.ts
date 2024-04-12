@@ -43,6 +43,20 @@ import type {
 	WeekOffset,
 } from './types';
 
+const orderedScopes: Scope[] = ['day', 'month', 'year', 'decade'] as const;
+
+const adapters: Record<Scope,
+	(new (options: AdapterOptions) => Adapter) & {
+		eventListener?: (element: HTMLElement, callback: ({scope}: {scope: Scope}) => void) => void,
+		targets?: Record<string, string>
+	}
+> = {
+	decade: DecadeAdapter,
+	year: YearAdapter,
+	month: MonthAdapter,
+	day: DayAdapter,
+} as const;
+
 const defaults: InternalOptions = {
 	render: () => {
 		throw new Error('Missing render function');
@@ -78,22 +92,22 @@ const defaults: InternalOptions = {
 		previousButton: 'clndr-previous-button',
 		nextYearButton: 'clndr-next-year-button',
 		previousYearButton: 'clndr-previous-year-button',
-		switchYearButton: 'clndr-switch-year-button',
-		switchDecadeButton: 'clndr-switch-decade-button',
-	},
+		...Object.values(adapters).map(adapterConstructor => {
+			return adapterConstructor.targets;
+		}).reduce<Record<string, string>>(
+			(accu, value) => {
+				if (value !== undefined) {
+					Object.keys(value).forEach(key => accu[key] = value[key]);
+				}
+				return accu;
+			},
+			{}
+		),
+	} as {[key in TargetOption]: string},
 	trackSelectedDate: false,
 	useTouchEvents: false,
 	weekOffset: 0,
 };
-
-const orderedScopes: Scope[] = ['day', 'month', 'year', 'decade'] as const;
-
-const adapters: Record<Scope, new (options: AdapterOptions) => Adapter> = {
-	decade: DecadeAdapter,
-	year: YearAdapter,
-	month: MonthAdapter,
-	day: DayAdapter,
-} as const;
 
 class Clndr {
 
@@ -587,14 +601,11 @@ class Clndr {
 			this.previousYear(options);
 		}
 
-		// TODO: Have adapters inject their options and event handlers
-		if (element.closest('.' + targets.switchYearButton)) {
-			this.setPagination({scope: 'year'});
-		}
-
-		if (element.closest('.' + targets.switchDecadeButton)) {
-			this.setPagination({scope: 'decade'});
-		}
+		Object.values(adapters).forEach(adapterConstructor => {
+			if (adapterConstructor.eventListener) {
+				adapterConstructor.eventListener.apply(this, [element, this.setPagination.bind(this)]);
+			}
+		});
 	}
 
 	/**

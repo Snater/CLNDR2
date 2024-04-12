@@ -242,10 +242,10 @@ const meta: Meta<ClndrOptions> = {
 			description: 'Override the CSS class names applied to the calendar elements for binding the `clickEvents` to.',
 			table: {
 				defaultValue: {
-					summary: '{item: \'item\', empty: \'empty\', nextButton: \'clndr-next-button\', todayButton: \'clndr-today-button\', previousButton: \'clndr-previous-button\', nextYearButton: \'clndr-next-year-button\', previousYearButton: \'clndr-previous-year-button\', switchYearButton: \'clndr-switch-year-button\'}',
+					summary: '{item: \'item\', empty: \'empty\', nextButton: \'clndr-next-button\', todayButton: \'clndr-today-button\', previousButton: \'clndr-previous-button\', nextYearButton: \'clndr-next-year-button\', previousYearButton: \'clndr-previous-year-button\', switchMonthButton: \'clndr-switch-month-button\', switchYearButton: \'clndr-switch-year-button\', switchDecadeButton: \'clndr-switch-decade-button\'}',
 				},
 				type: {
-					summary: '{item?: string, empty?: string, nextButton?: string, todayButton?: string, previousButton?: string, nextYearButton?: string, previousYearButton?: string, switchYearButton?: string}',
+					summary: '{item?: string, empty?: string, nextButton?: string, todayButton?: string, previousButton?: string, nextYearButton?: string, previousYearButton?: string, switchMonthButton?: string, switchYearButton?: string, switchDecadeButton?: string}',
 				},
 			},
 		},
