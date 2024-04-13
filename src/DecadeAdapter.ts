@@ -29,13 +29,15 @@ export type TargetOption = 'switchDecadeButton'
 
 export default class DecadeAdapter extends Adapter {
 
+	static scope: Scope = 'decade';
+
 	static targets: Record<TargetOption, string> = {
 		switchDecadeButton: 'clndr-switch-decade-button',
 	}
 
-	static eventListener(element: HTMLElement, callback: ({scope}: {scope: Scope}) => void) {
+	static eventListener(element: HTMLElement, callback: (scope: Scope) => void) {
 		if (element.closest('.' + DecadeAdapter.targets.switchDecadeButton)) {
-			callback({scope: 'decade'});
+			callback('decade');
 		}
 	}
 
@@ -128,13 +130,13 @@ export default class DecadeAdapter extends Adapter {
 		return [startOfDecade(new Date(newYear.toString())), endOfDecade(new Date(newYear.toString()))];
 	}
 
-	back(interval: Interval, step: number): Interval {
-		const start = startOfDecade(subYears(interval[0], step * 10));
+	back(interval: Interval, step?: number): Interval {
+		const start = startOfDecade(subYears(interval[0], (step ?? this.options.pageSize) * 10));
 		return [start, endOfDecade(addYears(start, (this.options.pageSize - 1) * 10))];
 	}
 
-	forward(interval: Interval, step: number): Interval {
-		const start = startOfDecade(addYears(interval[0], step * 10));
+	forward(interval: Interval, step?: number): Interval {
+		const start = startOfDecade(addYears(interval[0], (step ?? this.options.pageSize) * 10));
 		return [start, endOfDecade(addYears(start, (this.options.pageSize - 1) * 10))];
 	}
 

@@ -13,6 +13,7 @@ export type InternalOptions = {
 	constraints?: Constraints
 	dateParameter: DateParameterDefinition
 	daysOfTheWeek?: DaysOfTheWeek
+	defaultView: Scope
 	doneRendering?: () => void
 	events: ClndrEvent[]
 	extras?: unknown
@@ -20,7 +21,7 @@ export type InternalOptions = {
 	formatWeekdayHeader?: (day: Date, locale?: Locale) => string
 	ignoreInactiveDaysInSelection: boolean
 	locale?: Locale
-	pagination: Pagination
+	pagination: {[key in Scope]?: Pagination}
 	ready?: () => void
 	selectedDate?: Date
 	showAdjacent: boolean
@@ -32,9 +33,10 @@ export type InternalOptions = {
 }
 
 export type ClndrOptions = Partial<
-	Omit<InternalOptions, 'classes' | 'pagination' | 'render' | 'targets'> & {
+	Omit<InternalOptions, 'classes' | 'defaultView' | 'pagination' | 'render' | 'targets'> & {
 		classes?: {[key in ItemStatus]?: string}
-		pagination?: Pagination
+		defaultView?: Scope
+		pagination?: {[key in Scope]?: Pagination}
 		targets?: {[key in TargetOption]?: string}
 	}
 > & {
@@ -74,7 +76,6 @@ type DateParameterDefinition = string
 	| {date?: string, startDate: string, endDate: string}
 
 export type Pagination = {
-	scope: Scope
 	size: number
 	step?: number
 }

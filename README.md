@@ -25,11 +25,12 @@ It is the unofficial successor to awesome [CLNDR](https://github.com/kylestetz/C
   - [The "items" Array](#the-items-array)
 - [Custom CSS Classes](#custom-css-classes)
 - [Constraints & Date Pickers](#constraints--date-pickers)
+- [Switching the View](#switching-the-view)
 - [Public API](#public-api)
 - [Internationalization](#internationalization)
-- [Key differences to CLNDR](#key-differences-to-clndr)
+- [Key Differences to CLNDR](#key-differences-to-clndr)
   - [Migrate from CLNDR to CLNDR2](#migrate-from-clndr-to-clndr2)
-  - [Considerations when migrating](#considerations-when-migrating)
+  - [Considerations when Migrating](#considerations-when-migrating)
 
 ## Basic Usage
 
@@ -203,8 +204,10 @@ Example configuration:
 ```typescript
 new Clndr(container, {
 
-  // The function rendering your template. See below for the data that is being passed to the
-  // template rendering function
+  // The function rendering your template. See below for the data that is being
+  // passed to the template rendering function. This may also be an object with
+  // the keys referring to the views to enable if switching between views is to
+  // enabled, see "Switching the View" section.
   render: data => ejs.render(template, data),
 
   // Whether clicking the day of the preceding or following month navigates to that month.
@@ -297,6 +300,10 @@ new Clndr(container, {
   // locale per the `locale` option, it will be guessed for you.
   daysOfTheWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
 
+  // The view that should be rendered initially; Only relevant when configuring
+  // multiple views to allow switching between views.
+  defaultView: 'month',
+
   // A callback triggered when the calendar is done rendering.
   doneRendering: function() {...},
 
@@ -323,27 +330,29 @@ new Clndr(container, {
     return format(day, 'cccccc', {locale}).charAt(0);
   },
 
-  // Whether `inactive` dates (dates considered outside the boundaries defined by the `constrains`
-  // option) should be selectable, if the `trackSelectedDate` option is activated.
+  // Whether `inactive` dates (dates considered outside the boundaries defined
+  // by the `constraints` option) should be selectable, if the
+  // `trackSelectedDate` option is activated.
   ignoreInactiveDaysInSelection: false,
 
-  // Customize the calendar's pagination. That is, if the calendar should
-  // render more than one month, or a certain amount of days at once.
+  // Customize the calendar's pagination. That is, if the calendar should, for
+  // example, render more than one month, or a certain amount of days at once.
+  // Pagination may be configured individual to each view when using multiple
+  // views, see "Switching the View" section.
   pagination: {
-    // May be set to either `day`, `month`, `year`, or `decade`.
-    scope: 'month',
+    // Keys may be either `day`, `month`, `year`, or `decade` to configure
+    // multiple calendar views that may be switched between.
+    month: {
 
-    // Adjust to render more than one month at the same time (when
-    // `scope === 'month')` or set `scope` to `day` to define how many days to
-    // display at the same time, i.e. displaying a week setting `size` to `7`.
-    size: 1,
-
-    // The amount of months or days that will be navigated forward/backward
-    // when paging the calendar, i.e. `scope === 'day'` together with
-    // `size === 14` and `step === 7` would result in a calendar displaying two
-    // weeks with paging forward and backward one week at a time.
-    // If not set, `size` will be used for paginating.
-    step: 1
+      // Adjust to render more than one element (in this case month) at the
+      // same time.
+      size: 1,
+  
+      // The amount of elements (in this case months) that will be navigated
+      // forward/backward when paging the calendar.
+      // If not set, `size` will be used for paginating.
+      step: 1
+    },
   },
   
   // A date-fns locale to use when formatting date strings (the month name passed to the template,
@@ -568,7 +577,7 @@ new Clndr(container, {
 
 ## Switching the View
 
-CLNDR2 is capable of switching the view between year view and month view for easing navigation. (Additional views will be added in the future.) In order to activate the capability to switch between views, instead of a single `render` function, a `render` function needs to be provided for each view that should be possible to be switched to:
+CLNDR2 is capable of switching between different views for easing navigation. The currently available views are `day`, `month`, `year` and `decade`. (Additional views will be added in the future.) In order to activate the capability to switch between views, instead of a single `render` function, a `render` function needs to be provided for each view that should be possible to be switched to:
 
 ```typescript
 const clndr = new Clndr(container, {render: {
@@ -577,6 +586,37 @@ const clndr = new Clndr(container, {render: {
 }});
 ```
 
+Additionally, you may also customize the pagination for each view:
+
+```typescript
+const clndr = new Clndr(container, {
+  render: {
+    year: data => {...},
+    month: data => {...},
+  },
+  pagination: {
+    month: {size: 2},
+  },
+});
+```
+
+Use the `defaultView` option to customize the initial view (if a pagination is provided for `month`, it is `month` by default, otherwise the most granular view that `pagination` is configured for is used):
+
+```typescript
+const clndr = new Clndr(container, {
+  render: {
+    year: data => {...},
+    month: data => {...},
+  },
+  defaultView: 'year',
+  pagination: {
+    year: {size: 1},
+    month: {size: 2},
+  },
+});
+```
+
+There is no need to configure `defaultView` when only using one view or when the default view is supposed to be `month`.
 
 ## Public API
 
@@ -645,7 +685,7 @@ CLNDR2 has support for internationalization insofar as date-fns supports it. A d
 
 For applying additional internationalization, the `extras` option can be used to pass in required functionality. 
 
-## Key differences to CLNDR
+## Key Differences to CLNDR
 
 - Instead of a jQuery plugin, CLNDR2 provides a `Clndr` class per an ES module.
 - The dependency on jQuery is removed.
@@ -678,7 +718,7 @@ const clndr = new Clndr(document.getElementById('calendar'), {
 });
 ```
 
-### Considerations when migrating
+### Considerations when Migrating
 
 - The `template` option was removed to be even less opinionated about your template engine. Therefore, you now *have to* use the `render` option for hooking up your template engine of choice.
 - In contrast to moment, date-fns is less opinionated about localisation. The consequence is that when setting a locale on date-fns, this does not automatically configure the day a week starts with. Therefore, you have to use the `weekOffset` option if you would like to have the week start with a day other than Sunday.

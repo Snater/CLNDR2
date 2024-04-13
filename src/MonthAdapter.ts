@@ -33,13 +33,15 @@ export type TargetOption = 'switchMonthButton'
 
 export default class MonthAdapter extends DayBasedAdapter {
 
+	protected static scope: Scope = 'month';
+
 	static targets: Record<TargetOption, string> = {
 		switchMonthButton: 'clndr-switch-month-button',
 	}
 
-	static eventListener(element: HTMLElement, callback: ({scope}: {scope: Scope}) => void) {
+	static eventListener(element: HTMLElement, callback: (scope: Scope) => void) {
 		if (element.closest('.' + MonthAdapter.targets.switchMonthButton)) {
-			callback({scope: 'month'});
+			callback('month');
 		}
 	}
 
@@ -204,13 +206,13 @@ export default class MonthAdapter extends DayBasedAdapter {
 		return [start, endOfMonth(subDays(addMonths(start, this.options.pageSize), 1))];
 	}
 
-	back(interval: Interval, step: number): Interval {
-		const start = startOfMonth(subMonths(interval[0], step));
+	back(interval: Interval, step?: number): Interval {
+		const start = startOfMonth(subMonths(interval[0], step ?? this.options.pageSize));
 		return [start, endOfMonth(subDays(addMonths(start, this.options.pageSize), 1))];
 	}
 
-	forward(interval: Interval, step: number): Interval {
-		const start = startOfMonth(addMonths(interval[0], step));
+	forward(interval: Interval, step?: number): Interval {
+		const start = startOfMonth(addMonths(interval[0], step ?? this.options.pageSize));
 		return [start, endOfMonth(subDays(addMonths(start, this.options.pageSize), 1))];
 	}
 

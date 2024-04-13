@@ -29,13 +29,15 @@ export type TargetOption = 'switchYearButton'
 
 export default class YearAdapter extends Adapter {
 
+	static scope: Scope = 'year';
+
 	static targets: Record<TargetOption, string> = {
 		switchYearButton: 'clndr-switch-year-button',
 	}
 
-	static eventListener(element: HTMLElement, callback: ({scope}: {scope: Scope}) => void) {
+	static eventListener(element: HTMLElement, callback: (scope: Scope) => void) {
 		if (element.closest('.' + YearAdapter.targets.switchYearButton)) {
-			callback({scope: 'year'});
+			callback('year');
 		}
 	}
 
@@ -128,13 +130,13 @@ export default class YearAdapter extends Adapter {
 		return [startOfYear(new Date(newYear.toString())), endOfYear(new Date(newYear.toString()))];
 	}
 
-	back(interval: Interval, step: number): Interval {
-		const start = startOfYear(subYears(interval[0], step));
+	back(interval: Interval, step?: number): Interval {
+		const start = startOfYear(subYears(interval[0], step ?? this.options.pageSize));
 		return [start, endOfYear(addYears(start, this.options.pageSize - 1))];
 	}
 
-	forward(interval: Interval, step: number): Interval {
-		const start = startOfYear(addYears(interval[0], step));
+	forward(interval: Interval, step?: number): Interval {
+		const start = startOfYear(addYears(interval[0], step ?? this.options.pageSize));
 		return [start, endOfYear(addYears(start, this.options.pageSize - 1))];
 	}
 

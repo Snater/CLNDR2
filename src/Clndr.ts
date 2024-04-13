@@ -47,7 +47,7 @@ const orderedScopes: Scope[] = ['day', 'month', 'year', 'decade'] as const;
 
 const adapters: Record<Scope,
 	(new (options: AdapterOptions) => Adapter) & {
-		eventListener?: (element: HTMLElement, callback: ({scope}: {scope: Scope}) => void) => void,
+		eventListener?: (element: HTMLElement, callback: (scope: Scope) => void) => void,
 		targets?: Record<string, string>
 	}
 > = {
@@ -79,10 +79,11 @@ const defaults: InternalOptions = {
 		startDate: 'startDate',
 		endDate: 'endDate',
 	},
+	defaultView: 'month',
 	events: [],
 	forceSixRows: false,
 	ignoreInactiveDaysInSelection: false,
-	pagination: {scope: 'month', size: 1},
+	pagination: {month: {size: 1}},
 	showAdjacent: true,
 	targets: {
 		item: 'item',
@@ -128,7 +129,10 @@ class Clndr {
 		const targetObject = target as {[k: string]: unknown};
 
 		for (const key in source) {
-			if (Array.isArray(source[key])) {
+			if (key === 'pagination') {
+				// Do not merge pagination to not unintentionally enable view switching functionality
+				targetObject[key] = source[key];
+			} else if (Array.isArray(source[key])) {
 				targetObject[key] = (source[key] as unknown[]).map(element => {
 					return Clndr.isObject(element)
 						? Clndr.mergeDeep({}, element as {[k: string]: unknown})
@@ -187,12 +191,19 @@ class Clndr {
 		}
 
 		this.availableScopes = typeof this.options.render === 'function'
-			? [this.options.pagination.scope]
+			? Object.keys(this.options.pagination) as Scope[]
 			: orderedScopes.filter(scope => Object.keys(this.options.render).includes(scope));
 
-		this.adapter = new adapters[this.options.pagination.scope]({
+		const defaultView = this.options.pagination[this.options.defaultView]
+			? this.options.defaultView
+			// Pick the smallest scope configured when pagination is not configured for the default view.
+			: orderedScopes.filter(scope => this.options.pagination[scope] !== undefined)[0];
+
+		this.adapter = new adapters[defaultView]({
 			forceSixRows: this.options.forceSixRows,
-			pageSize: this.options.pagination.size,
+			// There will always be at least one scope's pagination be configured as there is a default
+			// value. Therefore, `defaultView` will be a valid scope having pagination configured.
+			pageSize: (this.options.pagination[defaultView] as Pagination).size,
 			showAdjacent: this.options.showAdjacent,
 			weekOffset: this.options.weekOffset,
 		});
@@ -403,7 +414,7 @@ class Clndr {
 			}
 		}
 
-		const adjacentScope = this.getAdjacentScope(this.options.pagination.scope);
+		const adjacentScope = this.getAdjacentScope(this.adapter.getScope());
 
 		if(adjacentScope) {
 			classes.push(this.options.classes.switch);
@@ -440,10 +451,10 @@ class Clndr {
 
 		const renderFn = typeof this.options.render === 'function'
 			? this.options.render
-			: this.options.render[this.options.pagination.scope];
+			: this.options.render[this.adapter.getScope()];
 
 		if (!renderFn) {
-			console.warn(`No render function defined for ${this.options.pagination.scope} scope`);
+			console.warn(`No render function defined for ${this.adapter.getScope()} scope`);
 			return;
 		}
 
@@ -489,7 +500,7 @@ class Clndr {
 			data,
 			(interval: Interval) => this.createScopeObjects(interval, parsedEvents),
 			parsedEvents,
-			this.options.pagination.size,
+			this.options.pagination[this.adapter.getScope()]?.size ?? 1,
 		]);
 	}
 
@@ -663,10 +674,10 @@ class Clndr {
 			return;
 		}
 
-		const adjacentScope = this.getAdjacentScope(this.options.pagination.scope);
+		const adjacentScope = this.getAdjacentScope(this.adapter.getScope());
 
 		if (adjacentScope) {
-			this.setPagination({scope: adjacentScope}, this.getTargetDate(target));
+			this.setPagination(adjacentScope, this.getTargetDate(target));
 		}
 	}
 
@@ -854,12 +865,10 @@ class Clndr {
 		return Clndr.mergeOptions<ClndrItem>(defaults, options);
 	}
 
-	private setPagination(pagination: Partial<Pagination>, date?: Date) {
-		this.options.pagination = {...this.options.pagination, ...pagination};
-
-		this.adapter = new adapters[this.options.pagination.scope]({
+	private setPagination(scope: Scope, date?: Date) {
+		this.adapter = new adapters[scope]({
 			forceSixRows: this.options.forceSixRows,
-			pageSize: this.options.pagination.size,
+			pageSize: this.options.pagination[scope]?.size ?? 1,
 			showAdjacent: this.options.showAdjacent,
 			weekOffset: this.options.weekOffset,
 		});
@@ -888,7 +897,7 @@ class Clndr {
 
 		this.interval = this.adapter.back(
 			this.interval,
-			this.options.pagination.step || this.options.pagination.size
+			this.options.pagination[this.adapter.getScope()]?.step
 		);
 
 		this.render();
@@ -922,7 +931,7 @@ class Clndr {
 
 		this.interval = this.adapter.forward(
 			this.interval,
-			this.options.pagination.step || this.options.pagination.size
+			this.options.pagination[this.adapter.getScope()]?.step
 		);
 
 		this.render();

@@ -5,6 +5,7 @@ import type {
 	InternalClndrEvent,
 	Interval,
 	PageDates,
+	Scope,
 } from './types';
 
 export type AdapterOptions = {
@@ -15,6 +16,13 @@ export type AdapterOptions = {
 }
 
 export abstract class Adapter {
+
+	protected static scope: Scope;
+
+	getScope()  {
+		const adapter = <typeof Adapter>this.constructor;
+		return adapter.scope;
+	}
 
 	protected readonly options: AdapterOptions
 
@@ -47,8 +55,8 @@ export abstract class Adapter {
 	abstract setMonth(newMonth: number, interval: Interval): Interval
 	abstract setYear(newYear: number, interval: Interval): Interval
 
-	abstract back(interval: Interval, step: number): Interval
-	abstract forward(interval: Interval, step: number): Interval
+	abstract back(interval: Interval, step?: number): Interval
+	abstract forward(interval: Interval, step?: number): Interval
 
 	abstract flushTemplateData(
 		data: ClndrTemplateData,

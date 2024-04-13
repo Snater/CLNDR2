@@ -25,9 +25,12 @@ import type {
 	InternalClndrEvent,
 	Interval,
 	PageDates,
+	Scope,
 } from './types';
 
 export default class DayAdapter extends DayBasedAdapter {
+
+	static scope: Scope = 'day';
 
 	initInterval(startOn?: Date): Interval {
 		const start = startOfDay(startOn ? startOn : setDay(new Date(), this.options.weekOffset));
@@ -101,13 +104,13 @@ export default class DayAdapter extends DayBasedAdapter {
 		return [start, endOfDay(addDays(start, this.options.pageSize - 1))];
 	}
 
-	back(interval: Interval, step: number): Interval {
-		const start = startOfDay(subDays(interval[0], step));
+	back(interval: Interval, step?: number): Interval {
+		const start = startOfDay(subDays(interval[0], step ?? this.options.pageSize));
 		return [start, endOfDay(addDays(start, this.options.pageSize - 1))];
 	}
 
-	forward(interval: Interval, step: number): Interval {
-		const start = startOfDay(addDays(interval[0], step));
+	forward(interval: Interval, step?: number): Interval {
+		const start = startOfDay(addDays(interval[0], step ?? this.options.pageSize));
 		return [start, endOfDay(addDays(start, this.options.pageSize - 1))];
 	}
 

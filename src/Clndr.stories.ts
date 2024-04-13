@@ -95,6 +95,18 @@ const meta: Meta<ClndrOptions> = {
 				},
 			},
 		},
+		defaultView: {
+			description: 'The view the calendar should render initially. Particularly relevant when configuring multiple views for allowing to switch between views. When just configuring one view per `pagination` option, this will automatically point to that view.',
+			control: 'select',
+			table: {
+				defaultValue: {
+					summary: 'month',
+				},
+				type: {
+					summary: '\'day\' | \'month\' | \'year\' | \'decade\'',
+				},
+			},
+		},
 		doneRendering: {
 			description: 'A callback triggered each time the calendar is (re-)rendered.',
 			control: false,
@@ -183,10 +195,10 @@ const meta: Meta<ClndrOptions> = {
 			description: 'Specify custom pagination, i.e. display more than one month or a custom amount of days, like two weeks. You can also define the pagination step.',
 			table: {
 				defaultValue: {
-					summary: '{scope: \'month\', size: 1}',
+					summary: '{month:, {size: 1}',
 				},
 				type: {
-					summary: '{scope: \'decade\' | \'year\' | \'month\' | \'day\', size: number, step?: number}',
+					summary: '{[key in \'decade\' | \'year\' | \'month\' | \'day\']?: {size: number, step?: number}}',
 					detail: 'If `step` is not defined, `size` is used as the step size when navigating.',
 				},
 			},
@@ -566,11 +578,8 @@ export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 			</div>
 			<div class="clndr-today-button" role="button">Today</div>
 		`, data),
-		pagination: {
-			scope: 'day',
-			size: 14,
-			step: 7,
-		},
+		defaultView: 'day',
+		pagination: {day: {size: 14, step: 7}},
 	},
 	render: args => {
 		const container = document.createElement('div');
@@ -606,11 +615,7 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 			<% }); %>
 			<div class="clndr-today-button" role="button">Today</div>
 		`, data),
-		pagination: {
-			scope: 'month',
-			size: 2,
-			step: 1,
-		},
+		pagination: {month: {size: 2, step: 1}},
 	},
 	render: args => {
 		const container = document.createElement('div');
@@ -646,7 +651,8 @@ export const Year: Story = {
 				endDate: new Date().getFullYear() + '-07-03',
 			},
 		],
-		pagination: {scope: 'year', size: 1, step: 1},
+		defaultView: 'year',
+		pagination: {year: {size: 1, step: 1}},
 	},
 	render: args => {
 		const container = document.createElement('div');
@@ -737,7 +743,6 @@ export const SwitchBetweenViews: Story = {
 			},
 		],
 		forceSixRows: true,
-		pagination: {scope: 'year', size: 1, step: 1},
 	},
 	render: args => {
 		const container = document.createElement('div');
