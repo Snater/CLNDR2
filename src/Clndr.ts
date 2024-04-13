@@ -403,21 +403,20 @@ class Clndr {
 			const constraintStart = this.options.constraints.startDate;
 			const constraintEnd = this.options.constraints.endDate;
 
-			if (constraintStart && isBefore(interval[1], constraintStart)) {
+			if (constraintStart && isBefore(itemInterval[1], constraintStart)) {
 				classes.push(this.options.classes.inactive);
 				properties.isInactive = true;
 			}
 
-			if (constraintEnd && isAfter(interval[0], constraintEnd)) {
+			if (constraintEnd && isAfter(itemInterval[0], constraintEnd)) {
 				classes.push(this.options.classes.inactive);
 				properties.isInactive = true;
 			}
 		}
 
-		const adjacentScope = this.getAdjacentScope(this.adapter.getScope());
-
-		if(adjacentScope) {
-			classes.push(this.options.classes.switch);
+		if(!properties.isInactive) {
+			const adjacentScope = this.getAdjacentScope(this.adapter.getScope());
+			adjacentScope && classes.push(this.options.classes.switch);
 		}
 
 		if (

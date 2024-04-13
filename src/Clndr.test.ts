@@ -1999,7 +1999,7 @@ describe('Multiple scopes', () => {
 		clndr = new Clndr(container, {
 			render: {
 				month: provideRender(`
-					<div class="month"><%= format(month, 'MMMM yyyy') %></div>
+					<div><%= format(month, 'MMMM') %></div>
 					<div>
 						<% items.forEach(item => { %>
 							<div class="<%= item.classes %>"><%= item.day %></div>
@@ -2008,6 +2008,7 @@ describe('Multiple scopes', () => {
 					<div class="clndr-switch-year-button" role="button">Switch to year view</div>
 				`),
 				year: provideRender(`
+					<div><%= format(month, 'yyyy') %></div>
 					<div class="months">
 						<% items.forEach((month, monthIndex) => { %>
 							<div class="<%= month.classes %>"><%= format(months[monthIndex], 'MMMM yyyy') %></div>
@@ -2021,18 +2022,15 @@ describe('Multiple scopes', () => {
 			},
 		});
 
-		expect(screen.queryAllByText('2024').length).toBe(0);
-		expect(screen.getByText('January 2024')).toBeInTheDocument();
+		expect(screen.getByText('January')).toBeInTheDocument();
 
 		await user.click(screen.getByText('Switch to year view'));
 
-		// TODO: Do not permit switching out of constraints
-		// await user.click(screen.getByText('March 2024'));
-		// expect(screen.getByText('2024')).toBeInTheDocument();
+		await user.click(screen.getByText('March 2024'));
+		expect(screen.getByText('2024')).toBeInTheDocument();
 
 		await user.click(screen.getByText('February 2024'));
-		expect(container.querySelector('.month')?.childNodes.length).toBe(1);
-		expect(screen.getByText('February 2024')).toBeInTheDocument();
+		expect(screen.getByText('February')).toBeInTheDocument();
 	});
 
 	test('Missing render function for scope', async () => {
