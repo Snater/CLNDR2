@@ -36,29 +36,29 @@ export default class DayAdapter extends DayBasedAdapter {
 		const start = startOfDay(startOn ? startOn : setDay(new Date(), this.options.weekOffset));
 		const end = endOfDay(addDays(start, this.options.pageSize - 1));
 
-		return [start, end];
+		return {start, end};
 	}
 
 	initStartConstraint(constraintStart: Date, interval: Interval): Interval {
-		const adjustedInterval: Interval = [interval[0], interval[1]];
+		const adjustedInterval: Interval = {start: interval.start, end: interval.end};
 
-		if (isBefore(adjustedInterval[0], subWeeks(constraintStart, 1))) {
-			adjustedInterval[0] = startOfWeek(constraintStart);
+		if (isBefore(adjustedInterval.start, subWeeks(constraintStart, 1))) {
+			adjustedInterval.start = startOfWeek(constraintStart);
 		}
 
-		adjustedInterval[1] = endOfDay(addDays(adjustedInterval[0], this.options.pageSize - 1));
+		adjustedInterval.end = endOfDay(addDays(adjustedInterval.start, this.options.pageSize - 1));
 
 		return adjustedInterval;
 	}
 
 	initEndConstraint(constraintEnd: Date, interval: Interval): Interval {
-		const adjustedInterval: Interval = [interval[0], interval[1]];
+		const adjustedInterval: Interval = {start: interval.start, end: interval.end};
 
-		if (isAfter(adjustedInterval[0], addWeeks(constraintEnd, 1))) {
-			adjustedInterval[0] = startOfDay(
+		if (isAfter(adjustedInterval.start, addWeeks(constraintEnd, 1))) {
+			adjustedInterval.start = startOfDay(
 				subDays(endOfWeek(constraintEnd), this.options.pageSize - 1)
 			);
-			adjustedInterval[1] = endOfWeek(constraintEnd);
+			adjustedInterval.end = endOfWeek(constraintEnd);
 		}
 
 		return adjustedInterval;
@@ -72,8 +72,8 @@ export default class DayAdapter extends DayBasedAdapter {
 
 	aggregateScopeItems(interval: Interval): PageDates {
 		const days: Date[] = [];
-		for (let i = 0; i <= differenceInDays(interval[1], interval[0]); i++) {
-			days.push(addDays(interval[0], i));
+		for (let i = 0; i <= differenceInDays(interval.end, interval.start); i++) {
+			days.push(addDays(interval.start, i));
 		}
 		return [[], days, []];
 	}
@@ -83,7 +83,7 @@ export default class DayAdapter extends DayBasedAdapter {
 	}
 
 	getIntervalForDate(date: Date): Interval {
-		return [startOfDay(date), endOfDay(date)];
+		return {start: startOfDay(date), end: endOfDay(date)};
 	}
 
 	setDay(day: Date, startOn?: Date): Interval {
@@ -91,27 +91,27 @@ export default class DayAdapter extends DayBasedAdapter {
 		// starting point of the interval. If not, go to today.weekday(0).
 		const start = startOfDay(setDay(day, startOn ? getDay(startOn) : 0));
 
-		return [start, endOfDay(addDays(start, this.options.pageSize - 1))];
+		return {start, end: endOfDay(addDays(start, this.options.pageSize - 1))};
 	}
 
 	setMonth(newMonth: number, interval: Interval): Interval {
-		const start = setDay(setMonth(interval[0], newMonth), this.options.weekOffset);
-		return [start, endOfDay(addDays(start, this.options.pageSize - 1))];
+		const start = setDay(setMonth(interval.start, newMonth), this.options.weekOffset);
+		return {start, end: endOfDay(addDays(start, this.options.pageSize - 1))};
 	}
 
 	setYear(newYear: number, interval: Interval): Interval {
-		const start = setDay(setYear(interval[0], newYear), this.options.weekOffset);
-		return [start, endOfDay(addDays(start, this.options.pageSize - 1))];
+		const start = setDay(setYear(interval.start, newYear), this.options.weekOffset);
+		return {start, end: endOfDay(addDays(start, this.options.pageSize - 1))};
 	}
 
 	back(interval: Interval, step?: number): Interval {
-		const start = startOfDay(subDays(interval[0], step ?? this.options.pageSize));
-		return [start, endOfDay(addDays(start, this.options.pageSize - 1))];
+		const start = startOfDay(subDays(interval.start, step ?? this.options.pageSize));
+		return {start, end: endOfDay(addDays(start, this.options.pageSize - 1))};
 	}
 
 	forward(interval: Interval, step?: number): Interval {
-		const start = startOfDay(addDays(interval[0], step ?? this.options.pageSize));
-		return [start, endOfDay(addDays(start, this.options.pageSize - 1))];
+		const start = startOfDay(addDays(interval.start, step ?? this.options.pageSize));
+		return {start, end: endOfDay(addDays(start, this.options.pageSize - 1))};
 	}
 
 	flushTemplateData(
@@ -120,8 +120,8 @@ export default class DayAdapter extends DayBasedAdapter {
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
 	): ClndrTemplateData {
 
-		data.months = eachMonthOfInterval({start: data.interval[0], end: data.interval[1]});
-		data.years = eachYearOfInterval({start: data.interval[0], end: data.interval[1]});
+		data.months = eachMonthOfInterval(data.interval);
+		data.years = eachYearOfInterval(data.interval);
 		data.items = createDaysObject.apply(this, [data.interval]);
 		data.numberOfRows = Math.ceil(data.items.length / 7);
 		data.events.currentPage = events[1].map(event => event.originalEvent);

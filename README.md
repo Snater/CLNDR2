@@ -81,7 +81,7 @@ Here's a typical CLNDR2 template for EJS, Underscore and lodash. It's got a cont
 ```html
 <div class="clndr-controls">
   <div class="clndr-previous-button">&lsaquo;</div>
-  <div class="month"><%= format(interval[0], 'MMMM') %></div>
+  <div class="month"><%= format(interval.start, 'MMMM') %></div>
   <div class="clndr-next-button">&rsaquo;</div>
 </div>
 <div class="clndr-grid">
@@ -255,7 +255,7 @@ new Clndr(container, {
     // "forward" buttons, clicking the "today" button etc. 
     onNavigate: function(parameters: {
       // The interval of the new page.
-      interval?: [Date, Date],
+      interval?: {start: Date, end: Date},
 
       // Whether the new page is before the one previously rendered (i.e.
       // navigating backward).
@@ -409,9 +409,8 @@ While the properties of the data being passed to the template will always be def
 ### All Parameters
 
 ```typescript
-// A tuple of Date objects representing the start and end of the current page's
-// interval.
-interval: [Date, Date]
+// Start and end of the current page's interval.
+interval: {start: Date, end: Date}
 
 // The `items` array, documented in more detail below; when `pagination.scope`
 // is set to `month` or `year`, while `pagination.size` is greater than 1, this
@@ -420,7 +419,7 @@ interval: [Date, Date]
 items: ClndrItem[] | ClndrItem[][]
 
 // A Date object representing the current month. This is an convenience
-// parameter euqal to interval[0].
+// parameter euqal to interval.start.
 month: Date
 
 // An array of Date objects representing the months of the current page,
@@ -435,7 +434,7 @@ month: Date
 months: Date[]
 
 // A Date object representing the current year. This is an convenience
-// parameter euqal to interval[0].
+// parameter euqal to interval.start.
 year: Date
 
 // An array of Date objects representing the years of the current page,
@@ -450,7 +449,7 @@ year: Date
 years: Date[]
 
 // A Date object representing the current decade. This is an convenience
-// parameter euqal to interval[0].
+// parameter euqal to interval.start.
 decade: Date
 
 // An array of Date objects representing the decades of the current page,
@@ -498,7 +497,7 @@ The `items` array contains most of the data needed to render the calendar. Its s
 
 ```typescript
 type ClndrItem = {
-  interval?: [Date, Date]
+  interval?: {start: Date, end: Date}
   day?: number
   date?: Date
   events?: ClndrEvent[]
@@ -625,10 +624,10 @@ It's possible to programmatically update the calendar after initialization.
 ```typescript
 const clndr = new Clndr(container, {render: {...}});
 
-// Navigate to the next month (or interval)
+// Navigate to the next page
 clndr.forward();
 
-// Navigate to the previous month (or interval)
+// Navigate to the previous page
 clndr.back();
 
 // Set the month using a number from 0-11

@@ -44,21 +44,11 @@ export type ClndrOptions = Partial<
 }
 
 export type ClndrEvent = {
-	_clndrStartDateObject?: never
-	_clndrEndDateObject?: never
-} & Partial<ClndrMultiDayEvent & ClndrSingleDayEvent>
-
-type ClndrMultiDayEvent = {
-	[key: string]: unknown
-}
-
-type ClndrSingleDayEvent = {
 	[key: string]: unknown
 }
 
 export type InternalClndrEvent = {
-	_clndrStartDateObject: Date
-	_clndrEndDateObject: Date
+	clndrInterval: Interval
 	originalEvent: ClndrEvent
 }
 
@@ -166,7 +156,7 @@ export type ClndrNavigationOptions = {element?: HTMLElement, withCallbacks?: boo
 export type NavigationConstraint = 'next' | 'today' | 'previous' | 'nextYear' | 'previousYear'
 export type NavigationConstraints = {[key in NavigationConstraint]: boolean}
 
-export type Interval = [Date, Date]
+export type Interval = {start: Date, end: Date}
 
 // Tuple of dates before the days of the current page, the days of the current page, and days after
 // the current page's days. To be used when showing days of adjacent months along a current page's

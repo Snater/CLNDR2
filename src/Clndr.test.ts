@@ -12,7 +12,7 @@ const defaultTemplate = `
 		<div class="clndr-control-button">
 			<span class="clndr-previous-button" role="button">previous</span>
 		</div>
-		<div class="month"><%= format(month, 'MMMM') %> <%= interval[0].getFullYear() %></div>
+		<div class="month"><%= format(month, 'MMMM') %> <%= interval.start.getFullYear() %></div>
 		<div class="clndr-control-button">
 			<span class="clndr-next-button" role="button">next</span>
 		</div>
@@ -63,7 +63,7 @@ const oneWeekTemplate = `
 	<div class="clndr-controls">
 		<div class="clndr-previous-button">&lsaquo;</div>
 		<div class="month">
-			<%= format(interval[0], 'MM/dd') %> - <%= format(interval[1], 'MM/dd') %>
+			<%= format(interval.start, 'MM/dd') %> - <%= format(interval.end, 'MM/dd') %>
 		</div>
 		<div class="clndr-next-button">&rsaquo;</div>
 	</div>
@@ -769,7 +769,7 @@ describe('Navigation', () => {
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
 
 		expect(handleNavigate.mock.calls[0][0]).toEqual({
-			interval: [startOfDay(new Date('2024-01-01')), endOfDay(new Date('2024-01-31'))],
+			interval: {start: startOfDay(new Date('2024-01-01')), end: endOfDay(new Date('2024-01-31'))},
 			isBefore: false,
 			isAfter: true,
 			monthChanged: true,
@@ -819,7 +819,7 @@ describe('Navigation', () => {
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
 
 		expect(handleNavigate.mock.calls[0][0]).toEqual({
-			interval: [startOfDay(new Date('2024-01-01')), endOfDay(new Date('2024-01-31'))],
+			interval: {start: startOfDay(new Date('2024-01-01')), end: endOfDay(new Date('2024-01-31'))},
 			isBefore: false,
 			isAfter: true,
 			monthChanged: true,
@@ -846,7 +846,7 @@ describe('Navigation', () => {
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
 
 		expect(handleNavigate.mock.calls[0][0]).toEqual({
-			interval: [startOfDay(new Date('1992-01-01')), endOfDay(new Date('1992-01-31'))],
+			interval: {start: startOfDay(new Date('1992-01-01')), end: endOfDay(new Date('1992-01-31'))},
 			isBefore: true,
 			isAfter: false,
 			monthChanged: true,
@@ -917,7 +917,7 @@ describe('Navigation', () => {
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
 
 		expect(handleNavigate.mock.calls[0][0]).toEqual({
-			interval: [startOfDay(new Date('1991-10-01')), endOfDay(new Date('1991-10-31'))],
+			interval: {start: startOfDay(new Date('1991-10-01')), end: endOfDay(new Date('1991-10-31'))},
 			isBefore: true,
 			isAfter: false,
 			monthChanged: true,
@@ -945,7 +945,7 @@ describe('Navigation', () => {
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
 
 		expect(handleNavigate.mock.calls[0][0]).toEqual({
-			interval: [startOfDay(new Date('1992-01-12')), endOfDay(new Date('1992-01-18'))],
+			interval: {start: startOfDay(new Date('1992-01-12')), end: endOfDay(new Date('1992-01-18'))},
 			isBefore: true,
 			isAfter: false,
 			monthChanged: true,
@@ -1001,7 +1001,7 @@ describe('Navigation', () => {
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
 
 		expect(handleNavigate.mock.calls[0][0]).toEqual({
-			interval: [startOfDay(new Date('2000-06-01')), endOfDay(new Date('2000-08-31'))],
+			interval: {start: startOfDay(new Date('2000-06-01')), end: endOfDay(new Date('2000-08-31'))},
 			isBefore: false,
 			isAfter: true,
 			monthChanged: true,
@@ -1099,7 +1099,7 @@ describe('Events', () => {
 		expect(handleNavigate).toHaveBeenCalledTimes(2);
 
 		expect(handleNavigate.mock.calls[0][0]).toEqual({
-			interval: [startOfDay(new Date('1993-01-01')), endOfDay(new Date('1993-01-31'))],
+			interval: {start: startOfDay(new Date('1993-01-01')), end: endOfDay(new Date('1993-01-31'))},
 			isBefore: false,
 			isAfter: true,
 			monthChanged: true,
@@ -1108,7 +1108,7 @@ describe('Events', () => {
 		});
 
 		expect(handleNavigate.mock.calls[1][0]).toEqual({
-			interval: [startOfDay(new Date('1992-12-01')), endOfDay(new Date('1992-12-31'))],
+			interval: {start: startOfDay(new Date('1992-12-01')), end: endOfDay(new Date('1992-12-31'))},
 			isBefore: true,
 			isAfter: false,
 			monthChanged: true,
@@ -1571,7 +1571,7 @@ describe('pagination.scope set to `year`', () => {
 		expect(handleNavigate).toHaveBeenCalledTimes(2);
 
 		expect(handleNavigate.mock.calls[0][0]).toEqual({
-			interval: [startOfDay(new Date('1993-01-01')), endOfDay(new Date('1993-12-31'))],
+			interval: {start: startOfDay(new Date('1993-01-01')), end: endOfDay(new Date('1993-12-31'))},
 			isBefore: false,
 			isAfter: true,
 			monthChanged: true,
@@ -1580,7 +1580,7 @@ describe('pagination.scope set to `year`', () => {
 		});
 
 		expect(handleNavigate.mock.calls[1][0]).toEqual({
-			interval: [startOfDay(new Date('1992-01-01')), endOfDay(new Date('1992-12-31'))],
+			interval: {start: startOfDay(new Date('1992-01-01')), end: endOfDay(new Date('1992-12-31'))},
 			isBefore: true,
 			isAfter: false,
 			monthChanged: true,
@@ -1606,7 +1606,7 @@ describe('pagination.scope set to `year`', () => {
 		expect(handleNavigate).toHaveBeenCalledTimes(3);
 
 		expect(handleNavigate.mock.calls[2][0]).toEqual({
-			interval: [startOfDay(new Date('2024-01-01')), endOfDay(new Date('2024-12-31'))],
+			interval: {start: startOfDay(new Date('2024-01-01')), end: endOfDay(new Date('2024-12-31'))},
 			isBefore: false,
 			isAfter: true,
 			monthChanged: true,
@@ -1841,7 +1841,7 @@ describe('pagination.scope set to `decade`', () => {
 		expect(handleNavigate).toHaveBeenCalledTimes(2);
 
 		expect(handleNavigate.mock.calls[0][0]).toEqual({
-			interval: [startOfDay(new Date('2000-01-01')), endOfDay(new Date('2009-12-31'))],
+			interval: {start: startOfDay(new Date('2000-01-01')), end: endOfDay(new Date('2009-12-31'))},
 			isBefore: false,
 			isAfter: true,
 			monthChanged: true,
@@ -1850,7 +1850,7 @@ describe('pagination.scope set to `decade`', () => {
 		});
 
 		expect(handleNavigate.mock.calls[1][0]).toEqual({
-			interval: [startOfDay(new Date('1990-01-01')), endOfDay(new Date('1999-12-31'))],
+			interval: {start: startOfDay(new Date('1990-01-01')), end: endOfDay(new Date('1999-12-31'))},
 			isBefore: true,
 			isAfter: false,
 			monthChanged: true,
@@ -1876,7 +1876,7 @@ describe('pagination.scope set to `decade`', () => {
 		expect(handleNavigate).toHaveBeenCalledTimes(3);
 
 		expect(handleNavigate.mock.calls[2][0]).toEqual({
-			interval: [startOfDay(new Date('2020-01-01')), endOfDay(new Date('2029-12-31'))],
+			interval: {start: startOfDay(new Date('2020-01-01')), end: endOfDay(new Date('2029-12-31'))},
 			isBefore: false,
 			isAfter: true,
 			monthChanged: true,

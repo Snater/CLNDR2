@@ -74,6 +74,7 @@ const defaults: InternalOptions = {
 		switch: 'switch',
 	},
 	clickEvents: {},
+	// TODO: Change startDate to `start` and endDate to `end` and update documentation
 	dateParameter: {
 		date: 'date',
 		startDate: 'startDate',
@@ -250,7 +251,7 @@ class Clndr {
 	}
 
 	private initConstraints(constraints: Constraints, interval: Interval) {
-		let adjustedInterval: Interval = [interval[0], interval[1]];
+		let adjustedInterval: Interval = {start: interval.start, end: interval.end};
 
 		if (constraints.startDate) {
 			adjustedInterval = this.adapter.initStartConstraint(
@@ -339,8 +340,8 @@ class Clndr {
 			= [[], [], []];
 
 		parsedEvents[1] = this.events.filter(event => {
-			const afterEnd = isAfter(event._clndrStartDateObject, interval[1]);
-			const beforeStart = isBefore(event._clndrEndDateObject, interval[0]);
+			const afterEnd = isAfter(event.clndrInterval.start, interval.end);
+			const beforeStart = isBefore(event.clndrInterval.end, interval.start);
 
 			return !(beforeStart || afterEnd);
 		});
@@ -365,20 +366,20 @@ class Clndr {
 
 		const itemInterval = this.adapter.getIntervalForDate(date);
 
-		if (isWithinInterval(now, {start: itemInterval[0], end: itemInterval[1]})) {
+		if (isWithinInterval(now, itemInterval)) {
 			classes.push(this.options.classes.now);
 			properties.isNow = true;
 		}
 
-		if (isBefore(itemInterval[1], now)) {
+		if (isBefore(itemInterval.end, now)) {
 			classes.push(this.options.classes.past);
 		}
 
 		const eventsOfCurrentItem = events.filter(event => {
-			const start = event._clndrStartDateObject;
-			const end = event._clndrEndDateObject;
+			const start = event.clndrInterval.start;
+			const end = event.clndrInterval.end;
 
-			return !isAfter(start, itemInterval[1]) && !isAfter(itemInterval[0], end);
+			return !isAfter(start, itemInterval.end) && !isAfter(itemInterval.start, end);
 		});
 
 		if (eventsOfCurrentItem.length) {
@@ -403,12 +404,12 @@ class Clndr {
 			const constraintStart = this.options.constraints.startDate;
 			const constraintEnd = this.options.constraints.endDate;
 
-			if (constraintStart && isBefore(itemInterval[1], constraintStart)) {
+			if (constraintStart && isBefore(itemInterval.end, constraintStart)) {
 				classes.push(this.options.classes.inactive);
 				properties.isInactive = true;
 			}
 
-			if (constraintEnd && isAfter(itemInterval[0], constraintEnd)) {
+			if (constraintEnd && isAfter(itemInterval.start, constraintEnd)) {
 				classes.push(this.options.classes.inactive);
 				properties.isInactive = true;
 			}
@@ -419,13 +420,7 @@ class Clndr {
 			adjacentScope && classes.push(this.options.classes.switch);
 		}
 
-		if (
-			this.options.selectedDate
-			&& isWithinInterval(
-				this.options.selectedDate,
-				{start: itemInterval[0], end: itemInterval[1]}
-			)
-		) {
+		if (this.options.selectedDate && isWithinInterval(this.options.selectedDate, interval)) {
 			classes.push(this.options.classes.selected);
 		}
 
@@ -473,11 +468,11 @@ class Clndr {
 	private aggregateTemplateData() {
 		const data: ClndrTemplateData = {
 			items: [],
-			month: this.interval[0],
+			month: this.interval.start,
 			months: [],
-			year: this.interval[0],
+			year: this.interval.start,
 			years: [],
-			decade: this.interval[0],
+			decade: this.interval.start,
 			decades: [],
 			events: {
 				currentPage: [],
@@ -534,7 +529,7 @@ class Clndr {
 
 		// Month control
 		// Room to go back?
-		if (start && (!isBefore(start, this.interval[0]))) {
+		if (start && (!isBefore(start, this.interval.start))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.previousButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -542,7 +537,7 @@ class Clndr {
 		}
 
 		// Room to go forward?
-		if (end && (!isAfter(end, this.interval[1]))) {
+		if (end && (!isAfter(end, this.interval.end))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.nextButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -551,7 +546,7 @@ class Clndr {
 
 		// Year control
 		// Room to go back?
-		if (start && !isBefore(start, subYears(this.interval[0], 1))) {
+		if (start && !isBefore(start, subYears(this.interval.start, 1))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.previousYearButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -559,7 +554,7 @@ class Clndr {
 		}
 
 		// Room to for forward?
-		if (end && !isAfter(end, addYears(this.interval[1], 1))) {
+		if (end && !isAfter(end, addYears(this.interval.end, 1))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.nextYearButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -764,8 +759,8 @@ class Clndr {
 		const interval = this.adapter.getIntervalForDate(date);
 
 		return this.events.filter(event => areIntervalsOverlapping(
-			{start: interval[0], end: interval[1]},
-			{start: event._clndrStartDateObject, end: event._clndrEndDateObject}
+			interval,
+			event.clndrInterval
 		)).map(event => event.originalEvent);
 	}
 
@@ -775,14 +770,14 @@ class Clndr {
 	 * @param element The event's source element.
 	 */
 	private triggerEvents(orig: Interval, element?: HTMLElement) {
-		const newInt: Interval = [this.interval[0], this.interval[1]];
+		const newInt: Interval = {start: this.interval.start, end: this.interval.end};
 
 		const eventParameters = {
 			interval: this.interval,
-			isBefore: isBefore(newInt[0], orig[0]),
-			isAfter: isAfter(newInt[0], orig[0]),
-			monthChanged: !isSameMonth(newInt[0], orig[0]),
-			yearChanged: !isSameYear(newInt[0], orig[0]),
+			isBefore: isBefore(newInt.start, orig.start),
+			isAfter: isAfter(newInt.start, orig.start),
+			monthChanged: !isSameMonth(newInt.start, orig.start),
+			yearChanged: !isSameYear(newInt.start, orig.start),
 			element,
 		}
 
@@ -806,8 +801,10 @@ class Clndr {
 				}
 
 				return {
-					_clndrStartDateObject: new Date(event[dateParameter] as Date | string),
-					_clndrEndDateObject: endOfDay(new Date(event[dateParameter] as Date | string)),
+					clndrInterval: {
+						start: new Date(event[dateParameter] as Date | string),
+						end: endOfDay(new Date(event[dateParameter] as Date | string)),
+					},
 					originalEvent: event,
 				};
 			}
@@ -827,8 +824,10 @@ class Clndr {
 				}
 
 				return {
-					_clndrStartDateObject: new Date(event[dateParameter.date] as Date | string),
-					_clndrEndDateObject: endOfDay(new Date(event[dateParameter.date] as Date | string)),
+					clndrInterval: {
+						start: new Date(event[dateParameter.date] as Date | string),
+						end: endOfDay(new Date(event[dateParameter.date] as Date | string)),
+					},
 					originalEvent: event,
 				};
 			} else if (end || start) {
@@ -844,8 +843,10 @@ class Clndr {
 				}
 
 				return {
-					_clndrStartDateObject: new Date((start || end) as Date | string),
-					_clndrEndDateObject: endOfDay(new Date((end || start) as Date | string)),
+					clndrInterval: {
+						start: new Date((start || end) as Date | string),
+						end: endOfDay(new Date((end || start) as Date | string)),
+					},
 					originalEvent: event,
 				};
 			}
@@ -872,7 +873,7 @@ class Clndr {
 			weekOffset: this.options.weekOffset,
 		});
 
-		this.interval = this.adapter.initInterval(date || this.interval[0]);
+		this.interval = this.adapter.initInterval(date || this.interval.start);
 
 		if (this.options.constraints) {
 			this.interval = this.initConstraints(this.options.constraints, this.interval);
@@ -886,7 +887,7 @@ class Clndr {
 	 */
 	back(options: ClndrNavigationOptions = {}) {
 		const defaults: ClndrNavigationOptions = {withCallbacks: false};
-		const orig: Interval = [this.interval[0], this.interval[1]];
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
 
@@ -920,7 +921,7 @@ class Clndr {
 	 */
 	forward(options: ClndrNavigationOptions = {}) {
 		const defaults: ClndrNavigationOptions = {withCallbacks: false};
-		const orig: Interval = [this.interval[0], this.interval[1]];
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
 
@@ -954,7 +955,7 @@ class Clndr {
 	 */
 	previousYear(options: ClndrNavigationOptions = {}) {
 		const defaults: ClndrNavigationOptions = {	withCallbacks: false};
-		const orig: Interval = [this.interval[0], this.interval[1]];
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
 
@@ -962,8 +963,10 @@ class Clndr {
 			return this;
 		}
 
-		this.interval[0] = subYears(this.interval[0], 1);
-		this.interval[1] = subYears(this.interval[1], 1);
+		this.interval = {
+			start: subYears(this.interval.start, 1),
+			end: subYears(this.interval.end, 1),
+		};
 
 		this.render();
 
@@ -979,7 +982,7 @@ class Clndr {
 	 */
 	nextYear(options: ClndrNavigationOptions = {}) {
 		const defaults: ClndrNavigationOptions = {withCallbacks: false};
-		const orig: Interval = [this.interval[0], this.interval[1]];
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
 
@@ -987,8 +990,10 @@ class Clndr {
 			return this;
 		}
 
-		this.interval[0] = addYears(this.interval[0], 1);
-		this.interval[1] = addYears(this.interval[1], 1);
+		this.interval = {
+			start: addYears(this.interval.start, 1),
+			end: addYears(this.interval.end, 1),
+		};
 
 		this.render();
 
@@ -1001,7 +1006,7 @@ class Clndr {
 
 	today(options: ClndrNavigationOptions = {}) {
 		const defaults: ClndrNavigationOptions = {withCallbacks: false};
-		const orig: Interval = [this.interval[0], this.interval[1]];
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
 
@@ -1009,8 +1014,8 @@ class Clndr {
 
 		// No need to re-render if the month was not changed
 		if (
-			!isSameMonth(this.interval[0], orig[0])
-			|| !isSameMonth(this.interval[1], orig[1])
+			!isSameMonth(this.interval.start, orig.start)
+			|| !isSameMonth(this.interval.end, orig.end)
 		) {
 			this.render();
 		}
@@ -1024,7 +1029,7 @@ class Clndr {
 	 * Changes the month being provided a value between 0 and 11.
 	 */
 	setMonth(newMonth: number, options: ClndrNavigationOptions = {}) {
-		const orig: Interval = [this.interval[0], this.interval[1]];
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		this.interval = this.adapter.setMonth(newMonth, this.interval);
 
@@ -1038,7 +1043,7 @@ class Clndr {
 	}
 
 	setYear(newYear: number, options: ClndrNavigationOptions = {}) {
-		const orig: Interval = [this.interval[0], this.interval[1]];
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		this.interval = this.adapter.setYear(newYear, this.interval);
 
@@ -1055,7 +1060,7 @@ class Clndr {
 	 * Sets the start of the time period.
 	 */
 	setIntervalStart(newDate: Date | string, options: ClndrNavigationOptions = {}) {
-		const orig: Interval = [this.interval[0], this.interval[1]];
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		this.interval = this.adapter.setDay(new Date(newDate), this.options.startOn);
 

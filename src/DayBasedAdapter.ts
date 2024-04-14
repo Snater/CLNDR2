@@ -14,9 +14,9 @@ export default abstract class DayBasedAdapter extends Adapter {
 
 	getIdClasses(interval: Interval): string[] {
 		return [
-			`calendar-day-${format(interval[0], 'yyyy-MM-dd')}`,
+			`calendar-day-${format(interval.start, 'yyyy-MM-dd')}`,
 			// Day of week
-			`calendar-dow-${getDay(interval[0])}`,
+			`calendar-dow-${getDay(interval.start)}`,
 		];
 	}
 
