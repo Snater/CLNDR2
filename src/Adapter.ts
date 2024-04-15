@@ -6,13 +6,14 @@ import type {
 	Interval,
 	PageDates,
 	Scope,
+	WeekOffset,
 } from './types';
 
 export type AdapterOptions = {
 	forceSixRows: boolean
 	pageSize: number
 	showAdjacent: boolean
-	weekOffset: number
+	weekOffset: WeekOffset
 }
 
 export abstract class Adapter {

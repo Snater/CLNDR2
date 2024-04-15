@@ -761,6 +761,38 @@
 			padding: 3px 8px;
 		}
 
+		.week-template {
+			.clndr-grid {
+				.week {
+					display: grid;
+					grid-template-columns: auto 1fr;
+					height: 100%;
+
+					.grid-template {
+						display: grid;
+
+						> * {
+							align-items: center;
+							display: flex;
+							padding: 0 8px;
+						}
+					}
+
+					.days-of-the-week {
+						background: @violet;
+						color: @white;
+					}
+
+					.days {
+						.item {
+							height: auto;
+							justify-content: center;
+						}
+					}
+				}
+			}
+		}
+
 		.month-template {
 			.clndr-grid {
 				.grid-template {

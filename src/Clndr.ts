@@ -21,6 +21,7 @@ import {Adapter, AdapterOptions} from './Adapter';
 import DayAdapter from './DayAdapter';
 import DecadeAdapter from './DecadeAdapter';
 import MonthAdapter from './MonthAdapter';
+import WeekAdapter from './WeekAdapter';
 import YearAdapter from './YearAdapter';
 import type {
 	ClndrEvent,
@@ -43,7 +44,7 @@ import type {
 	WeekOffset,
 } from './types';
 
-const orderedScopes: Scope[] = ['day', 'month', 'year', 'decade'] as const;
+const orderedScopes: Scope[] = ['day', 'week', 'month', 'year', 'decade'] as const;
 
 const adapters: Record<Scope,
 	(new (options: AdapterOptions) => Adapter) & {
@@ -54,6 +55,7 @@ const adapters: Record<Scope,
 	decade: DecadeAdapter,
 	year: YearAdapter,
 	month: MonthAdapter,
+	week: WeekAdapter,
 	day: DayAdapter,
 } as const;
 
@@ -468,6 +470,7 @@ class Clndr {
 	private aggregateTemplateData() {
 		const data: ClndrTemplateData = {
 			items: [],
+			weeks: [],
 			month: this.interval.start,
 			months: [],
 			year: this.interval.start,
@@ -1024,6 +1027,8 @@ class Clndr {
 			this.triggerEvents(orig, options.element);
 		}
 	}
+
+	// TODO: Add setWeek and setDecade
 
 	/**
 	 * Changes the month being provided a value between 0 and 11.

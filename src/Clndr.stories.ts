@@ -103,7 +103,7 @@ const meta: Meta<ClndrOptions> = {
 					summary: 'month',
 				},
 				type: {
-					summary: '\'day\' | \'month\' | \'year\' | \'decade\'',
+					summary: '\'day\' | \'week\' | \'month\' | \'year\' | \'decade\'',
 				},
 			},
 		},
@@ -198,7 +198,7 @@ const meta: Meta<ClndrOptions> = {
 					summary: '{month:, {size: 1}',
 				},
 				type: {
-					summary: '{[key in \'decade\' | \'year\' | \'month\' | \'day\']?: {size: number, step?: number}}',
+					summary: '{[key in \'decade\' | \'year\' | \'month\' | \'week\' | \'day\']?: {size: number, step?: number}}',
 					detail: 'If `step` is not defined, `size` is used as the step size when navigating.',
 				},
 			},
@@ -709,11 +709,36 @@ export const SwitchBetweenViews: Story = {
 						</div>
 						<div class="days grid-template">
 							<% items.forEach(day => { %>
-								<div class="<%= day.classes %>"><%= day.day %></div>
+								<div class="<%= day.classes %>" role="button"><%= day.day %></div>
 							<% }); %>
 						</div>
 					</div>
 					<div class="clndr-today-button footer-button" role="button">Go to current month</div>
+					<div class="clndr-switch-year-button footer-button" role="button">Switch to year view</div>
+					<div class="clndr-switch-decade-button footer-button" role="button">Switch to decade view</div>
+				</div>
+			`, data),
+			week: data => ejs.render(`
+				<div class="week-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title">Week <%= format(interval.start, 'w') %> in <%= format(interval.start, 'yyyy') %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<div class="week">
+							<div class="days-of-the-week grid-template">
+								<% items.forEach(day => { %><div class="header-day"><%= format(day.date, 'EEEE') %></div><% }); %>
+							</div>
+							<div class="days grid-template">
+								<% items.forEach(day => { %>
+									<div class="<%= day.classes %>"><%= format(day.date, 'LLLL do') %></div>
+								<% }); %>
+							</div>
+						</div>
+					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to current week</div>
+					<div class="clndr-switch-month-button footer-button" role="button">Switch to month view</div>
 					<div class="clndr-switch-year-button footer-button" role="button">Switch to year view</div>
 					<div class="clndr-switch-decade-button footer-button" role="button">Switch to decade view</div>
 				</div>

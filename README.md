@@ -340,8 +340,8 @@ new Clndr(container, {
   // Pagination may be configured individual to each view when using multiple
   // views, see "Switching the View" section.
   pagination: {
-    // Keys may be either `day`, `month`, `year`, or `decade` to configure
-    // multiple calendar views that may be switched between.
+    // Keys may be either `day`, `week`, `month`, `year`, or `decade` to
+    // configure multiple calendar views that may be switched between.
     month: {
 
       // Adjust to render more than one element (in this case month) at the
@@ -418,14 +418,25 @@ interval: {start: Date, end: Date}
 // month or year according to `pagination.scope`.
 items: ClndrItem[] | ClndrItem[][]
 
+// An array of Date objects representing the weeks of the current page,
+// particularly useful if `week` `pagination` is configured and its `size` is
+// greater than 1. In that case, use this property to loop over the weeks and
+// render the days per week, i.e.
+// ```
+// weeks.forEach((week, monthIndex) => {
+//   ... items[weekIndex].forEach(day => ...) ...
+// )}
+// ```
+weeks: Date[]
+
 // A Date object representing the current month. This is an convenience
 // parameter euqal to interval.start.
 month: Date
 
 // An array of Date objects representing the months of the current page,
-// particularly useful if `pagination.scope` is set to `month` and
-// `pagination.size` is greater than 1. In that case, use this property
-// to loop over the months and render the days per month, i.e.
+// particularly useful if `month` `pagination` is configured and its `size` is
+// greater than 1. In that case, use this property to loop over the months and
+// render the days per months, i.e.
 // ```
 // months.forEach((month, monthIndex) => {
 //   ... items[monthIndex].forEach(day => ...) ...
@@ -438,9 +449,9 @@ months: Date[]
 year: Date
 
 // An array of Date objects representing the years of the current page,
-// particularly useful if `pagination.scope` is set to `year` and
-// `pagination.size` is greater than 1. In that case, use this property
-// to loop over the years and render the months per year, i.e.
+// particularly useful if `year` `pagination` is configured and its `size` is
+// greater than 1. In that case, use this property to loop over the years and
+// render the months per year, i.e.
 // ```
 // years.forEach((year, yearIndex) => {
 //   ... items[yearIndex].forEach(month => ...) ...
@@ -453,12 +464,12 @@ years: Date[]
 decade: Date
 
 // An array of Date objects representing the decades of the current page,
-// particularly useful if `pagination.scope` is set to `decade` and
-// `pagination.size` is greater than 1. In that case, use this property
-// to loop over the decades and render the years per decade, i.e.
+// particularly useful if `decade` `pagination` is configured and its `size` is
+// greater than 1. In that case, use this property to loop over the decades and
+// render the years per decade, i.e.
 // ```
 // decades.forEach((decade, decadeIndex) => {
-//   ... items[decadeIndex].forEach(decade => ...) ...
+//   ... items[decadeIndex].forEach(year => ...) ...
 // )}
 // ```
 decades: Date[]

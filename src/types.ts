@@ -5,6 +5,7 @@ import type {TargetOption as YearTargetOption} from './YearAdapter';
 
 type RenderFn = (data: ClndrTemplateData) => string
 
+// TODO: Extend Date types to also allow Date compatible types string and number
 export type InternalOptions = {
 	render: RenderFn | {[key in Scope]?: RenderFn}
 	adjacentDaysChangeMonth: boolean
@@ -70,7 +71,7 @@ export type Pagination = {
 	step?: number
 }
 
-export type Scope = 'decade' | 'year' | 'month' | 'day'
+export type Scope = 'decade' | 'year' | 'month' | 'week' | 'day'
 
 type ClickEvents = {
 	onClick?: (parameters: ClndrItemEventParameters) => void
@@ -116,9 +117,11 @@ type ItemStatus = 'past'
 	| 'adjacent'
 	| 'switch'
 
+// TODO: There is not really a need for duplicating "month", "year" and "decade"
 export type ClndrTemplateData = {
 	interval: Interval
 	items: ClndrItem[] | ClndrItem[][]
+	weeks: Date[]
 	month: Date
 	months: Date[]
 	year: Date
