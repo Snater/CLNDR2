@@ -27,9 +27,21 @@ import type {
 	Scope,
 } from './types';
 
+export type TargetOption = 'switchWeekButton'
+
 export default class WeekAdapter extends DayBasedAdapter {
 
 	static scope: Scope = 'week';
+
+	static targets: Record<TargetOption, string> = {
+		switchWeekButton: 'clndr-switch-week-button',
+	}
+
+	static eventListener(element: HTMLElement, callback: (scope: Scope) => void) {
+		if (element.closest('.' + WeekAdapter.targets.switchWeekButton)) {
+			callback(WeekAdapter.scope);
+		}
+	}
 
 	initInterval(startOn?: Date): Interval {
 		const start = startOfWeek(

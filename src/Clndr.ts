@@ -197,16 +197,19 @@ class Clndr {
 			? Object.keys(this.options.pagination) as Scope[]
 			: orderedScopes.filter(scope => Object.keys(this.options.render).includes(scope));
 
-		const defaultView = this.options.pagination[this.options.defaultView]
+		const defaultView = this.options.defaultView !== defaults.defaultView
 			? this.options.defaultView
-			// Pick the smallest scope configured when pagination is not configured for the default view.
-			: orderedScopes.filter(scope => this.options.pagination[scope] !== undefined)[0];
+			: this.options.pagination[this.options.defaultView]
+				? this.options.defaultView
+				// Pick the smallest scope configured when pagination is not configured for the default
+				// view.
+				: orderedScopes.filter(scope => this.options.pagination[scope] !== undefined)[0];
 
 		this.adapter = new adapters[defaultView]({
 			forceSixRows: this.options.forceSixRows,
 			// There will always be at least one scope's pagination be configured as there is a default
 			// value. Therefore, `defaultView` will be a valid scope having pagination configured.
-			pageSize: (this.options.pagination[defaultView] as Pagination).size,
+			pageSize: (this.options.pagination[defaultView] as Pagination)?.size ?? 1,
 			showAdjacent: this.options.showAdjacent,
 			weekOffset: this.options.weekOffset,
 		});

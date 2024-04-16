@@ -254,10 +254,10 @@ const meta: Meta<ClndrOptions> = {
 			description: 'Override the CSS class names applied to the calendar elements for binding the `clickEvents` to.',
 			table: {
 				defaultValue: {
-					summary: '{item: \'item\', empty: \'empty\', nextButton: \'clndr-next-button\', todayButton: \'clndr-today-button\', previousButton: \'clndr-previous-button\', nextYearButton: \'clndr-next-year-button\', previousYearButton: \'clndr-previous-year-button\', switchMonthButton: \'clndr-switch-month-button\', switchYearButton: \'clndr-switch-year-button\', switchDecadeButton: \'clndr-switch-decade-button\'}',
+					summary: '{item: \'item\', empty: \'empty\', nextButton: \'clndr-next-button\', todayButton: \'clndr-today-button\', previousButton: \'clndr-previous-button\', nextYearButton: \'clndr-next-year-button\', previousYearButton: \'clndr-previous-year-button\', switchWeekButton: \'clndr-switch-week-button\', switchMonthButton: \'clndr-switch-month-button\', switchYearButton: \'clndr-switch-year-button\', switchDecadeButton: \'clndr-switch-decade-button\'}',
 				},
 				type: {
-					summary: '{item?: string, empty?: string, nextButton?: string, todayButton?: string, previousButton?: string, nextYearButton?: string, previousYearButton?: string, switchMonthButton?: string, switchYearButton?: string, switchDecadeButton?: string}',
+					summary: '{item?: string, empty?: string, nextButton?: string, todayButton?: string, previousButton?: string, nextYearButton?: string, previousYearButton?: string, switchWeekButton?: string, switchMonthButton?: string, switchYearButton?: string, switchDecadeButton?: string}',
 				},
 			},
 		},
@@ -732,12 +732,37 @@ export const SwitchBetweenViews: Story = {
 							</div>
 							<div class="days grid-template">
 								<% items.forEach(day => { %>
-									<div class="<%= day.classes %>"><%= format(day.date, 'LLLL do') %></div>
+									<div class="<%= day.classes %>" role="button"><%= format(day.date, 'LLLL do') %></div>
 								<% }); %>
 							</div>
 						</div>
 					</div>
 					<div class="clndr-today-button footer-button" role="button">Go to current week</div>
+					<div class="clndr-switch-month-button footer-button" role="button">Switch to month view</div>
+					<div class="clndr-switch-year-button footer-button" role="button">Switch to year view</div>
+					<div class="clndr-switch-decade-button footer-button" role="button">Switch to decade view</div>
+				</div>
+			`, data),
+			day: data => ejs.render(`
+				<div class="day-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title"><%= format(interval.start, 'PPP') %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<div class="header">Events</div>
+						<% if (events.currentPage.length === 0) { %>
+							<div class="empty">No events today.</div>
+						<% } else { %>
+							<% events.currentPage.forEach(event => { %>
+								<div class="event"><%= event.title %></div>
+							<% }) %>
+						<% } %>
+						</div>
+					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to today</div>
+					<div class="clndr-switch-week-button footer-button" role="button">Switch to week view</div>
 					<div class="clndr-switch-month-button footer-button" role="button">Switch to month view</div>
 					<div class="clndr-switch-year-button footer-button" role="button">Switch to year view</div>
 					<div class="clndr-switch-decade-button footer-button" role="button">Switch to decade view</div>

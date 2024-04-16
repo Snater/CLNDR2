@@ -37,7 +37,7 @@ export default class DecadeAdapter extends Adapter {
 
 	static eventListener(element: HTMLElement, callback: (scope: Scope) => void) {
 		if (element.closest('.' + DecadeAdapter.targets.switchDecadeButton)) {
-			callback('decade');
+			callback(DecadeAdapter.scope);
 		}
 	}
 

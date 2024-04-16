@@ -35,13 +35,14 @@ export default class MonthAdapter extends DayBasedAdapter {
 
 	protected static scope: Scope = 'month';
 
+	// TODO: Document how to switch between views
 	static targets: Record<TargetOption, string> = {
 		switchMonthButton: 'clndr-switch-month-button',
 	}
 
 	static eventListener(element: HTMLElement, callback: (scope: Scope) => void) {
 		if (element.closest('.' + MonthAdapter.targets.switchMonthButton)) {
-			callback('month');
+			callback(MonthAdapter.scope);
 		}
 	}
 

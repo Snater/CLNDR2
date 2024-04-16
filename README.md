@@ -384,6 +384,7 @@ new Clndr(container, {
     previousButton: 'clndr-previous-button',
     nextYearButton: 'clndr-next-year-button',
     previousYearButton: 'clndr-previous-year-button',
+    switchWeekButton: 'clndr-switch-week-button',
     switchMonthButton: 'clndr-switch-month-button',
     switchYearButton: 'clndr-switch-year-button',
     switchDecadeButton: 'clndr-switch-decade-button',
@@ -587,7 +588,7 @@ new Clndr(container, {
 
 ## Switching the View
 
-CLNDR2 is capable of switching between different views for easing navigation. The currently available views are `day`, `month`, `year` and `decade`. (Additional views will be added in the future.) In order to activate the capability to switch between views, instead of a single `render` function, a `render` function needs to be provided for each view that should be possible to be switched to:
+CLNDR2 is capable of switching between different views for easing navigation. The currently available views are `day`, `week`, `month`, `year` and `decade`. (Additional views will be added in the future.) In order to activate the capability to switch between views, instead of a single `render` function, a `render` function needs to be provided for each view that should be possible to be switched to:
 
 ```typescript
 const clndr = new Clndr(container, {render: {

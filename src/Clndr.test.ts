@@ -896,7 +896,7 @@ describe('Navigation', () => {
 
 		expect(screen.getByText('10/01 - 10/07')).toBeInTheDocument();
 		clndr.setMonth(4);
-		expect(screen.getByText('04/26 - 05/02')).toBeInTheDocument();
+		expect(screen.getByText('05/01 - 05/07')).toBeInTheDocument();
 	});
 
 	test('Programmatically set year with callbacks', () => {
@@ -937,15 +937,15 @@ describe('Navigation', () => {
 			pagination: {day: {size: 7}},
 		});
 
-		expect(screen.getByText('01/14 - 01/20')).toBeInTheDocument();
+		expect(screen.getByText('01/18 - 01/24')).toBeInTheDocument();
 		expect(container.querySelector('.calendar-day-2024-01-18')).toBeInTheDocument();
 		clndr.setYear(1992, {withCallbacks: true});
-		expect(screen.getByText('01/12 - 01/18')).toBeInTheDocument();
+		expect(screen.getByText('01/18 - 01/24')).toBeInTheDocument();
 
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
 
 		expect(handleNavigate.mock.calls[0][0]).toEqual({
-			interval: {start: startOfDay(new Date('1992-01-12')), end: endOfDay(new Date('1992-01-18'))},
+			interval: {start: startOfDay(new Date('1992-01-18')), end: endOfDay(new Date('1992-01-24'))},
 			isBefore: true,
 			isAfter: false,
 			monthChanged: true,
@@ -1403,6 +1403,231 @@ describe('Custom interval', () => {
 });
 
 // TODO: Move adapter specific tests to separate file
+describe('pagination.scope set to `day`', () => {
+	const oneDayTemplate = `
+		<div class="clndr-controls">
+			<div class="clndr-previous-button" role="button">previous</div>
+			<% items.forEach(day => { %>
+				<div class="<%= day.classes %>">Day <%= format(day.date, 'D', {useAdditionalDayOfYearTokens: true}) %> in <%= format(day.date, 'yyyy') %></div>
+			<% }) %>
+			<div class="clndr-next-button" role="button">next</div>
+		</div>
+		<div class="clndr-today-button" role="button">Current day</div>
+	`;
+
+	const multiDayTemplate = `
+		<div>
+			<% items.forEach(day => { %>
+				<div>Day <%= format(day.date, 'D', {useAdditionalDayOfYearTokens: true}) %></div>
+			<% }) %>
+		</div>
+	`;
+
+	test('Rendering plain calendar', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneDayTemplate),
+			pagination: {day: {size: 1}},
+		});
+
+		expect(screen.getByText('Day 18 in 2024')).toBeInTheDocument();
+		expect(container.querySelector('.calendar-day-2024-01-18')).toBeInTheDocument();
+	});
+
+	test('Programmatic navigation', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneDayTemplate),
+			pagination: {day: {size: 1}},
+		});
+
+		clndr.setYear(2025);
+		expect(screen.getByText('Day 18 in 2025')).toBeInTheDocument();
+
+		clndr.setMonth(4);
+		expect(screen.getByText('Day 138 in 2025')).toBeInTheDocument();
+
+		clndr.setIntervalStart(new Date('1992-10-15'));
+		expect(screen.getByText('Day 289 in 1992')).toBeInTheDocument();
+	});
+
+	test('Start and end constraints', async () => {
+		const handleNavigate = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneDayTemplate),
+			clickEvents: {
+				onNavigate: handleNavigate,
+			},
+			constraints: {
+				startDate: new Date('1992-10-14'),
+				endDate: new Date('1992-10-17'),
+			},
+			pagination: {day: {size: 1}},
+			startOn: new Date('1992-10-15'),
+		});
+		expect(screen.getByText('Day 289 in 1992')).toBeInTheDocument();
+		await user.click(screen.getByText('previous'));
+		expect(screen.getByText('Day 288 in 1992')).toBeInTheDocument();
+		expect(handleNavigate).toHaveBeenCalledTimes(1);
+		await user.click(screen.getByText('previous'));
+		expect(screen.getByText('Day 288 in 1992')).toBeInTheDocument();
+		expect(handleNavigate).toHaveBeenCalledTimes(1);
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('Day 289 in 1992')).toBeInTheDocument();
+		expect(handleNavigate).toHaveBeenCalledTimes(2);
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('Day 290 in 1992')).toBeInTheDocument();
+		expect(handleNavigate).toHaveBeenCalledTimes(3);
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('Day 291 in 1992')).toBeInTheDocument();
+		expect(handleNavigate).toHaveBeenCalledTimes(4);
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('Day 291 in 1992')).toBeInTheDocument();
+		expect(handleNavigate).toHaveBeenCalledTimes(4);
+	});
+
+	test('Start date before start constraint', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneDayTemplate),
+			constraints: {
+				startDate: new Date('1992-10-16'),
+			},
+			pagination: {day: {size: 1}},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.getByText('Day 290 in 1992')).toBeInTheDocument();
+	});
+
+	test('End date after end constraint', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneDayTemplate),
+			constraints: {
+				endDate: new Date('1992-10-14'),
+			},
+			pagination: {day: {size: 1}},
+			startOn: new Date('1992-10-15'),
+		});
+
+		expect(screen.getByText('Day 288 in 1992')).toBeInTheDocument();
+	});
+
+	test('Click event handlers', async () => {
+		const handleClick = jest.fn();
+		const handleNavigate = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneDayTemplate),
+			clickEvents: {
+				onClick: handleClick,
+				onNavigate: handleNavigate,
+			},
+			pagination: {day: {size: 1}},
+			startOn: new Date('1992-10-15'),
+		});
+
+		await user.click(screen.getByText('next'));
+		await user.click(screen.getByText('previous'));
+
+		expect(handleNavigate).toHaveBeenCalledTimes(2);
+
+		expect(handleNavigate.mock.calls[0][0]).toEqual({
+			interval: {start: startOfDay(new Date('1992-10-16')), end: endOfDay(new Date('1992-10-16'))},
+			isBefore: false,
+			isAfter: true,
+			monthChanged: false,
+			yearChanged: false,
+			element: screen.getByText('next'),
+		});
+
+		expect(handleNavigate.mock.calls[1][0]).toEqual({
+			interval: {start: startOfDay(new Date('1992-10-15')), end: endOfDay(new Date('1992-10-15'))},
+			isBefore: true,
+			isAfter: false,
+			monthChanged: false,
+			yearChanged: false,
+			element: screen.getByText('previous'),
+		});
+
+		await user.click(screen.getByText('Day 289 in 1992'));
+
+		expect(handleClick).toHaveBeenCalledTimes(1);
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: new Date('1992-10-15'),
+			events: [],
+			selectedDateChanged: true,
+			isToday: false,
+			element: screen.getByText('Day 289 in 1992'),
+		});
+
+		await user.click(screen.getByText('Current day'));
+
+		expect(handleNavigate).toHaveBeenCalledTimes(3);
+
+		expect(handleNavigate.mock.calls[2][0]).toEqual({
+			interval: {start: startOfDay(new Date('2024-01-18')), end: endOfDay(new Date('2024-01-18'))},
+			isBefore: false,
+			isAfter: true,
+			monthChanged: true,
+			yearChanged: true,
+			element: screen.getByText('Current day'),
+		});
+	});
+
+	test('Events', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(oneDayTemplate),
+			events: [
+				{date: '2024-01-17', title: 'event out of range'},
+				{date: '2024-01-18', title: 'event on current page'},
+				{date: '2024-01-29', title: 'event out of range'},
+			],
+			pagination: {day: {size: 1}},
+		});
+
+		expect(screen.getByText('Day 18 in 2024').classList.contains('event')).toBeTruthy();
+	});
+
+	test('Multiple days on one page', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(multiDayTemplate),
+			pagination: {day: {size: 2}},
+		});
+
+		expect(screen.getByText('Day 18')).toBeInTheDocument();
+		expect(screen.getByText('Day 19')).toBeInTheDocument();
+	});
+
+	test('Click on a day while the identifier class is unexpectedly not assigned', async () => {
+		const handleClick = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneDayTemplate),
+			clickEvents: {
+				onClick: handleClick,
+			},
+			pagination: {day: {size: 1}},
+			trackSelectedDate: true,
+		});
+
+		const dayElement = screen.getByText('Day 18 in 2024');
+		expect(dayElement instanceof Element).toBeTruthy();
+		(dayElement as Element).classList.remove('calendar-day-2024-01-18');
+		await user.click(dayElement as Element);
+
+		expect(handleClick).toHaveBeenCalledTimes(1);
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: undefined,
+			events: [],
+			selectedDateChanged: false,
+			isToday: false,
+			element: dayElement,
+		});
+	});
+
+});
+
 describe('pagination.scope set to `week`', () => {
 	const oneWeekTemplate = `
 		<div class="clndr-controls">
@@ -2195,6 +2420,10 @@ describe('Multiple scopes', () => {
 		clndr = new Clndr(container, {
 			render: {
 				day: provideRender(`
+					<div class="day">Day <%= format(items[0].date, 'D', {useAdditionalDayOfYearTokens: true}) %> in <%= format(items[0].date, 'yyyy') %></div>
+					<div class="clndr-switch-week-button" role="button">Switch to week view</div>
+				`),
+				week: provideRender(`
 					<div class="week"><%= format(items[0].date, 'LL-dd') %> to <%= format(items[items.length -1].date, 'LL-dd') %></div>
 					<div class="clndr-switch-month-button" role="button">Switch to month view</div>
 				`),
@@ -2219,8 +2448,10 @@ describe('Multiple scopes', () => {
 				`),
 			},
 			defaultView: 'day',
-			pagination: {day: {size: 7}},
 		});
+
+		expect(screen.getByText('Day 18 in 2024')).toBeInTheDocument();
+		await user.click(screen.getByText('Switch to week view'));
 
 		expect(screen.getByText('01-14 to 01-20')).toBeInTheDocument();
 		await user.click(screen.getByText('Switch to month view'));

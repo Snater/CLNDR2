@@ -37,7 +37,7 @@ export default class YearAdapter extends Adapter {
 
 	static eventListener(element: HTMLElement, callback: (scope: Scope) => void) {
 		if (element.closest('.' + YearAdapter.targets.switchYearButton)) {
-			callback('year');
+			callback(YearAdapter.scope);
 		}
 	}
 
