@@ -3,7 +3,6 @@ import {
 	addWeeks,
 	differenceInDays,
 	eachMonthOfInterval,
-	eachWeekOfInterval,
 	eachYearOfInterval,
 	endOfDay,
 	endOfWeek,
@@ -19,6 +18,7 @@ import {
 import DayBasedAdapter from './DayBasedAdapter';
 import type {
 	Adjacent,
+	ClndrEvent,
 	ClndrItem,
 	ClndrTemplateData,
 	InternalClndrEvent,
@@ -173,15 +173,43 @@ export default class WeekAdapter extends DayBasedAdapter {
 	flushTemplateData(
 		data: ClndrTemplateData,
 		createDaysObject: (interval: Interval) => ClndrItem[],
-		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
+		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]],
+		pageSize: number
 	): ClndrTemplateData {
 
-		data.weeks = eachWeekOfInterval(data.interval);
+		data.items = [] as ClndrItem[][];
 		data.months = eachMonthOfInterval(data.interval);
 		data.years = eachYearOfInterval(data.interval);
-		data.items = createDaysObject.apply(this, [data.interval]);
-		data.numberOfRows = Math.ceil(data.items.length / 7);
-		data.events.currentPage = events[1].map(event => event.originalEvent);
+		const currentPageEvents: ClndrEvent[][] = [];
+
+		for (let i = 0; i < pageSize; i++) {
+			const currentIntervalStart = addWeeks(data.interval.start, i);
+			const currentIntervalEnd = endOfWeek(currentIntervalStart);
+
+			data.weeks.push(currentIntervalStart);
+
+			data.items.push(
+				createDaysObject.apply(this, [{start: currentIntervalStart, end: currentIntervalEnd}])
+			);
+
+			currentPageEvents.push(
+				events[1].filter(event => {
+					const beforeStart = isBefore(event.clndrInterval.end, currentIntervalStart);
+					const afterEnd = isAfter(event.clndrInterval.start, currentIntervalEnd);
+
+					return !(beforeStart || afterEnd);
+				}).map(event => event.originalEvent)
+			);
+		}
+
+		data.events.currentPage = currentPageEvents;
+
+		if (pageSize > 1) {
+			return data;
+		}
+
+		data.events.currentPage = data.events.currentPage[0];
+		data.items = data.items[0];
 
 		return data;
 	}
