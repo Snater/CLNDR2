@@ -57,8 +57,8 @@ describe('DAY view', () => {
 				onNavigate: handleNavigate,
 			},
 			constraints: {
-				startDate: new Date('1992-10-14'),
-				endDate: new Date('1992-10-17'),
+				start: new Date('1992-10-14'),
+				end: new Date('1992-10-17'),
 			},
 			pagination: {day: {size: 1}},
 			startOn: new Date('1992-10-15'),
@@ -88,7 +88,7 @@ describe('DAY view', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneDayTemplate),
 			constraints: {
-				startDate: new Date('1992-10-16'),
+				start: new Date('1992-10-16'),
 			},
 			pagination: {day: {size: 1}},
 			startOn: new Date('1992-10-15'),
@@ -101,7 +101,7 @@ describe('DAY view', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneDayTemplate),
 			constraints: {
-				endDate: new Date('1992-10-14'),
+				end: new Date('1992-10-14'),
 			},
 			pagination: {day: {size: 1}},
 			startOn: new Date('1992-10-15'),

@@ -74,8 +74,8 @@ describe('WEEK view', () => {
 				onNavigate: handleNavigate,
 			},
 			constraints: {
-				startDate: new Date('1992-10-07'),
-				endDate: new Date('1992-10-31'),
+				start: new Date('1992-10-07'),
+				end: new Date('1992-10-31'),
 			},
 			pagination: {week: {size: 1}},
 			startOn: new Date('1992-10-15'),
@@ -106,7 +106,7 @@ describe('WEEK view', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
 			constraints: {
-				startDate: new Date('1992-11-15'),
+				start: new Date('1992-11-15'),
 			},
 			pagination: {week: {size: 1}},
 			startOn: new Date('1992-10-15'),
@@ -119,7 +119,7 @@ describe('WEEK view', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
 			constraints: {
-				endDate: new Date('1992-09-15'),
+				end: new Date('1992-09-15'),
 			},
 			pagination: {week: {size: 1}},
 			startOn: new Date('1992-10-15'),

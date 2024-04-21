@@ -76,11 +76,10 @@ const defaults: InternalOptions = {
 		switch: 'switch',
 	},
 	clickEvents: {},
-	// TODO: Change startDate to `start` and endDate to `end` and update documentation
 	dateParameter: {
 		date: 'date',
-		startDate: 'startDate',
-		endDate: 'endDate',
+		start: 'start',
+		end: 'end',
 	},
 	defaultView: 'month',
 	events: [],
@@ -258,16 +257,16 @@ class Clndr {
 	private initConstraints(constraints: Constraints, interval: Interval) {
 		let adjustedInterval: Interval = {start: interval.start, end: interval.end};
 
-		if (constraints.startDate) {
+		if (constraints.start) {
 			adjustedInterval = this.adapter.initStartConstraint(
-				new Date(constraints.startDate),
+				new Date(constraints.start),
 				adjustedInterval
 			);
 		}
 
-		if (constraints.endDate) {
+		if (constraints.end) {
 			adjustedInterval = this.adapter.initEndConstraint(
-				new Date(constraints.endDate),
+				new Date(constraints.end),
 				adjustedInterval
 			);
 		}
@@ -406,15 +405,15 @@ class Clndr {
 
 		// If there are constraints, the inactive class needs to be added to the days outside of them
 		if (this.options.constraints) {
-			const constraintStart = this.options.constraints.startDate;
-			const constraintEnd = this.options.constraints.endDate;
+			const constraintStart = this.options.constraints.start;
+			const constraintEnd = this.options.constraints.end;
 
-			if (constraintStart && isBefore(itemInterval.end, constraintStart)) {
+			if (constraintStart !== undefined && isBefore(itemInterval.end, constraintStart)) {
 				classes.push(this.options.classes.inactive);
 				properties.isInactive = true;
 			}
 
-			if (constraintEnd && isAfter(itemInterval.start, constraintEnd)) {
+			if (constraintEnd !== undefined && isAfter(itemInterval.start, constraintEnd)) {
 				classes.push(this.options.classes.inactive);
 				properties.isInactive = true;
 			}
@@ -526,11 +525,11 @@ class Clndr {
 			this.constraints[navigationConstraint as NavigationConstraint] = true;
 		}
 
-		const start = this.options.constraints.startDate
-			? new Date(this.options.constraints.startDate)
+		const start = this.options.constraints.start
+			? new Date(this.options.constraints.start)
 			: null;
-		const end = this.options.constraints.endDate
-			? this.adapter.endOfScope(new Date(this.options.constraints.endDate))
+		const end = this.options.constraints.end
+			? this.adapter.endOfScope(new Date(this.options.constraints.end))
 			: null;
 
 		// Month control
@@ -796,34 +795,17 @@ class Clndr {
 		const dateParameter = this.options.dateParameter;
 
 		return events.map(event => {
-
-			if (typeof dateParameter === 'string') {
-				if (!(event[dateParameter] instanceof Date) && typeof event[dateParameter] !== 'string') {
-					console.warn(
-						`event['${dateParameter}'] is required to be a Date or a string, while ${typeof event[dateParameter]} was provided`,
-						event
-					);
-					return;
-				}
-
-				return {
-					clndrInterval: {
-						start: new Date(event[dateParameter] as Date | string),
-						end: endOfDay(new Date(event[dateParameter] as Date | string)),
-					},
-					originalEvent: event,
-				};
-			}
-
-			const start = dateParameter.startDate && event[dateParameter.startDate];
-			const end = dateParameter.endDate && event[dateParameter.endDate];
+			const start = dateParameter.start && event[dateParameter.start];
+			const end = dateParameter.end && event[dateParameter.end];
 
 			if (!end && !start && dateParameter.date) {
-				if (!(event[dateParameter.date] instanceof Date)
+				if (
+					!(event[dateParameter.date] instanceof Date)
 					&& typeof event[dateParameter.date] !== 'string'
+					&& !Number.isInteger(event[dateParameter.date])
 				) {
 					console.warn(
-						`event['${dateParameter.date}'] is required to be a Date or a string, while ${typeof event[dateParameter.date]} was provided`,
+						`event['${dateParameter.date}'] is required to be a Date, a string or an integer, while ${typeof event[dateParameter.date]} was provided`,
 						event
 					);
 					return;
@@ -831,18 +813,18 @@ class Clndr {
 
 				return {
 					clndrInterval: {
-						start: new Date(event[dateParameter.date] as Date | string),
-						end: endOfDay(new Date(event[dateParameter.date] as Date | string)),
+						start: new Date(event[dateParameter.date] as Date | string | number),
+						end: endOfDay(new Date(event[dateParameter.date] as Date | string | number)),
 					},
 					originalEvent: event,
 				};
 			} else if (end || start) {
 				if (
-					start && !(start instanceof Date) && typeof start !== 'string'
-					|| end && !(end instanceof Date) && typeof end !== 'string'
+					start && !(start instanceof Date) && typeof start !== 'string' && !Number.isInteger(start)
+					|| end && !(end instanceof Date) && typeof end !== 'string' && !Number.isInteger(end)
 				) {
 					console.warn(
-						`event['${dateParameter.startDate}'] and event['${dateParameter.endDate}'] are required to be a Date or a string`,
+						`event['${dateParameter.start}'] and event['${dateParameter.end}'] are required to be a Date, a string or an integer`,
 						event
 					);
 					return;
@@ -850,8 +832,8 @@ class Clndr {
 
 				return {
 					clndrInterval: {
-						start: new Date((start || end) as Date | string),
-						end: endOfDay(new Date((end || start) as Date | string)),
+						start: new Date((start || end) as Date | string | number),
+						end: endOfDay(new Date((end || start) as Date | string | number)),
 					},
 					originalEvent: event,
 				};

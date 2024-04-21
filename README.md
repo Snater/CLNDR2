@@ -16,9 +16,6 @@ It is the unofficial successor to awesome [CLNDR](https://github.com/kylestetz/C
   - [Configuration using CSS Classes](#configuration-using-css-classes)
   - [Template Rendering Engine](#template-rendering-engine)
 - [Calendar Events](#calendar-events)
-  - [Single-day Events](#single-day-events)
-  - [Multi-day Events](#multi-day-events)
-  - [Mixing Multi-day and Single-day Events](#mixing-multi-day-and-single-day-events)
 - [All Options](#all-options)
 - [Data provided to the Template](#data-provided-to-the-template)
   - [All Parameters](#all-parameters)
@@ -122,51 +119,7 @@ CLNDR has been tested successfully with [doT.js](http://olado.github.io/doT/), [
 
 ## Calendar Events
 
-You can set up the calendar using either single-day or multi-day events. When configuring multi-day events, single-day events can be specified as well.
-
-### Single-day Events
-
-Single-day events are to be passed to the calendar as an array of objects:
-
-```typescript
-events: ClndrEvent[] = [{
-  date: 'Date object, YYYY-MM-DD or some other ISO Date format provided to the Date constructor',
-  and: 'anything else',
-}]
-```
-
-CLNDR2 looks through the objects in your events array for a `date` field unless you specify otherwise using the `dateParameter` option. In your template, the `items` array will contain these event objects in their entirety.
-
-### Multi-day Events
-
-You may also provide events spanning across multiple days.
-
-```typescript
-const template = ejs.compile(myTemplate);
-
-const lotsOfEvents = [
-  {
-    title: 'Monday to Friday Event',
-    startDate: '2013-11-04',
-    endDate: '2013-11-08',
-  }, {
-    title: 'Another Long Event',
-    startDate: '2013-11-15',
-    endDate: '2013-11-20',
-  },
-];
-
-new Clndr(document.getElementById('calendar'), {
-  render: data => template(data),
-  events: lotsOfEvents,
-});
-```
-
-When looping through days in the example template, the "Monday to Friday Event" will be passed to *every single day* between the start and end date. The keys where the calendar can expect the start and end date of the events to be stored within the event objects can be customised by configuring the `dateParameter` option.
-
-### Mixing Multi-day and Single-day Events
-
-Multi-day and single-day events may be mixed. In the example, the `dateParameter` option is used to specify custom keys, though you may also just use the defaults instead.
+Events passed to the calendar may have either just a single date for specifying single-day events, or a start date and an end date for specifying multi-day events. Both types of events, single-day and multi-day, may also be mixed in the array of events that is passed to the calendar.
 
 ```typescript
 const mixedEvents = [
@@ -175,25 +128,32 @@ const mixedEvents = [
     start: '2015-11-04',
     end: '2015-11-08',
   }, {
-    title: 'Another Long Event',
-    start: '2015-11-15',
-    end: '2015-11-20',
+    title: 'Another multi-day Event',
+    start: new Date('2024-04-10'),
+    end: 1713112793934,
   }, {
-    title: 'Birthday',
-    day: '2015-07-16',
+    title: 'A single-day event',
+    date: '1992-10-15',
+  }, {
+    title: 'Also just a single-day event',
+    start: '2024-01-18',
+    end: '2024-01-18',
+  }, {
+    date: '2000-06-30',
+    custom: 'property',
+    another: {custom: 'property'},
   },
 ];
 
 new Clndr(document.getElementById('calendar'), {
   render: data => template(data),
   events: mixedEvents,
-  dateParameter: {
-    date: 'day',
-    startDate: 'start',
-    endDate: 'end',
-  },
 });
 ```
+
+Generally, the event objects may consist of random properties, yet the calendar needs to find a date, or a start date and an end date in the object. By default, the parameters the calendar recognizes are `date`, `start` and `end`. The name of these parameters may be customized using the `dateParameter` option.
+
+The event objects provided to the calendar are passed in their entirety to the template, filtered by the calendar objects currently rendered. For example, a day calendar item will be populated only with the events that take place on that day. Multi-day events are passed to every single day within their interval.
 
 ## All Options
 
@@ -278,22 +238,24 @@ new Clndr(container, {
     }) {...},
   },
 
-  // Prevent the user from navigating the calendar outside of a certain date range by specifying
-  // (e.g. when configuring a date picker) by specifying either the startDate, endDate, or both in
-  // It's possible to change these dynamically after initialization, see API functions below.
+  // Prevent the user from navigating the calendar outside of a certain date
+  // range (e.g. when configuring a date picker) by specifying either the
+  // start, end, or both. It's possible to change these dynamically after
+  // initialization, see API functions below.
   constraints: {
-    startDate: new Date('2017-12-22'),
-    endDate: new Date('2018-01-09'),
+    start: '2017-12-22',
+    end: '2018-01-09',
   },
 
-  // If you're supplying an events array, dateParameter configures which key(s) to look for dates
-  // in the events provided per the `events` option. You may set this to a plain string when setting
-  // up a calendar with single-day events only.
+  // If you're supplying an events array, `dateParameter` configures which
+  // key(s) to look for dates in the events provided per the `events` option.
+  // You may provide only parts of this object, if you are interested in
+  // exclusively configuring single-day or multi-day events only.
   dateParameter: {
-    // `date` configures the key of single-day events.
+    // `date` configures the key to look for the date on single-day events.
     date: 'date',
-    startDate: 'startDate',
-    endDate: 'endDate',
+    start: 'start',
+    end: 'end',
   },
 
   // An array of day abbreviation labels used in the calendar header. If you provided a date-fns
@@ -551,14 +513,14 @@ To configure the `item`, `empty`, as well as `next`/`previous`/`today` etc. butt
 ## Constraints & Date Pickers
 
 For creating a datepicker or to prevent users from *nexting* all the way to 2034 in the calendar,
-the `constraints` options can be set with `startDate`, `endDate`, or both specified:
+the `constraints` options can be set with `start`, `end`, or both specified:
 
 ```typescript
 new Clndr(container, {
   render: ...,
   constraints: {
-    startDate: new Date('1992-10-15'),
-    endDate: new Date('2024-10-15'),
+    start: '1992-10-15',
+    end: '2024-10-15',
   }
 });
 ```
@@ -571,8 +533,8 @@ The days in the grid that are outside the range will also have the `inactive` cl
 new Clndr(container, {
   render: ...,
   constraints: {
-    startDate: new Date('1992-10-15'),
-    endDate: new Date('2024-10-15'),
+    start: '1992-10-15',
+    end: '2024-10-15',
   },
   clickEvents: {
     onClick: target => {

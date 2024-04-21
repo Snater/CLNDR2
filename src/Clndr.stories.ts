@@ -66,18 +66,18 @@ const meta: Meta<ClndrOptions> = {
 					summary: 'undefined',
 				},
 				type: {
-					summary: '{startDate?: Date, endDate?: Date}',
+					summary: '{start?: Date | string | number, end?: Date | string | number}',
 				},
 			},
 		},
 		dateParameter: {
-			description: 'The key(s) used to extract dates from the `events` array. For a calendar with *single-day* events only, this may be a plain string, i.e. setting this option to `\'dateParam\'`, the events array should be `{dateParam: Date | string, ...}[]`. Provide an object to configure multi-day events, i.e. setting `{startDate: \'start\', endDate: \'end\'}`, the events array should be `{start: Date | string, end: Date | string, ...}[]`. Use the `date` field to also enable single-day events in a multi-day calendar, i.e. `{date: \'day\', startDate: \'start\', endDate: \'end\'}`.',
+			description: 'The key(s) used to extract dates from the `events` array. `date` is used to extract dates of single-day events, while `start` and `end` are used to extract the dates for multi-day events.',
 			table: {
 				defaultValue: {
-					summary: '{date: \'date\', startDate: \'startDate\', endDate: \'endDate\'},',
+					summary: '{date: \'date\', start: \'start\', end: \'end\'},',
 				},
 				type: {
-					summary: 'string | {date?: string, startDate?: string, endDate?: string}',
+					summary: '{date: string, start: never, end: never} | {date?: string, start: string, end: string} | {date: string, start: string, end: string}',
 				},
 			},
 		},
@@ -336,19 +336,19 @@ const meta: Meta<ClndrOptions> = {
 		},
 		dateParameter: {
 			date: 'date',
-			startDate: 'startDate',
-			endDate: 'endDate',
+			start: 'start',
+			end: 'end',
 		},
 		doneRendering: action('doneRendering'),
 		events: [
 			{
 				title: 'Multi-Day Event',
-				startDate: new Date().toISOString().slice(0, 8) + '10',
-				endDate: new Date().toISOString().slice(0, 8) + '14',
+				start: new Date().toISOString().slice(0, 8) + '10',
+				end: new Date().toISOString().slice(0, 8) + '14',
 			}, {
 				title: 'Another Multi-Day Event',
-				startDate: new Date().toISOString().slice(0, 8) + '21',
-				endDate: new Date().toISOString().slice(0, 8) + '23',
+				start: new Date().toISOString().slice(0, 8) + '21',
+				end: new Date().toISOString().slice(0, 8) + '23',
 			},
 		],
 		forceSixRows: false,
@@ -529,13 +529,13 @@ export const MiniCalendarWithClickEvent: Story = {
 		}, {
 			title: 'Trip To A Remote Island',
 			description: 'Don\'t forget to take three things.',
-			startDate: getDateOfCurrentMonth(22),
-			endDate: getDateOfCurrentMonth(28),
+			start: getDateOfCurrentMonth(22),
+			end: getDateOfCurrentMonth(28),
 		}, {
 			title: 'Prepare for exam',
 			description: 'Make sure to buy enough food.',
-			startDate: getDateOfCurrentMonth(11),
-			endDate: getDateOfCurrentMonth(13),
+			start: getDateOfCurrentMonth(11),
+			end: getDateOfCurrentMonth(13),
 		}],
 		trackSelectedDate: true,
 	},
@@ -643,12 +643,12 @@ export const Year: Story = {
 		events: [
 			{
 				title: 'Multi-Day Event',
-				startDate: new Date().getFullYear() + '-01-20',
-				endDate: new Date().getFullYear() + '-01-21',
+				start: new Date().getFullYear() + '-01-20',
+				end: new Date().getFullYear() + '-01-21',
 			}, {
 				title: 'Another Multi-Day Event',
-				startDate: new Date().getFullYear() + '-06-20',
-				endDate: new Date().getFullYear() + '-07-03',
+				start: new Date().getFullYear() + '-06-20',
+				end: new Date().getFullYear() + '-07-03',
 			},
 		],
 		defaultView: 'year',
@@ -772,24 +772,24 @@ export const SwitchBetweenViews: Story = {
 		events: [
 			{
 				title: 'Multi-Day Event',
-				startDate: new Date().getFullYear() + '-01-20',
-				endDate: new Date().getFullYear() + '-01-21',
+				start: new Date().getFullYear() + '-01-20',
+				end: new Date().getFullYear() + '-01-21',
 			}, {
 				title: 'Another Multi-Day Event',
-				startDate: new Date().getFullYear() + '-02-26',
-				endDate: new Date().getFullYear() + '-03-05',
+				start: new Date().getFullYear() + '-02-26',
+				end: new Date().getFullYear() + '-03-05',
 			}, {
 				title: 'And another Multi-Day Event',
-				startDate: new Date().getFullYear() + '-06-20',
-				endDate: new Date().getFullYear() + '-07-03',
+				start: new Date().getFullYear() + '-06-20',
+				end: new Date().getFullYear() + '-07-03',
 			}, {
 				title: 'A looong Multi-Day Event',
-				startDate: new Date().getFullYear() + '-09-01',
-				endDate: new Date().getFullYear() + '-10-03',
+				start: new Date().getFullYear() + '-09-01',
+				end: new Date().getFullYear() + '-10-03',
 			}, {
 				title: 'Event in another year',
-				startDate: new Date().getFullYear() + 2 + '-06-01',
-				endDate: new Date().getFullYear() + 3 + '-05-31',
+				start: new Date().getFullYear() + 2 + '-06-01',
+				end: new Date().getFullYear() + 3 + '-05-31',
 			},
 		],
 		forceSixRows: true,

@@ -87,8 +87,8 @@ describe('YEAR view', () => {
 				onNavigate: handleNavigate,
 			},
 			constraints: {
-				startDate: new Date('1991'),
-				endDate: new Date('1994'),
+				start: new Date('1991'),
+				end: new Date('1994'),
 			},
 			pagination: {year: {size: 1}},
 			startOn: new Date('1992-10-15'),
@@ -118,7 +118,7 @@ describe('YEAR view', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneYearTemplate),
 			constraints: {
-				startDate: new Date('1993'),
+				start: new Date('1993'),
 			},
 			pagination: {year: {size: 1}},
 			startOn: new Date('1992-10-15'),
@@ -131,7 +131,7 @@ describe('YEAR view', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneYearTemplate),
 			constraints: {
-				endDate: new Date('1991'),
+				end: new Date('1991'),
 			},
 			pagination: {year: {size: 1}},
 			startOn: new Date('1992-10-15'),

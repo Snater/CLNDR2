@@ -113,19 +113,15 @@ describe('Setup', () => {
 	test('Basic multi-day events', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			dateParameter: {
-				startDate: 'startDate',
-				endDate: 'endDate',
-			},
 			events: [
 				{
 					title: 'Multi1',
-					startDate: '1992-10-12',
-					endDate: '1992-10-17',
+					start: '1992-10-12',
+					end: '1992-10-17',
 				}, {
 					title: 'Multi2',
-					startDate: '1992-10-24',
-					endDate: '1992-10-27',
+					start: '1992-10-24',
+					end: '1992-10-27',
 				},
 			],
 			startOn: new Date('1992-10'),
@@ -141,17 +137,13 @@ describe('Setup', () => {
 	test('Multi-day events with partial dates', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			dateParameter: {
-				startDate: 'startDate',
-				endDate: 'endDate',
-			},
 			events: [
 				{
 					title: 'Multi1',
-					startDate: '2024-01-17',
+					start: '2024-01-17',
 				}, {
 					title: 'Multi2',
-					endDate: '2024-01-12',
+					end: '2024-01-12',
 				},
 			],
 		});
@@ -166,20 +158,15 @@ describe('Setup', () => {
 	test('Mixing single-day and multi-day events', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			dateParameter: {
-				date: 'date',
-				startDate: 'startDate',
-				endDate: 'endDate',
-			},
 			events: [
 				{
 					title: 'Multi1',
-					startDate: '2024-01-12',
-					endDate: '2024-01-17',
+					start: '2024-01-12',
+					end: '2024-01-17',
 				}, {
 					title: 'Multi2',
-					startDate: '2024-01-24',
-					endDate: '2024-01-27',
+					start: '2024-01-24',
+					end: '2024-01-27',
 				}, {
 					title: 'Single',
 					date: '2024-01-19',
@@ -386,15 +373,26 @@ describe('Setup', () => {
 		expect(screen.getByText('15').parentNode).toHaveClass('event');
 	});
 
-	test('Custom dateParameter', () => {
+	test('Custom single-day dateParameter', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			dateParameter: 'customDateParameter',
+			dateParameter: {date: 'customDateParameter'},
 			events: [{customDateParameter: '1992-10-15'}],
 			startOn: new Date('1992-10'),
 		});
 
 		expect(screen.getByText(15).parentNode).toHaveClass('event');
+	});
+
+	test('Custom multi-day dateParameter', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			dateParameter: {start: 'customStart', end: 'customEnd'},
+			events: [{customStart: '2024-01-18', customEnd: '2024-01-19'}],
+		});
+
+		expect(screen.getByText(17).parentNode).not.toHaveClass('event');
+		expect(screen.getByText(18).parentNode).toHaveClass('event');
 	});
 
 	test('formatWeekDayHeader option', () => {
@@ -619,7 +617,7 @@ describe('Navigation', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			constraints: {
-				startDate: new Date('1992-10-15'),
+				start: new Date('1992-10-15'),
 			},
 			startOn: new Date('1992-10'),
 		});
@@ -646,7 +644,7 @@ describe('Navigation', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			constraints: {
-				endDate: new Date('1992-10-15'),
+				end: new Date('1992-10-15'),
 			},
 			startOn: new Date('1992-10'),
 		});
@@ -1086,14 +1084,10 @@ describe('Events', () => {
 			clickEvents: {
 				onClick: handleClick,
 			},
-			dateParameter: {
-				startDate: 'startDate',
-				endDate: 'endDate',
-			},
 			events: [{
 				title: 'Multi-day event',
-				startDate: '1992-10-12',
-				endDate: '1992-10-17',
+				start: '1992-10-12',
+				end: '1992-10-17',
 			}],
 			startOn: new Date('1992-10'),
 		})
@@ -1105,8 +1099,8 @@ describe('Events', () => {
 			date: new Date('1992-10-15'),
 			events: [{
 				title: 'Multi-day event',
-				startDate: '1992-10-12',
-				endDate: '1992-10-17',
+				start: '1992-10-12',
+				end: '1992-10-17',
 			}],
 			selectedDateChanged: true,
 			isToday: false,
@@ -1187,23 +1181,6 @@ describe('Data manipulations', () => {
 		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 	});
 
-	test('Add a single-day event with multi-day events being configured', () => {
-		clndr = new Clndr(container, {
-			render: provideRender(),
-			dateParameter: {
-				date: 'date',
-				startDate: 'startDate',
-				endDate: 'endDate',
-			},
-		});
-
-		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
-
-		clndr.addEvents([{date: '2024-01-12'}], false);
-
-		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
-	})
-
 	test('Set all events', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
@@ -1222,15 +1199,10 @@ describe('Data manipulations', () => {
 	test('Set all events with multi-day events being configured', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			dateParameter: {
-				date: 'date',
-				startDate: 'startDate',
-				endDate: 'endDate',
-			},
 			events: [{
 				title: 'Multi',
-				startDate: '2024-01-12',
-				endDate: '2024-01-17',
+				start: '2024-01-12',
+				end: '2024-01-17',
 			}],
 		});
 
@@ -1268,26 +1240,22 @@ describe('Custom interval', () => {
 	test('pagination option', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiMonthTemplate),
-			dateParameter: {
-				startDate: 'startDate',
-				endDate: 'endDate',
-			},
 			events: [{
 				title: 'Event in previous month',
-				startDate: '1992-09-24',
-				endDate: '1992-09-27',
+				start: '1992-09-24',
+				end: '1992-09-27',
 			}, {
 				title: 'Event in this month',
-				startDate: '1992-10-24',
-				endDate: '1992-10-27',
+				start: '1992-10-24',
+				end: '1992-10-27',
 			}, {
 				title: 'Event in next month',
-				startDate: '1992-11-24',
-				endDate: '1992-11-27',
+				start: '1992-11-24',
+				end: '1992-11-27',
 			}, {
 				title: 'Event in next month interval',
-				startDate: '1993-01-24',
-				endDate: '1993-01-27',
+				start: '1993-01-24',
+				end: '1993-01-27',
 			}],
 			pagination: {month: {size: 3}},
 			startOn: new Date('1992-10'),
@@ -1416,8 +1384,8 @@ describe('Multiple scopes', () => {
 				`),
 			},
 			constraints: {
-				startDate: new Date('2024-01-18'),
-				endDate: new Date('2024-02-18'),
+				start: new Date('2024-01-18'),
+				end: new Date('2024-02-18'),
 			},
 		});
 
@@ -1445,8 +1413,8 @@ describe('Multiple scopes', () => {
 				year: undefined,
 			},
 			constraints: {
-				startDate: new Date('2024-01-18'),
-				endDate: new Date('2024-02-18'),
+				start: new Date('2024-01-18'),
+				end: new Date('2024-02-18'),
 			},
 		});
 
@@ -1598,8 +1566,8 @@ describe('Constraints', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			constraints: {
-				endDate: new Date('1992-11-15'),
-				startDate: new Date('1992-10-15'),
+				start: new Date('1992-10-15'),
+				end: new Date('1992-11-15'),
 			},
 		});
 
@@ -1618,8 +1586,8 @@ describe('Constraints', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
 			constraints: {
-				endDate: new Date('2100-01-06'),
-				startDate: new Date('2100-01-01'),
+				start: new Date('2100-01-01'),
+				end: new Date('2100-01-06'),
 			},
 			pagination: {day: {size: 7, step: 7}},
 		});
@@ -1639,8 +1607,8 @@ describe('Constraints', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
 			constraints: {
-				startDate: new Date('1992-09-01'),
-				endDate: new Date('1992-09-15'),
+				start: new Date('1992-09-01'),
+				end: new Date('1992-09-15'),
 			},
 			pagination: {day: {size: 7, step: 7}},
 			startOn: new Date('1992-10-15'),
@@ -1654,8 +1622,8 @@ describe('Constraints', () => {
 			render: provideRender(multiMonthTemplate),
 			pagination: {month: {size: 3, step: 7}},
 			constraints: {
-				startDate: new Date('1993-11-30'),
-				endDate: new Date('1992-11-15'),
+				start: new Date('1993-11-30'),
+				end: new Date('1992-11-15'),
 			},
 			startOn: new Date('1992-10-15'),
 		});
@@ -1682,8 +1650,8 @@ describe('Handling errors', () => {
 			render: provideRender(),
 			dateParameter: {
 				date: undefined,
-				startDate: 'startDate',
-				endDate: 'endDate',
+				start: 'start',
+				end: 'end',
 			},
 			events: [{title: 'Multi'}],
 		});
@@ -1734,47 +1702,41 @@ describe('Handling errors', () => {
 		});
 	});
 
-	test('Specifying wrong dateParameter option', () => {
-		const mockWarn = jest.fn();
-		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
-
-		clndr = new Clndr(container, {
-			render: provideRender(),
-			dateParameter: 'wrong',
-			events: [{date: '2024-02-19'}],
-		});
-
-		expect(mockWarn).toHaveBeenCalledTimes(1);
-	});
-
-	test('Specifying multi-day events without dateParameter option', () => {
-		const mockWarn = jest.fn();
-		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
-
-		clndr = new Clndr(container, {
-			render: provideRender(),
-			dateParameter: 'wrong',
-			events: [{date: '2024-02-19'}],
-		});
-
-		expect(mockWarn).toHaveBeenCalledTimes(1);
-	});
-
-	test('Invalid date parameter on multi-day event', () => {
+	test('Invalid start date parameter on multi-day event', () => {
 		const mockWarn = jest.fn();
 		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			dateParameter: {
-				date: 'wrong',
-				startDate: 'startDate',
-				endDate: 'endDate',
+				start: 'start',
+				end: 'end',
 			},
 			events: [{
 				title: 'Multi1',
-				startDate: {year: 1992},
-				endDate: '1992-10-17',
+				start: {year: 1992},
+				end: '1992-10-17',
+			}],
+			startOn: new Date('1992-10'),
+		});
+
+		expect(mockWarn).toHaveBeenCalledTimes(1);
+	});
+
+	test('Invalid end date parameter on multi-day event', () => {
+		const mockWarn = jest.fn();
+		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
+
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			dateParameter: {
+				start: 'start',
+				end: 'end',
+			},
+			events: [{
+				title: 'Multi1',
+				start: new Date('1991'),
+				end: {year: 1992},
 			}],
 			startOn: new Date('1992-10'),
 		});
@@ -1788,7 +1750,6 @@ describe('Handling errors', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			// @ts-expect-error Intentionally provide invalid dateParameter configuration
 			dateParameter: {
 				date: 'wrong',
 			},

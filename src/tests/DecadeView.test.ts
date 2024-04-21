@@ -85,8 +85,8 @@ describe('DECADE view', () => {
 				onNavigate: handleNavigate,
 			},
 			constraints: {
-				startDate: new Date('1981'),
-				endDate: new Date('2014'),
+				start: new Date('1981'),
+				end: new Date('2014'),
 			},
 			pagination: {decade: {size: 1}},
 			startOn: new Date('1992-10-15'),
@@ -117,7 +117,7 @@ describe('DECADE view', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneDecadeTemplate),
 			constraints: {
-				startDate: new Date('2003'),
+				start: new Date('2003'),
 			},
 			pagination: {decade: {size: 1}},
 			startOn: new Date('1992-10-15'),
@@ -130,7 +130,7 @@ describe('DECADE view', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(oneDecadeTemplate),
 			constraints: {
-				endDate: new Date('1981'),
+				end: new Date('1981'),
 			},
 			pagination: {decade: {size: 1}},
 			startOn: new Date('1992-10-15'),

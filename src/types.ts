@@ -56,15 +56,16 @@ export type InternalClndrEvent = {
 export type WeekOffset = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
 export type Constraints = {
-	startDate?: Date
-	endDate?: Date
+	start?: Date | string | number
+	end?: Date | string | number
 }
 
 export type DaysOfTheWeek = [string, string, string, string, string, string, string]
 
-type DateParameterDefinition = string
-	| {date: string, startDate: never, endDate: never}
-	| {date?: string, startDate: string, endDate: string}
+type DateParameterDefinition
+	= {date: string, start?: never, end?: never}
+	| {date?: string, start: string, end: string}
+	| {date: string, start: string, end: string}
 
 export type Pagination = {
 	size: number
