@@ -230,6 +230,14 @@ describe('DECADE view', () => {
 		expect(screen.getByText('1990 to 1999')).toBeInTheDocument();
 		expect(screen.getByText('2000 to 2009')).toBeInTheDocument();
 		expect(container.querySelectorAll('.item').length).toBe(20);
+
+		clndr.forward();
+		expect(screen.getByText('2010 to 2019')).toBeInTheDocument();
+		expect(screen.getByText('2020 to 2029')).toBeInTheDocument();
+
+		clndr.back();
+		expect(screen.getByText('1990 to 1999')).toBeInTheDocument();
+		expect(screen.getByText('2000 to 2009')).toBeInTheDocument();
 	});
 
 	test('Click on a year while the identifier class is unexpectedly not assigned', async () => {

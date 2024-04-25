@@ -16,6 +16,7 @@ import {
 	setDay,
 	subMonths,
 	subYears,
+	startOfDay,
 } from 'date-fns';
 import {Adapter, AdapterOptions} from './Adapter';
 import DayAdapter from './DayAdapter';
@@ -184,13 +185,6 @@ class Clndr {
 		this.element = element;
 
 		this.options = Clndr.mergeOptions<InternalOptions, ClndrOptions>(defaults, options);
-
-		if (this.options.weekOffset > 6 || this.options.weekOffset < 0) {
-			console.warn(
-				`An invalid offset ${this.options.weekOffset} was provided (must be 0 - 6); using 0 instead`
-			);
-			this.options.weekOffset = 0;
-		}
 
 		this.availableScopes = typeof this.options.render === 'function'
 			? Object.keys(this.options.pagination) as Scope[]
@@ -551,7 +545,7 @@ class Clndr {
 
 		// Year control
 		// Room to go back?
-		if (start && !isBefore(start, subYears(this.interval.start, 1))) {
+		if (start && isAfter(startOfDay(start), startOfDay(subYears(this.interval.start, 1)))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.previousYearButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -559,7 +553,7 @@ class Clndr {
 		}
 
 		// Room to for forward?
-		if (end && !isAfter(end, addYears(this.interval.end, 1))) {
+		if (end && isBefore(startOfDay(end), startOfDay(addYears(this.interval.end, 1)))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.nextYearButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -1000,7 +994,7 @@ class Clndr {
 
 		this.interval = this.adapter.setDay(new Date(), this.options.startOn);
 
-		// No need to re-render if the month was not changed
+		// No need to re-render if the page was not changed
 		if (
 			!isSameMonth(this.interval.start, orig.start)
 			|| !isSameMonth(this.interval.end, orig.end)

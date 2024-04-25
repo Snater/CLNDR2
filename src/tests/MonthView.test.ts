@@ -315,6 +315,23 @@ describe('MONTH view', () => {
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
 	});
 
+	test('Track selected date while inactive days should be ignored in selection and adjacent month\'s days change the month', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			adjacentDaysChangeMonth: true,
+			ignoreInactiveDaysInSelection: true,
+			trackSelectedDate: true,
+		});
+
+		expect(container.querySelector('.selected')).toBeNull();
+		await user.click(screen.getByText('18'));
+		expect(screen.getByText('18')).toHaveClass('selected');
+		await user.click(screen.getByText('16'));
+		expect(screen.getByText('16')).toHaveClass('selected');
+		await user.click(screen.getByText('next'));
+		expect(screen.getByText('18')).not.toHaveClass('selected');
+	});
+
 	test('Click on empty calendar box', async () => {
 		const handleClick = jest.fn();
 

@@ -231,6 +231,14 @@ describe('YEAR view', () => {
 		expect(screen.getByText('1992')).toBeInTheDocument();
 		expect(screen.getByText('1993')).toBeInTheDocument();
 		expect(container.querySelectorAll('.item').length).toBe(24);
+
+		clndr.forward();
+		expect(screen.getByText('1994')).toBeInTheDocument();
+		expect(screen.getByText('1995')).toBeInTheDocument();
+
+		clndr.back();
+		expect(screen.getByText('1992')).toBeInTheDocument();
+		expect(screen.getByText('1993')).toBeInTheDocument();
 	});
 
 	test('Click on a month while the identifier class is unexpectedly not assigned', async () => {

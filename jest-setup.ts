@@ -3,40 +3,27 @@ import ejs from 'ejs';
 import userEvent from '@testing-library/user-event';
 import type {ClndrTemplateData} from './src';
 
-const defaultTemplate = `
-	<div class="clndr-controls">
-		<div class="clndr-control-button">
-			<span class="clndr-previous-button" role="button">previous</span>
-		</div>
-		<div class="month"><%= format(month, 'MMMM') %> <%= interval.start.getFullYear() %></div>
-		<div class="clndr-control-button">
-			<span class="clndr-next-button" role="button">next</span>
-		</div>
+globalThis.defaultTemplate = `
+	<div>
+		<div class="clndr-previous-button">previous</div>
+		<div><%= format(interval.start, 'MM/dd') %> - <%= format(interval.end, 'MM/dd') %></div>
+		<div><%= format(month, 'MMMM') %> <%= interval.start.getFullYear() %></div>
+		<div class="clndr-next-button">next</div>
 	</div>
-	<table class="clndr-table">
-		<thead>
-			<tr class="header-days">
-				<% for(let i = 0; i < daysOfTheWeek.length; i++) { %>
-					<td class="header-day"><%= daysOfTheWeek[i] %></td>
-				<% } %>
-			</tr>
-		</thead>
-		<tbody>
-			<% for(let i = 0; i < numberOfRows; i++){ %>
-				<tr>
-					<% for(let j = 0; j < 7; j++){ %>
-						<% const d = j + i * 7; %>
-						<td class="<%= items[d].classes %>">
-							<div class="day-contents"><%= items[d].day %></div>
-						</td>
-					<% } %>
-				</tr>
-			<% } %>
-		</tbody>
-	</table>`;
+	<div>
+		<% daysOfTheWeek.forEach(dayOfTheWeek => { %>
+			<div class="header-day"><%= dayOfTheWeek %></div>
+		<% }) %>
+	</div>
+	<div>
+		<% items.forEach(day => { %>
+			<div class="<%= day.classes %>"><%= day.day %></div>
+		<% }) %>
+	</div>
+	<div class="clndr-today-button">Today</div>`;
 
 globalThis.provideRender = (template?: string) => (data: ClndrTemplateData) => {
-	return ejs.render(template || defaultTemplate, data);
+	return ejs.render(template || globalThis.defaultTemplate, data);
 }
 
 globalThis.clndr = null;

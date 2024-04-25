@@ -48,30 +48,33 @@ export default class YearAdapter extends Adapter {
 	}
 
 	initStartConstraint(constraintStart: Date, interval: Interval): Interval {
-		const adjustedInterval: Interval = {start: interval.start, end: interval.end};
+		const adjustedInterval: Interval = {
+			start: startOfYear(interval.start),
+			end: endOfYear(interval.end),
+		};
 		const start = startOfYear(constraintStart);
 
 		if (isBefore(adjustedInterval.start, start)) {
 			adjustedInterval.start = start;
 		}
 
-		if (isBefore(adjustedInterval.end, start)) {
-			adjustedInterval.end = endOfYear(constraintStart);
-		}
+		adjustedInterval.end = endOfYear(
+			addYears(adjustedInterval.start, this.options.pageSize - 1)
+		);
 
 		return adjustedInterval;
 	}
 
 	initEndConstraint(constraintEnd: Date, interval: Interval): Interval {
-		const adjustedInterval: Interval = {start: interval.start, end: interval.end};
+		const adjustedInterval: Interval = {
+			start: startOfYear(interval.start),
+			end: endOfYear(interval.end),
+		};
 		const end = endOfYear(constraintEnd);
 
-		if (isAfter(adjustedInterval.end, end)) {
-			adjustedInterval.end = end;
-		}
-
 		if (isAfter(adjustedInterval.start, end)) {
-			adjustedInterval.start = startOfYear(constraintEnd);
+			adjustedInterval.start = startOfYear(subYears(end, this.options.pageSize - 1));
+			adjustedInterval.end = end;
 		}
 
 		return adjustedInterval;

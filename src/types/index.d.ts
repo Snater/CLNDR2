@@ -8,5 +8,6 @@ declare global {
 	var user: UserEvent;
 	var container: HTMLElement;
 	var clndr: Clndr | null;
+	var defaultTemplate: string;
 	var provideRender: (template?: string) => (data: ClndrTemplateData) => string
 }

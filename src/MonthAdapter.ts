@@ -56,28 +56,36 @@ export default class MonthAdapter extends DayBasedAdapter {
 	}
 
 	initStartConstraint(constraintStart: Date, interval: Interval): Interval {
-		const adjustedInterval: Interval = {start: interval.start, end: interval.end};
+		const adjustedInterval: Interval = {
+			start: startOfMonth(interval.start),
+			end: endOfMonth(interval.end),
+		};
 
 		if (isBefore(adjustedInterval.start, subMonths(constraintStart, 1))) {
 			adjustedInterval.start = startOfMonth(constraintStart);
 		}
 
-		if (isBefore(adjustedInterval.end, subMonths(constraintStart, 1))) {
-			adjustedInterval.end = endOfMonth(constraintStart);
-		}
+		adjustedInterval.end = endOfMonth(
+			addMonths(adjustedInterval.start, this.options.pageSize - 1)
+		);
 
 		return adjustedInterval;
 	}
 
 	initEndConstraint(constraintEnd: Date, interval: Interval): Interval {
-		const adjustedInterval: Interval = {start: interval.start, end: interval.end};
+		const adjustedInterval: Interval = {
+			start: startOfMonth(interval.start),
+			end: endOfMonth(interval.end),
+		};
 
-		if (isAfter(adjustedInterval.end, addMonths(constraintEnd, 1))) {
+		if (isAfter(adjustedInterval.start, constraintEnd)) {
+			adjustedInterval.start = startOfMonth(
+				subMonths(
+					endOfMonth(constraintEnd),
+					this.options.pageSize - 1
+				)
+			);
 			adjustedInterval.end = endOfMonth(constraintEnd);
-		}
-
-		if (isAfter(adjustedInterval.start, addMonths(constraintEnd, 1))) {
-			adjustedInterval.start = startOfMonth(constraintEnd);
 		}
 
 		return adjustedInterval;
