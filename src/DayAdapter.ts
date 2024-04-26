@@ -1,8 +1,7 @@
 import {
 	addDays,
 	differenceInDays,
-	eachMonthOfInterval,
-	eachYearOfInterval,
+	eachDayOfInterval,
 	endOfDay,
 	isAfter,
 	isBefore,
@@ -111,8 +110,7 @@ export default class DayAdapter extends DayBasedAdapter {
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
 	): ClndrTemplateData {
 
-		data.months = eachMonthOfInterval(data.interval);
-		data.years = eachYearOfInterval(data.interval);
+		data.pages = eachDayOfInterval(data.interval);
 		data.items = createDaysObject.apply(this, [data.interval]);
 		data.numberOfRows = Math.ceil(data.items.length / 7);
 		data.events.currentPage = events[1].map(event => event.originalEvent);

@@ -375,67 +375,23 @@ While the properties of the data being passed to the template will always be def
 // Start and end of the current page's interval.
 interval: {start: Date, end: Date}
 
-// The `items` array, documented in more detail below; when `pagination.scope`
-// is set to `month` or `year`, while `pagination.size` is greater than 1, this
-// is a multi-dimensional array, one array of `ClndrItem` objects per
-// month or year according to `pagination.scope`.
+// When the calendar is configured to display multiple pages at a time per a
+// view's `pagination` option, this will contain a Date object for each page
+// referring to the start of each page's interval. For rendering the items of
+// each page, the `pages` can be looped over and the corresponding items be
+// rendered like this:
+// ```
+// pages.forEach((page, pageIndex) => {
+//   ... items[pageIndex].forEach(item => ...) ...
+// )}
+// ```
+pages: Date[]
+
+// The `items` array, documented in more detail below; when the calendar is
+// configured to display multiple pages at a time per a view's `pagination`
+// options, `items` will be a multi-dimensional array, one array of
+// `ClndrItem` objects per page.
 items: ClndrItem[] | ClndrItem[][]
-
-// An array of Date objects representing the weeks of the current page,
-// particularly useful if `week` `pagination` is configured and its `size` is
-// greater than 1. In that case, use this property to loop over the weeks and
-// render the days per week, i.e.
-// ```
-// weeks.forEach((week, monthIndex) => {
-//   ... items[weekIndex].forEach(day => ...) ...
-// )}
-// ```
-weeks: Date[]
-
-// A Date object representing the current month. This is an convenience
-// parameter euqal to interval.start.
-month: Date
-
-// An array of Date objects representing the months of the current page,
-// particularly useful if `month` `pagination` is configured and its `size` is
-// greater than 1. In that case, use this property to loop over the months and
-// render the days per months, i.e.
-// ```
-// months.forEach((month, monthIndex) => {
-//   ... items[monthIndex].forEach(day => ...) ...
-// )}
-// ```
-months: Date[]
-
-// A Date object representing the current year. This is an convenience
-// parameter euqal to interval.start.
-year: Date
-
-// An array of Date objects representing the years of the current page,
-// particularly useful if `year` `pagination` is configured and its `size` is
-// greater than 1. In that case, use this property to loop over the years and
-// render the months per year, i.e.
-// ```
-// years.forEach((year, yearIndex) => {
-//   ... items[yearIndex].forEach(month => ...) ...
-// )}
-// ```
-years: Date[]
-
-// A Date object representing the current decade. This is an convenience
-// parameter euqal to interval.start.
-decade: Date
-
-// An array of Date objects representing the decades of the current page,
-// particularly useful if `decade` `pagination` is configured and its `size` is
-// greater than 1. In that case, use this property to loop over the decades and
-// render the years per decade, i.e.
-// ```
-// decades.forEach((decade, decadeIndex) => {
-//   ... items[decadeIndex].forEach(year => ...) ...
-// )}
-// ```
-decades: Date[]
 
 // The events of the current page as well as the events of the previous and
 // next scope. `events.currentPage` is a multi-dimensional array if

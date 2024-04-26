@@ -2,8 +2,6 @@ import {
 	addDays,
 	addWeeks,
 	differenceInDays,
-	eachMonthOfInterval,
-	eachYearOfInterval,
 	endOfDay,
 	endOfWeek,
 	isAfter,
@@ -178,15 +176,13 @@ export default class WeekAdapter extends DayBasedAdapter {
 	): ClndrTemplateData {
 
 		data.items = [] as ClndrItem[][];
-		data.months = eachMonthOfInterval(data.interval);
-		data.years = eachYearOfInterval(data.interval);
 		const currentPageEvents: ClndrEvent[][] = [];
 
 		for (let i = 0; i < pageSize; i++) {
 			const currentIntervalStart = addWeeks(data.interval.start, i);
 			const currentIntervalEnd = endOfWeek(currentIntervalStart);
 
-			data.weeks.push(currentIntervalStart);
+			data.pages.push(currentIntervalStart);
 
 			data.items.push(
 				createDaysObject.apply(this, [{start: currentIntervalStart, end: currentIntervalEnd}])

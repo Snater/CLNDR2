@@ -6,7 +6,7 @@ import {screen} from '@testing-library/dom';
 describe('MONTH view', () => {
 
 	const oneMonthTemplate = `
-		<div><%= format(month, 'MMMM yyyy') %></div>
+		<div><%= format(interval.start, 'MMMM yyyy') %></div>
 		<div class="clndr-previous-button">previous</div>
 		<div class="clndr-next-button">next</div>
 		<div class="clndr-today-button">Current month</div>
@@ -17,9 +17,9 @@ describe('MONTH view', () => {
 
 	const multiMonthTemplate = `
 		<div>
-			<% months.forEach((month, monthIndex) => { %>
+			<% pages.forEach((month, pageIndex) => { %>
 				<div><%= format(month, 'MMMM yyyy') %></div>
-				<% items[monthIndex].forEach(day => { %>
+				<% items[pageIndex].forEach(day => { %>
 					<div class="<%= day.classes %>"><%= format(day.date, 'd') %></div>
 				<% }) %>
 			<% }) %>

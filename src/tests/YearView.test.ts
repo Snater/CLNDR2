@@ -6,7 +6,7 @@ import {screen} from '@testing-library/dom';
 describe('YEAR view', () => {
 
 	const oneYearTemplate = `
-		<div><%= year.getFullYear() %></div>
+		<div><%= interval.start.getFullYear() %></div>
 		<div class="clndr-previous-button">previous</div>
 		<div class="clndr-next-button">next</div>
 		<div class="clndr-today-button">Current year</div>
@@ -17,9 +17,9 @@ describe('YEAR view', () => {
 
 	const multiYearTemplate = `
 		<div>
-			<% years.forEach((year, yearIndex) => { %>
+			<% pages.forEach((year, pageIndex) => { %>
 				<div><%= year.getFullYear() %></div>
-				<% items[yearIndex].forEach(month => { %>
+				<% items[pageIndex].forEach(month => { %>
 					<div class="<%= month.classes %>"><%= format(month.date, 'MMMM') %></div>
 				<% }) %>
 			<% }) %>

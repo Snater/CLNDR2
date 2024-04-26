@@ -1,6 +1,5 @@
 import {
 	addYears,
-	eachMonthOfInterval,
 	eachYearOfInterval,
 	endOfDecade,
 	endOfYear,
@@ -148,15 +147,12 @@ export default class DecadeAdapter extends Adapter {
 
 		data.items = [] as ClndrItem[][];
 		const currentPageEvents: ClndrEvent[][] = [];
-		data.months = eachMonthOfInterval(data.interval);
-		data.years = eachYearOfInterval(data.interval);
-		data.decades = [];
 
 		for (let i = 0; i < pageSize; i++) {
 			const currentIntervalStart = addYears(data.interval.start, i * 10);
 			const currentIntervalEnd = endOfDecade(currentIntervalStart);
 
-			data.decades.push(currentIntervalStart);
+			data.pages.push(currentIntervalStart);
 
 			data.items.push(
 				createDaysObject.apply(this, [{start: currentIntervalStart, end: currentIntervalEnd}])

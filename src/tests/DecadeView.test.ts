@@ -6,7 +6,7 @@ import {screen} from '@testing-library/dom';
 describe('DECADE view', () => {
 
 	const oneDecadeTemplate = `
-		<div><%= years[0].getFullYear() %> to <%= years[9].getFullYear() %></div>
+		<div><%= items[0].date.getFullYear() %> to <%= items[9].date.getFullYear() %></div>
 		<div class="clndr-previous-button">previous</div>
 		<div class="clndr-next-button">next</div>
 		<div class="clndr-today-button">Current decade</div>
@@ -17,9 +17,9 @@ describe('DECADE view', () => {
 
 	const multiDecadeTemplate = `
 		<div>
-			<% decades.forEach((decade, decadeIndex) => { %>
+			<% pages.forEach((decade, pageIndex) => { %>
 				<div><%= decade.getFullYear() %> to <%= decade.getFullYear() + 9 %></div>
-				<% items[decadeIndex].forEach(year => { %>
+				<% items[pageIndex].forEach(year => { %>
 					<div class="<%= year.classes %>"><%= format(year.date, 'yyyy') %></div>
 				<% }) %>
 			<% }) %>

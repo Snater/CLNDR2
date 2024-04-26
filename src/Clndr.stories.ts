@@ -303,7 +303,7 @@ const meta: Meta<ClndrOptions> = {
 				<div class="clndr-control-button">
 					<span class="clndr-previous-button" role="button">previous</span>
 				</div>
-				<div class="month"><%= format(month, 'MMMM') %> <%= interval.start.getFullYear() %></div>
+				<div class="month"><%= format(interval.start, 'MMMM') %> <%= interval.start.getFullYear() %></div>
 				<div class="clndr-control-button">
 					<span class="clndr-next-button" role="button">next</span>
 				</div>
@@ -405,7 +405,7 @@ export const FullCalendar: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lt;</div>
-				<div class="current-month"><%= format(month, 'MMMM') %> <%= interval.start.getFullYear() %></div>
+				<div class="current-month"><%= format(interval.start, 'MMMM') %> <%= interval.start.getFullYear() %></div>
 				<div class="clndr-next-button" role="button">&gt;</div>
 			</div>
 			<div class="clndr-content">
@@ -413,12 +413,12 @@ export const FullCalendar: Story = {
 					<div class="days-of-the-week">
 						<% daysOfTheWeek.forEach(day => { %>
 							<div class="header-day"><%= day %></div>
-						<% }); %>
+						<% }) %>
 					</div>
 					<div class="days">
 						<% items.forEach(day => { %>
 							<div class="<%= day.classes %>" id="<%= day.id %>"><span class="day-number"><%= day.day %></span></div>
-						<% }); %>
+						<% }) %>
 					</div>
 				</div>
 				<div class="event-listing">
@@ -428,7 +428,7 @@ export const FullCalendar: Story = {
 							<div class="event-item-name"><%= event.title %></div>
 							<div class="event-item-location"><%= event.location %></div>
 						</div>
-					<% }); %>
+					<% }) %>
 				</div>
 			</div>
 		`, data),
@@ -464,17 +464,17 @@ export const MiniCalendarWithClickEvent: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lsaquo;</div>
-				<div class="month"><%= format(month, 'MMMM') %></div>
+				<div class="month"><%= format(interval.start, 'MMMM') %></div>
 				<div class="clndr-next-button" role="button">&rsaquo;</div>
 			</div>
 			<div class="clndr-grid">
 				<div class="days-of-the-week">
-					<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }); %>
+					<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }) %>
 				</div>
 				<div class="days">
 					<% items.forEach(day => { %>
 						<div class="<%= day.classes %>" role="button"><%= day.day %></div>
-					<% }); %>
+					<% }) %>
 				</div>
 			</div>
 		`, data),
@@ -568,12 +568,12 @@ export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 				<div class="days-of-the-week">
 					<% daysOfTheWeek.forEach(day => { %>
 						<div class="header-day"><%= day %></div>
-					<% }); %>
+					<% }) %>
 				</div>
 				<div class="days">
 					<% items.forEach(day => { %>
 						<div class="<%= day.classes %>"><%= day.day %></div>
-					<% }); %>
+					<% }) %>
 				</div>
 			</div>
 			<div class="clndr-today-button" role="button">Today</div>
@@ -596,19 +596,19 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 				<div class="clndr-previous-button" role="button">&lsaquo;</div>
 				<div class="clndr-next-button" role="button">&rsaquo;</div>
 			</div>
-			<% months.forEach((month, monthIndex) => { %>
+			<% pages.forEach((month, pageIndex) => { %>
 				<div class="cal">
 					<div class="month"><%= format(month, 'MMMM') %></div>
 					<div class="clndr-grid">
 						<div class="days-of-the-week">
 							<% daysOfTheWeek.forEach(day => { %>
 								<div class="header-day"><%= day %></div>
-							<% }); %>
+							<% }) %>
 						</div>
 						<div class="days">
-							<% items[monthIndex].forEach(day => { %>
+							<% items[pageIndex].forEach(day => { %>
 									<div class="<%= day.classes %>"><%= day.day %></div>
-							<% }); %>
+							<% }) %>
 						</div>
 					</div>
 				</div>
@@ -630,7 +630,7 @@ export const Year: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lsaquo;</div>
-				<div class="year"><%= year.getFullYear() %></div>
+				<div class="year"><%= interval.start.getFullYear() %></div>
 				<div class="clndr-next-button" role="button">&rsaquo;</div>
 			</div>
 			<div class="clndr-grid">
@@ -669,13 +669,13 @@ export const SwitchBetweenViews: Story = {
 				<div class="decade-template">
 					<div class="clndr-controls">
 						<div class="clndr-previous-button" role="button">&lsaquo;</div>
-						<div class="title"><%= years[0].getFullYear() %> to <%= years[9].getFullYear() %></div>
+						<div class="title"><%= items[0].date.getFullYear() %> to <%= items[9].date.getFullYear() %></div>
 						<div class="clndr-next-button" role="button">&rsaquo;</div>
 					</div>
 					<div class="clndr-grid">
 						<% items.forEach(year => { %>
 							<div class="<%= year.classes %>" role="button"><%= format(year.date, 'yyyy') %></div>
-						<% }); %>
+						<% }) %>
 					</div>
 					<div class="clndr-today-button footer-button" role="button">Go to current decade</div>
 				</div>
@@ -684,13 +684,13 @@ export const SwitchBetweenViews: Story = {
 				<div class="year-template">
 					<div class="clndr-controls">
 						<div class="clndr-previous-button" role="button">&lsaquo;</div>
-						<div class="title"><%= year.getFullYear() %></div>
+						<div class="title"><%= interval.start.getFullYear() %></div>
 						<div class="clndr-next-button" role="button">&rsaquo;</div>
 					</div>
 					<div class="clndr-grid">
 						<% items.forEach(month => { %>
 							<div class="<%= month.classes %>" role="button"><%= format(month.date, 'MMM') %></div>
-						<% }); %>
+						<% }) %>
 					</div>
 					<div class="clndr-today-button footer-button" role="button">Go to current year</div>
 					<div class="clndr-switch-decade-button footer-button" role="button">Switch to decade view</div>
@@ -700,17 +700,17 @@ export const SwitchBetweenViews: Story = {
 				<div class="month-template">
 					<div class="clndr-controls">
 						<div class="clndr-previous-button" role="button">&lsaquo;</div>
-						<div class="title"><%= format(month, 'MMMM yyyy') %></div>
+						<div class="title"><%= format(interval.start, 'MMMM yyyy') %></div>
 						<div class="clndr-next-button" role="button">&rsaquo;</div>
 					</div>
 					<div class="clndr-grid">
 						<div class="days-of-the-week grid-template">
-							<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }); %>
+							<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }) %>
 						</div>
 						<div class="days grid-template">
 							<% items.forEach(day => { %>
 								<div class="<%= day.classes %>" role="button"><%= day.day %></div>
-							<% }); %>
+							<% }) %>
 						</div>
 					</div>
 					<div class="clndr-today-button footer-button" role="button">Go to current month</div>
@@ -728,12 +728,12 @@ export const SwitchBetweenViews: Story = {
 					<div class="clndr-grid">
 						<div class="week">
 							<div class="days-of-the-week grid-template">
-								<% items.forEach(day => { %><div class="header-day"><%= format(day.date, 'EEEE') %></div><% }); %>
+								<% items.forEach(day => { %><div class="header-day"><%= format(day.date, 'EEEE') %></div><% }) %>
 							</div>
 							<div class="days grid-template">
 								<% items.forEach(day => { %>
 									<div class="<%= day.classes %>" role="button"><%= format(day.date, 'LLLL do') %></div>
-								<% }); %>
+								<% }) %>
 							</div>
 						</div>
 					</div>

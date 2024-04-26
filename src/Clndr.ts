@@ -465,14 +465,8 @@ class Clndr {
 
 	private aggregateTemplateData() {
 		const data: ClndrTemplateData = {
+			pages: [],
 			items: [],
-			weeks: [],
-			month: this.interval.start,
-			months: [],
-			year: this.interval.start,
-			years: [],
-			decade: this.interval.start,
-			decades: [],
 			events: {
 				currentPage: [],
 				previousScope: [],

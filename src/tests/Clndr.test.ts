@@ -262,7 +262,7 @@ describe('Navigation', () => {
 			<div class="clndr-previous-button">previous</div>
 			<div class="clndr-next-button">next</div>
 			<div class="clndr-next-year-button">next year</div>
-			<div><%= format(month, 'MMMM yyyy') %></div>
+			<div><%= format(interval.start, 'MMMM yyyy') %></div>
 		`;
 
 		clndr = new Clndr(container, {
@@ -698,28 +698,28 @@ describe('Multiple scopes', () => {
 			render: {
 				day: provideRender(`
 					<div class="day">Day <%= format(items[0].date, 'D', {useAdditionalDayOfYearTokens: true}) %> in <%= format(items[0].date, 'yyyy') %></div>
-					<div class="clndr-switch-week-button" role="button">Switch to week view</div>
+					<div class="clndr-switch-week-button">Switch to week view</div>
 				`),
 				week: provideRender(`
 					<div class="week"><%= format(items[0].date, 'LL-dd') %> to <%= format(items[items.length -1].date, 'LL-dd') %></div>
-					<div class="clndr-switch-month-button" role="button">Switch to month view</div>
+					<div class="clndr-switch-month-button">Switch to month view</div>
 				`),
 				month: provideRender(`
-					<div class="month"><%= format(month, 'MMMM yyyy') %></div>
-					<div class="clndr-switch-year-button" role="button">Switch to year view</div>
+					<div class="month"><%= format(interval.start, 'MMMM yyyy') %></div>
+					<div class="clndr-switch-year-button">Switch to year view</div>
 				`),
 				year: provideRender(`
 					<div class="months">
 						<% items.forEach((month, monthIndex) => { %>
-							<div class="<%= month.classes %>"><%= format(months[monthIndex], 'MMMM yyyy') %></div>
+							<div class="<%= month.classes %>"><%= format(month.date, 'MMMM yyyy') %></div>
 						<% }) %>
 					</div>
-					<div class="clndr-switch-decade-button" role="button">Switch to decade view</div>
+					<div class="clndr-switch-decade-button">Switch to decade view</div>
 				`),
 				decade: provideRender(`
 					<div class="years">
 						<% items.forEach((year, yearIndex) => { %>
-							<div class="<%= year.classes %>"><%= format(years[yearIndex], 'yyyy') %></div>
+							<div class="<%= year.classes %>"><%= format(year.date, 'yyyy') %></div>
 						<% }) %>
 					</div>
 				`),
@@ -753,19 +753,19 @@ describe('Multiple scopes', () => {
 		clndr = new Clndr(container, {
 			render: {
 				month: provideRender(`
-					<div><%= format(month, 'MMMM') %></div>
+					<div><%= format(interval.start, 'MMMM') %></div>
 					<div>
 						<% items.forEach(item => { %>
 							<div class="<%= item.classes %>"><%= item.day %></div>
 						<% }) %>
 					</div>
-					<div class="clndr-switch-year-button" role="button">Switch to year view</div>
+					<div class="clndr-switch-year-button">Switch to year view</div>
 				`),
 				year: provideRender(`
-					<div><%= format(month, 'yyyy') %></div>
-					<div class="months">
-						<% items.forEach((month, monthIndex) => { %>
-							<div class="<%= month.classes %>"><%= format(months[monthIndex], 'MMMM yyyy') %></div>
+					<div><%= format(interval.start, 'yyyy') %></div>
+					<div>
+						<% items.forEach((item, itemIndex) => { %>
+							<div class="<%= item.classes %>"><%= format(item.date, 'MMMM yyyy') %></div>
 						<% }) %>
 					</div>
 				`),
@@ -794,8 +794,8 @@ describe('Multiple scopes', () => {
 		clndr = new Clndr(container, {
 			render: {
 				month: provideRender(`
-					<div class="month"><%= format(month, 'MMMM yyyy') %></div>
-					<div class="clndr-switch-year-button" role="button">Switch to year view</div>
+					<div><%= format(interval.start, 'MMMM yyyy') %></div>
+					<div class="clndr-switch-year-button">Switch to year view</div>
 				`),
 				year: undefined,
 			},
@@ -810,7 +810,7 @@ describe('Multiple scopes', () => {
 		clndr = new Clndr(container, {
 			render: {
 				month: provideRender(`
-					<div class="month"><%= format(month, 'MMMM yyyy') %></div>
+					<div><%= format(interval.start, 'MMMM yyyy') %></div>
 					<div>
 						<% items.forEach(item => { %>
 							<div class="switch <%= item.classes %>"><%= item.day %></div>

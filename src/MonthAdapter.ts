@@ -2,7 +2,6 @@ import {
 	addDays,
 	addMonths,
 	differenceInDays,
-	eachYearOfInterval,
 	endOfDay,
 	endOfMonth,
 	getDay,
@@ -35,7 +34,6 @@ export default class MonthAdapter extends DayBasedAdapter {
 
 	protected static scope: Scope = 'month';
 
-	// TODO: Document how to switch between views
 	static targets: Record<TargetOption, string> = {
 		switchMonthButton: 'clndr-switch-month-button',
 	}
@@ -232,16 +230,14 @@ export default class MonthAdapter extends DayBasedAdapter {
 		pageSize: number
 	): ClndrTemplateData {
 
-		data.years = eachYearOfInterval(data.interval);
 		data.items = [] as ClndrItem[][];
 		const currentPageEvents: ClndrEvent[][] = [];
-		data.months = [];
 
 		for (let i = 0; i < pageSize; i++) {
 			const currentIntervalStart = addMonths(data.interval.start, i);
 			const currentIntervalEnd = endOfMonth(currentIntervalStart);
 
-			data.months.push(currentIntervalStart);
+			data.pages.push(currentIntervalStart);
 
 			data.items.push(
 				createDaysObject.apply(this, [{start: currentIntervalStart, end: currentIntervalEnd}])
@@ -261,7 +257,7 @@ export default class MonthAdapter extends DayBasedAdapter {
 		data.events.currentPage = currentPageEvents;
 
 		// Get the total number of rows across all months
-		data.months.forEach((_, i) => {
+		data.pages.forEach((_, i) => {
 			data.numberOfRows += Math.ceil((data.items[i] as ClndrItem[]).length / 7);
 		});
 

@@ -121,14 +121,8 @@ type ItemStatus = 'past'
 // TODO: There is not really a need for duplicating "month", "year" and "decade"
 export type ClndrTemplateData = {
 	interval: Interval
+	pages: Date[]
 	items: ClndrItem[] | ClndrItem[][]
-	weeks: Date[]
-	month: Date
-	months: Date[]
-	year: Date
-	years: Date[]
-	decade: Date
-	decades: Date[]
 	events: {
 		currentPage: ClndrEvent[] | ClndrEvent[][]
 		previousScope: ClndrEvent[]

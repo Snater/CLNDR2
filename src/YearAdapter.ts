@@ -151,14 +151,12 @@ export default class YearAdapter extends Adapter {
 
 		data.items = [] as ClndrItem[][];
 		const currentPageEvents: ClndrEvent[][] = [];
-		data.months = eachMonthOfInterval(data.interval);
-		data.years = [];
 
 		for (let i = 0; i < pageSize; i++) {
 			const currentIntervalStart = addYears(data.interval.start, i);
 			const currentIntervalEnd = endOfYear(currentIntervalStart);
 
-			data.years.push(currentIntervalStart);
+			data.pages.push(currentIntervalStart);
 
 			data.items.push(
 				createDaysObject.apply(this, [{start: currentIntervalStart, end: currentIntervalEnd}])

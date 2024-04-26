@@ -17,9 +17,9 @@ describe('WEEK view', () => {
 
 	const multiWeekTemplate = `
 		<div>
-			<% weeks.forEach((week, weekIndex) => { %>
+			<% pages.forEach((week, pageIndex) => { %>
 				<div>Week <%= format(week, 'w') %></div>
-				<% items[weekIndex].forEach(day => { %>
+				<% items[pageIndex].forEach(day => { %>
 					<div class="<%= day.classes %>"><%= format(day.date, 'd') %></div>
 				<% }) %>
 			<% }) %>
