@@ -483,12 +483,33 @@ class Clndr {
 
 		const parsedEvents = this.parseEvents(this.interval);
 
-		return this.adapter.flushTemplateData.apply(this, [
-			data,
-			(interval: Interval) => this.createScopeObjects(interval, parsedEvents),
-			parsedEvents,
-			this.options.pagination[this.adapter.getScope()]?.size ?? 1,
-		]);
+		data.items = [] as ClndrItem[][];
+		data.events.currentPage = [] as ClndrEvent[][];
+		const pageIntervals = this.adapter.getPageIntervals(data.interval.start);
+
+		for (const pageInterval of pageIntervals) {
+			data.pages.push(pageInterval.start);
+
+			data.items.push(this.createScopeObjects(pageInterval, parsedEvents));
+
+			data.events.currentPage.push(
+				parsedEvents[1]
+					.filter(event => areIntervalsOverlapping(event.clndrInterval, pageInterval))
+					.map(event => event.originalEvent)
+			);
+		}
+
+		data.events.previousScope = parsedEvents[0].map(event => event.originalEvent);
+		data.events.nextScope = parsedEvents[2].map(event => event.originalEvent);
+
+		if ((this.options.pagination[this.adapter.getScope()]?.size ?? 1) > 1) {
+			return data;
+		}
+
+		data.events.currentPage = data.events.currentPage[0];
+		data.items = data.items[0];
+
+		return data;
 	}
 
 	/**

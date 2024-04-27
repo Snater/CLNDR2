@@ -16,7 +16,7 @@ describe('DAY view', () => {
 
 	const multiDayTemplate = `
 		<div>
-			<% items.forEach(day => { %>
+			<% items.flat().forEach(day => { %>
 				<div class="<%= day.classes %>">Day <%= format(day.date, 'D', {useAdditionalDayOfYearTokens: true}) %></div>
 			<% }) %>
 		</div>

@@ -1,7 +1,6 @@
 import {
 	addDays,
 	differenceInDays,
-	eachDayOfInterval,
 	endOfDay,
 	isAfter,
 	isBefore,
@@ -11,15 +10,7 @@ import {
 	subDays,
 } from 'date-fns';
 import DayBasedAdapter from './DayBasedAdapter';
-import type {
-	Adjacent,
-	ClndrItem,
-	ClndrTemplateData,
-	InternalClndrEvent,
-	Interval,
-	PageDates,
-	Scope,
-} from './types';
+import type {Adjacent, InternalClndrEvent, Interval, PageDates, Scope} from './types';
 
 export default class DayAdapter extends DayBasedAdapter {
 
@@ -71,6 +62,14 @@ export default class DayAdapter extends DayBasedAdapter {
 		return [[], days, []];
 	}
 
+	endOfScope(date: Date): Date {
+		return endOfDay(date);
+	}
+
+	protected addScope(date: Date, count: number): Date {
+		return addDays(date, count);
+	}
+
 	isAdjacent(): Adjacent {
 		return null;
 	}
@@ -102,19 +101,5 @@ export default class DayAdapter extends DayBasedAdapter {
 	forward(interval: Interval, step?: number): Interval {
 		const start = addDays(interval.start, step ?? this.options.pageSize);
 		return {start, end: endOfDay(addDays(start, this.options.pageSize - 1))};
-	}
-
-	flushTemplateData(
-		data: ClndrTemplateData,
-		createDaysObject: (interval: Interval) => ClndrItem[],
-		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
-	): ClndrTemplateData {
-
-		data.pages = eachDayOfInterval(data.interval);
-		data.items = createDaysObject.apply(this, [data.interval]);
-		data.numberOfRows = Math.ceil(data.items.length / 7);
-		data.events.currentPage = events[1].map(event => event.originalEvent);
-
-		return data;
 	}
 }

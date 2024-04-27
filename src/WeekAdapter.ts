@@ -14,16 +14,7 @@ import {
 	subWeeks,
 } from 'date-fns';
 import DayBasedAdapter from './DayBasedAdapter';
-import type {
-	Adjacent,
-	ClndrEvent,
-	ClndrItem,
-	ClndrTemplateData,
-	InternalClndrEvent,
-	Interval,
-	PageDates,
-	Scope,
-} from './types';
+import type {Adjacent, InternalClndrEvent, Interval, PageDates, Scope} from './types';
 
 export type TargetOption = 'switchWeekButton'
 
@@ -98,6 +89,14 @@ export default class WeekAdapter extends DayBasedAdapter {
 		return [[], days, []];
 	}
 
+	endOfScope(date: Date): Date {
+		return endOfWeek(date);
+	}
+
+	protected addScope(date: Date, count: number): Date {
+		return addWeeks(date, count);
+	}
+
 	isAdjacent(): Adjacent {
 		return null;
 	}
@@ -166,47 +165,5 @@ export default class WeekAdapter extends DayBasedAdapter {
 		);
 
 		return {start, end};
-	}
-
-	flushTemplateData(
-		data: ClndrTemplateData,
-		createDaysObject: (interval: Interval) => ClndrItem[],
-		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]],
-		pageSize: number
-	): ClndrTemplateData {
-
-		data.items = [] as ClndrItem[][];
-		const currentPageEvents: ClndrEvent[][] = [];
-
-		for (let i = 0; i < pageSize; i++) {
-			const currentIntervalStart = addWeeks(data.interval.start, i);
-			const currentIntervalEnd = endOfWeek(currentIntervalStart);
-
-			data.pages.push(currentIntervalStart);
-
-			data.items.push(
-				createDaysObject.apply(this, [{start: currentIntervalStart, end: currentIntervalEnd}])
-			);
-
-			currentPageEvents.push(
-				events[1].filter(event => {
-					const beforeStart = isBefore(event.clndrInterval.end, currentIntervalStart);
-					const afterEnd = isAfter(event.clndrInterval.start, currentIntervalEnd);
-
-					return !(beforeStart || afterEnd);
-				}).map(event => event.originalEvent)
-			);
-		}
-
-		data.events.currentPage = currentPageEvents;
-
-		if (pageSize > 1) {
-			return data;
-		}
-
-		data.events.currentPage = data.events.currentPage[0];
-		data.items = data.items[0];
-
-		return data;
 	}
 }

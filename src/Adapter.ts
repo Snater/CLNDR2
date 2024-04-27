@@ -1,7 +1,5 @@
 import type {
 	Adjacent,
-	ClndrItem,
-	ClndrTemplateData,
 	InternalClndrEvent,
 	Interval,
 	PageDates,
@@ -44,6 +42,7 @@ export abstract class Adapter {
 	abstract aggregateScopeItems(interval: Interval, weekOffset?: number): PageDates
 
 	abstract endOfScope(date: Date): Date
+	protected abstract addScope(date: Date, count: number): Date
 
 	abstract isToday(date: Date): boolean
 	abstract isAdjacent(itemInterval: Interval, interval: Interval): Adjacent
@@ -59,10 +58,14 @@ export abstract class Adapter {
 	abstract back(interval: Interval, step?: number): Interval
 	abstract forward(interval: Interval, step?: number): Interval
 
-	abstract flushTemplateData(
-		data: ClndrTemplateData,
-		createDaysObject: (interval: Interval) => ClndrItem[],
-		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]],
-		pageSize?: number
-	): ClndrTemplateData
+	getPageIntervals(startDate: Date): Interval[] {
+		const pageIntervals: Interval[] = [];
+
+		for (let i = 0; i < this.options.pageSize; i++) {
+			const start = this.addScope(startDate, i);
+			pageIntervals.push({start, end: this.endOfScope(start)});
+		}
+
+		return pageIntervals;
+	}
 }

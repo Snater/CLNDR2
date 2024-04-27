@@ -409,10 +409,6 @@ events: {
 // `weekOffset` parameter, i.e. `['S', 'M', 'T', etc...]`.
 daysOfTheWeek: string[]
 
-// The number of 7-block calendar rows, in case of wanting to do some looping
-// with it.
-numberOfRows: number
-
 // A proxy for date-fns' `format` function being equiped with the locale
 // provided to the `locale` option.
 format: (date: Date, formatStr: string, options: FormatOptions) => string

@@ -311,18 +311,18 @@ const meta: Meta<ClndrOptions> = {
 			<table class="clndr-table">
 				<thead>
 					<tr class="header-days">
-						<% for(let i = 0; i < daysOfTheWeek.length; i++) { %>
-							<td class="header-day"><%= daysOfTheWeek[i] %></td>
-						<% } %>
+						<% daysOfTheWeek.forEach(dayOfTheWeek => { %>
+							<td class="header-day"><%= dayOfTheWeek %></td>
+						<% }) %>
 					</tr>
 				</thead>
 				<tbody>
-					<% for(let i = 0; i < numberOfRows; i++){ %>
+					<% for (let row = 0; row < Math.ceil(items.length / 7); row++) { %>
 						<tr>
-							<% for(let j = 0; j < 7; j++){ %>
-								<% const d = j + i * 7; %>
-								<td class="<%= items[d].classes %>">
-									<div class="day-contents"><%= items[d].day %></div>
+							<% for (let col = 0; col < 7; col++) { %>
+								<% const index = col + row * 7; %>
+								<td class="<%= items[index].classes %>">
+									<div class="day-contents"><%= items[index].day %></div>
 								</td>
 							<% } %>
 						</tr>
@@ -561,7 +561,7 @@ export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lsaquo;</div>
-				<div class="month"><%= items[0].day %>/<%= items[0].date.getMonth() + 1 %> - <%= items[items.length - 1].day %>/<%= items[items.length - 1].date.getMonth() + 1 %></div>
+				<div class="month"><%= format(pages[0], 'd/L') %> - <%= format(pages[pages.length - 1], 'd/L') %></div>
 				<div class="clndr-next-button" role="button">&rsaquo;</div>
 			</div>
 			<div class="clndr-grid">
@@ -571,15 +571,14 @@ export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 					<% }) %>
 				</div>
 				<div class="days">
-					<% items.forEach(day => { %>
+					<% items.flat().forEach(day => { %>
 						<div class="<%= day.classes %>"><%= day.day %></div>
 					<% }) %>
 				</div>
 			</div>
 			<div class="clndr-today-button" role="button">Today</div>
 		`, data),
-		defaultView: 'day',
-		pagination: {day: {size: 14, step: 7}},
+		pagination: {week: {size: 2, step: 1}},
 	},
 	render: args => {
 		const container = document.createElement('div');

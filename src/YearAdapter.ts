@@ -14,16 +14,7 @@ import {
 	subYears,
 } from 'date-fns';
 import {Adapter} from './Adapter';
-import type {
-	Adjacent,
-	ClndrEvent,
-	ClndrItem,
-	ClndrTemplateData,
-	InternalClndrEvent,
-	Interval,
-	PageDates,
-	Scope,
-} from './types';
+import type {Adjacent, InternalClndrEvent, Interval, PageDates, Scope} from './types';
 
 export type TargetOption = 'switchYearButton'
 
@@ -94,6 +85,10 @@ export default class YearAdapter extends Adapter {
 		return endOfYear(date);
 	}
 
+	protected addScope(date: Date, count: number): Date {
+		return addYears(date, count);
+	}
+
 	isToday(date: Date): boolean {
 		return isSameMonth(date, new Date());
 	}
@@ -140,48 +135,5 @@ export default class YearAdapter extends Adapter {
 	forward(interval: Interval, step?: number): Interval {
 		const start = startOfYear(addYears(interval.start, step ?? this.options.pageSize));
 		return {start, end: endOfYear(addYears(start, this.options.pageSize - 1))};
-	}
-
-	flushTemplateData(
-		data: ClndrTemplateData,
-		createDaysObject: (interval: Interval) => ClndrItem[],
-		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]],
-		pageSize: number
-	): ClndrTemplateData {
-
-		data.items = [] as ClndrItem[][];
-		const currentPageEvents: ClndrEvent[][] = [];
-
-		for (let i = 0; i < pageSize; i++) {
-			const currentIntervalStart = addYears(data.interval.start, i);
-			const currentIntervalEnd = endOfYear(currentIntervalStart);
-
-			data.pages.push(currentIntervalStart);
-
-			data.items.push(
-				createDaysObject.apply(this, [{start: currentIntervalStart, end: currentIntervalEnd}])
-			);
-
-			// Save events processed for each month into a master array of events for this interval
-			currentPageEvents.push(
-				events[1].filter(event => {
-					const beforeStart = isBefore(event.clndrInterval.end, currentIntervalStart);
-					const afterEnd = isAfter(event.clndrInterval.start, currentIntervalEnd);
-
-					return !(beforeStart || afterEnd);
-				}).map(event => event.originalEvent)
-			);
-		}
-
-		data.events.currentPage = currentPageEvents;
-
-		if (pageSize > 1) {
-			return data;
-		}
-
-		data.events.currentPage = data.events.currentPage[0];
-		data.items = data.items[0];
-
-		return data;
 	}
 }
