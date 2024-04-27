@@ -101,8 +101,8 @@ export default class YearAdapter extends Adapter {
 		return {start: startOfMonth(date), end: endOfMonth(date)};
 	}
 
-	getIdClasses(interval: Interval): string[] {
-		return [`calendar-month-${format(interval.start, 'yyyy-MM')}`];
+	getIdForItem(date: Date): string {
+		return `calendar-month-${format(date, 'yyyy-MM')}`;
 	}
 
 	getDateFromClassNames(classNames: string): Date | null {

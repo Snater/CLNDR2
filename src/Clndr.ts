@@ -180,6 +180,7 @@ class Clndr {
 	private options: InternalOptions;
 	private calendarContainer: HTMLElement;
 	private events: InternalClndrEvent[];
+	private selectedDate?: Date;
 
 	constructor(element: HTMLElement, options: ClndrOptions) {
 		this.element = element;
@@ -225,6 +226,10 @@ class Clndr {
 		// If there are constraints, make sure the interval is within them
 		if (this.options.constraints) {
 			this.interval = this.initConstraints(this.options.constraints, this.interval);
+		}
+
+		if (this.options.selectedDate) {
+			this.selectedDate = new Date(this.options.selectedDate);
 		}
 
 		this.daysOfTheWeek = this.options.daysOfTheWeek
@@ -418,7 +423,7 @@ class Clndr {
 			adjacentScope && classes.push(this.options.classes.switch);
 		}
 
-		if (this.options.selectedDate && isWithinInterval(this.options.selectedDate, interval)) {
+		if (this.selectedDate && isWithinInterval(this.selectedDate, itemInterval)) {
 			classes.push(this.options.classes.selected);
 		}
 
@@ -428,7 +433,7 @@ class Clndr {
 			day: getDate(date),
 			events: eventsOfCurrentItem.map(event => event.originalEvent),
 			properties: properties,
-			classes: [...classes, ...this.adapter.getIdClasses(itemInterval)].join(' '),
+			classes: [...classes, this.adapter.getIdForItem(itemInterval.start)].join(' '),
 		});
 	}
 
@@ -644,8 +649,7 @@ class Clndr {
 
 		this.switchView(currentTarget);
 
-		const previouslySelectedDate = this.options.selectedDate
-			&& new Date(this.options.selectedDate);
+		const previouslySelectedDate = this.selectedDate;
 
 		this.updateSelectedDate(currentTarget);
 
@@ -702,14 +706,13 @@ class Clndr {
 			return;
 		}
 
-		// TODO: Do not overwrite option
-		this.options.selectedDate = this.getTargetDate(target) || undefined;
+		this.selectedDate = this.getTargetDate(target);
 		this.element.querySelectorAll('.' + this.options.classes.selected)
 			.forEach(node => node.classList.remove(this.options.classes.selected));
 
-		if (this.options.selectedDate) {
-			const id = `.calendar-day-${format(this.options.selectedDate, 'yyyy-MM-dd')}`;
-			this.element.querySelector(id)?.classList.add(this.options.classes.selected);
+		if (this.selectedDate) {
+			const id = this.adapter.getIdForItem(this.selectedDate);
+			this.element.querySelector('.' + id)?.classList.add(this.options.classes.selected);
 		}
 	}
 
@@ -877,6 +880,10 @@ class Clndr {
 		}
 
 		this.render();
+	}
+
+	getSelectedDate() {
+		return this.selectedDate;
 	}
 
 	/**

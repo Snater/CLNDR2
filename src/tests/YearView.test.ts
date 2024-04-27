@@ -241,6 +241,35 @@ describe('YEAR view', () => {
 		expect(screen.getByText('1993')).toBeInTheDocument();
 	});
 
+	test('selectedDate option', async () => {
+		const handleClick = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneYearTemplate),
+			clickEvents: {
+				onClick: handleClick,
+			},
+			pagination: {year: {size: 1}},
+			selectedDate: '2024-10',
+			trackSelectedDate: true,
+		});
+
+		expect(clndr.getSelectedDate()).toBeDefined();
+		expect(container.querySelector('.selected')).toBe(screen.getByText('October'));
+		expect(clndr.getSelectedDate()?.toISOString()).toBe(new Date('2024-10').toISOString());
+		await user.click(screen.getByText('January'));
+		expect(clndr.getSelectedDate()?.toISOString()).toBe(new Date('2024-01').toISOString());
+		expect(container.querySelector('.selected')).toBe(screen.getByText('January'));
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: new Date('2024-01'),
+			events: [],
+			selectedDateChanged: true,
+			isToday: true,
+			element: screen.getByText('January'),
+		});
+	});
+
 	test('Click on a month while the identifier class is unexpectedly not assigned', async () => {
 		const handleClick = jest.fn();
 

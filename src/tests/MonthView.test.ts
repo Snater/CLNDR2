@@ -315,6 +315,35 @@ describe('MONTH view', () => {
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
 	});
 
+	test('selectedDate option', async () => {
+		const handleClick = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneMonthTemplate),
+			clickEvents: {
+				onClick: handleClick,
+			},
+			pagination: {month: {size: 1}},
+			selectedDate: '2024-01-15',
+			trackSelectedDate: true,
+		});
+
+		expect(clndr.getSelectedDate()).toBeDefined();
+		expect(container.querySelector('.selected')).toBe(screen.getByText('15'));
+		expect(clndr.getSelectedDate()?.toISOString()).toBe(new Date('2024-01-15').toISOString());
+		await user.click(screen.getByText('20'));
+		expect(clndr.getSelectedDate()?.toISOString()).toBe(new Date('2024-01-20').toISOString());
+		expect(container.querySelector('.selected')).toBe(screen.getByText('20'));
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: new Date('2024-01-20'),
+			events: [],
+			selectedDateChanged: true,
+			isToday: false,
+			element: screen.getByText('20'),
+		});
+	});
+
 	test('Track selected date while inactive days should be ignored in selection and adjacent month\'s days change the month', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),

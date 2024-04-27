@@ -206,6 +206,34 @@ describe('DAY view', () => {
 		expect(screen.getByText('Day 19')).toBeInTheDocument();
 	});
 
+	test('selectedDate option', async () => {
+		const handleClick = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneDayTemplate),
+			clickEvents: {
+				onClick: handleClick,
+			},
+			pagination: {day: {size: 1}},
+			selectedDate: '1992-10-15',
+			trackSelectedDate: true,
+		});
+
+		expect(clndr.getSelectedDate()).toBeDefined();
+		expect(clndr.getSelectedDate()?.toISOString()).toBe(new Date('1992-10-15').toISOString());
+		await user.click(screen.getByText('Day 18 in 2024'));
+		expect(clndr.getSelectedDate()?.toISOString()).toBe(new Date('2024-01-18').toISOString());
+		expect(container.querySelector('.selected')).toBe(screen.getByText('Day 18 in 2024'));
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: new Date('2024-01-18'),
+			events: [],
+			selectedDateChanged: true,
+			isToday: true,
+			element: screen.getByText('Day 18 in 2024'),
+		});
+	});
+
 	test('Click on a day while the identifier class is unexpectedly not assigned', async () => {
 		const handleClick = jest.fn();
 

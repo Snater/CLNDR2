@@ -97,8 +97,8 @@ export default class DecadeAdapter extends Adapter {
 		return {start: startOfYear(date), end: endOfYear(date)};
 	}
 
-	getIdClasses(interval: Interval): string[] {
-		return [`calendar-year-${format(interval.start, 'yyyy')}`];
+	getIdForItem(date: Date): string {
+		return `calendar-year-${format(date, 'yyyy')}`;
 	}
 
 	getDateFromClassNames(classNames: string): Date | null {

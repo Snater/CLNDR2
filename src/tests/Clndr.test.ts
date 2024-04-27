@@ -144,7 +144,7 @@ describe('Setup', () => {
 			selectedDateChanged: true,
 			isToday: false,
 			element: screen.getByText('16'),
-		})
+		});
 	});
 
 	test('Custom days of the week naming', () => {
@@ -693,37 +693,42 @@ describe('Data manipulations', () => {
 
 describe('Multiple scopes', () => {
 
+	const multiScopeTemplates = {
+		day: provideRender(`
+			<div class="day">Day <%= format(items[0].date, 'D', {useAdditionalDayOfYearTokens: true}) %> in <%= format(items[0].date, 'yyyy') %></div>
+			<div class="clndr-switch-week-button">Switch to week view</div>
+		`),
+		week: provideRender(`
+			<div class="week"><%= format(items[0].date, 'LL-dd') %> to <%= format(items[items.length -1].date, 'LL-dd') %></div>
+			<div class="clndr-switch-month-button">Switch to month view</div>
+		`),
+		month: provideRender(`
+			<div class="month"><%= format(interval.start, 'MMMM yyyy') %></div>
+			<% items.forEach(day => { %>
+					<div class="<%= day.classes %>"><%= format(day.date, 'd') %></div>
+				<% }) %>
+			<div class="clndr-switch-year-button">Switch to year view</div>
+		`),
+		year: provideRender(`
+			<div class="months">
+				<% items.forEach((month, monthIndex) => { %>
+					<div class="<%= month.classes %>"><%= format(month.date, 'MMMM yyyy') %></div>
+				<% }) %>
+			</div>
+			<div class="clndr-switch-decade-button">Switch to decade view</div>
+		`),
+		decade: provideRender(`
+			<div class="years">
+				<% items.forEach((year, yearIndex) => { %>
+					<div class="<%= year.classes %>"><%= format(year.date, 'yyyy') %></div>
+				<% }) %>
+			</div>
+		`),
+	};
+
 	test('Switching scope', async () => {
 		clndr = new Clndr(container, {
-			render: {
-				day: provideRender(`
-					<div class="day">Day <%= format(items[0].date, 'D', {useAdditionalDayOfYearTokens: true}) %> in <%= format(items[0].date, 'yyyy') %></div>
-					<div class="clndr-switch-week-button">Switch to week view</div>
-				`),
-				week: provideRender(`
-					<div class="week"><%= format(items[0].date, 'LL-dd') %> to <%= format(items[items.length -1].date, 'LL-dd') %></div>
-					<div class="clndr-switch-month-button">Switch to month view</div>
-				`),
-				month: provideRender(`
-					<div class="month"><%= format(interval.start, 'MMMM yyyy') %></div>
-					<div class="clndr-switch-year-button">Switch to year view</div>
-				`),
-				year: provideRender(`
-					<div class="months">
-						<% items.forEach((month, monthIndex) => { %>
-							<div class="<%= month.classes %>"><%= format(month.date, 'MMMM yyyy') %></div>
-						<% }) %>
-					</div>
-					<div class="clndr-switch-decade-button">Switch to decade view</div>
-				`),
-				decade: provideRender(`
-					<div class="years">
-						<% items.forEach((year, yearIndex) => { %>
-							<div class="<%= year.classes %>"><%= format(year.date, 'yyyy') %></div>
-						<% }) %>
-					</div>
-				`),
-			},
+			render: multiScopeTemplates,
 			defaultView: 'day',
 		});
 
@@ -747,6 +752,41 @@ describe('Multiple scopes', () => {
 		await user.click(screen.getByText('March 2024'));
 
 		expect(screen.getByText('March 2024')).toBeInTheDocument();
+	});
+
+	test('Tracking selected date across multiple views', async () => {
+		clndr = new Clndr(container, {
+			render: multiScopeTemplates,
+			defaultView: 'decade',
+			trackSelectedDate: true,
+		});
+
+		expect(clndr.getSelectedDate()).toBeUndefined();
+		await user.click(screen.getByText('2024'));
+		expect(clndr.getSelectedDate()).toBeUndefined();
+		await user.click(screen.getByText('January 2024'));
+		expect(clndr.getSelectedDate()).toBeUndefined();
+		await user.click(screen.getByText('20'));
+		expect(clndr.getSelectedDate()).not.toBeUndefined();
+		expect(clndr.getSelectedDate()?.toISOString()).toBe(new Date('2024-01-20').toISOString());
+	});
+
+	test('Tracking selected date on non-day based view', async () => {
+		clndr = new Clndr(container, {
+			render: {
+				year: multiScopeTemplates.year,
+				decade: multiScopeTemplates.decade,
+			},
+			defaultView: 'decade',
+			trackSelectedDate: true,
+		});
+
+		expect(clndr.getSelectedDate()).toBeUndefined();
+		await user.click(screen.getByText('2024'));
+		expect(clndr.getSelectedDate()).toBeUndefined();
+		await user.click(screen.getByText('January 2024'));
+		expect(clndr.getSelectedDate()).not.toBeUndefined();
+		expect(clndr.getSelectedDate()?.toISOString()).toBe(new Date('2024-01').toISOString());
 	});
 
 	test('Reapply constraints', async () => {

@@ -24,7 +24,7 @@ export type InternalOptions = {
 	locale?: Locale
 	pagination: {[key in Scope]?: Pagination}
 	ready?: () => void
-	selectedDate?: Date
+	selectedDate?: Date | string | number
 	showAdjacent: boolean
 	startOn?: Date
 	targets: {[key in TargetOption]: string}

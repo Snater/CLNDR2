@@ -1,6 +1,5 @@
-import {format, getDay, isSameDay} from 'date-fns';
+import {format, isSameDay} from 'date-fns';
 import {Adapter} from './Adapter';
-import type {Interval} from './types';
 
 export default abstract class DayBasedAdapter extends Adapter {
 
@@ -8,12 +7,8 @@ export default abstract class DayBasedAdapter extends Adapter {
 		return isSameDay(date, new Date());
 	}
 
-	getIdClasses(interval: Interval): string[] {
-		return [
-			`calendar-day-${format(interval.start, 'yyyy-MM-dd')}`,
-			// Day of week
-			`calendar-dow-${getDay(interval.start)}`,
-		];
+	getIdForItem(date: Date): string {
+		return `calendar-day-${format(date, 'yyyy-MM-dd')}`;
 	}
 
 	getDateFromClassNames(classNames: string) {

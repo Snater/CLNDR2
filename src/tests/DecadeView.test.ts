@@ -240,6 +240,35 @@ describe('DECADE view', () => {
 		expect(screen.getByText('2000 to 2009')).toBeInTheDocument();
 	});
 
+	test('selectedDate option', async () => {
+		const handleClick = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(oneDecadeTemplate),
+			clickEvents: {
+				onClick: handleClick,
+			},
+			pagination: {decade: {size: 1}},
+			selectedDate: '2025',
+			trackSelectedDate: true,
+		});
+
+		expect(clndr.getSelectedDate()).toBeDefined();
+		expect(container.querySelector('.selected')).toBe(screen.getByText('2025'));
+		expect(clndr.getSelectedDate()?.toISOString()).toBe(new Date('2025').toISOString());
+		await user.click(screen.getByText('2023'));
+		expect(clndr.getSelectedDate()?.toISOString()).toBe(new Date('2023').toISOString());
+		expect(container.querySelector('.selected')).toBe(screen.getByText('2023'));
+
+		expect(handleClick.mock.calls[0][0]).toEqual({
+			date: new Date('2023'),
+			events: [],
+			selectedDateChanged: true,
+			isToday: false,
+			element: screen.getByText('2023'),
+		});
+	});
+
 	test('Click on a year while the identifier class is unexpectedly not assigned', async () => {
 		const handleClick = jest.fn();
 
