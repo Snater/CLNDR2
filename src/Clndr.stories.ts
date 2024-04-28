@@ -23,8 +23,8 @@ const meta: Meta<ClndrOptions> = {
 				},
 			},
 		},
-		adjacentDaysChangeMonth: {
-			description: 'Whether clicking the day of the preceding or following month navigates to that month.',
+		adjacentItemsChangePage: {
+			description: 'Whether clicking the item of the preceding or following page navigates to that page. Currently, this option is only relevant for the `month` view where days of the previous and following month may be rendered on the same page of the current month according to the `showAdjacent` option.',
 			table: {
 				defaultValue: {
 					summary: 'false',
@@ -329,7 +329,7 @@ const meta: Meta<ClndrOptions> = {
 					<% } %>
 				</tbody>
 			</table>`, data),
-		adjacentDaysChangeMonth: false,
+		adjacentItemsChangePage: false,
 		clickEvents: {
 			onClick: action('click'),
 			onNavigate: action('navigate'),
@@ -378,7 +378,7 @@ function getDateOfCurrentMonth(day: number) {
 
 export const Default: Story = {
 	args: {
-		adjacentDaysChangeMonth: false,
+		adjacentItemsChangePage: false,
 		showAdjacent: true,
 	},
 	render: args => {

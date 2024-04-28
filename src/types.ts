@@ -8,7 +8,7 @@ type RenderFn = (data: ClndrTemplateData) => string
 // TODO: Extend Date types to also allow Date compatible types string and number
 export type InternalOptions = {
 	render: RenderFn | {[key in Scope]?: RenderFn}
-	adjacentDaysChangeMonth: boolean
+	adjacentItemsChangePage: boolean
 	classes: {[key in ItemStatus]: string}
 	clickEvents: ClickEvents
 	constraints?: Constraints

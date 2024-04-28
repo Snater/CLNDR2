@@ -263,7 +263,7 @@ describe('MONTH view', () => {
 	test('Change month by clicking on empty field preceding current month\'s days', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			adjacentDaysChangeMonth: true,
+			adjacentItemsChangePage: true,
 			pagination: {month: {size: 1}},
 			showAdjacent: false,
 			startOn: new Date('1992-10'),
@@ -279,7 +279,7 @@ describe('MONTH view', () => {
 	test('Change month by clicking on empty field following current month\'s days', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			adjacentDaysChangeMonth: true,
+			adjacentItemsChangePage: true,
 			pagination: {month: {size: 1}},
 			showAdjacent: false,
 			startOn: new Date('1992-09'),
@@ -293,7 +293,7 @@ describe('MONTH view', () => {
 	test('Change month with click on previous month\'s day', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			adjacentDaysChangeMonth: true,
+			adjacentItemsChangePage: true,
 			startOn: new Date('1992-10'),
 		});
 
@@ -305,7 +305,7 @@ describe('MONTH view', () => {
 	test('Change month with click on next month\'s day', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			adjacentDaysChangeMonth: true,
+			adjacentItemsChangePage: true,
 			pagination: {month: {size: 1}},
 			startOn: new Date('1992-09'),
 		});
@@ -347,7 +347,7 @@ describe('MONTH view', () => {
 	test('Track selected date while inactive days should be ignored in selection and adjacent month\'s days change the month', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			adjacentDaysChangeMonth: true,
+			adjacentItemsChangePage: true,
 			ignoreInactiveDaysInSelection: true,
 			trackSelectedDate: true,
 		});
@@ -384,6 +384,19 @@ describe('MONTH view', () => {
 			isToday: false,
 			element: emptyElement,
 		});
+	});
+
+	test('Missing CSS classes to detect month change when not showing adjacent months', async () => {
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			adjacentItemsChangePage: true,
+			showAdjacent: false,
+		});
+
+		const emptyElement = container.querySelector('.empty');
+		expect(emptyElement).not.toBeNull();
+		(emptyElement as Element).classList.remove('previous');
+		await user.click(emptyElement as Element);
 	});
 
 });

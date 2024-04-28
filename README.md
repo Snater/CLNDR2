@@ -170,9 +170,11 @@ new Clndr(container, {
   // enabled, see "Switching the View" section.
   render: data => ejs.render(template, data),
 
-  // Whether clicking the day of the preceding or following month navigates to that month.
-  // Triggers nextMonth/previousMonth/onMonthChange click callbacks.
-  adjacentDaysChangeMonth: false,
+  // Whether clicking the item of the preceding or following page navigates to
+  // that page. Currently, only relevant for the `month` view where days of
+  // adjacent months may be rendered on the page of the current month according
+  // to the `showAdjacent` option.
+  adjacentItemsChangePage: false,
 
   // Custom classes to avoid styling issues. pass in only the classnames that you wish to override.
   // These are the defaults:
@@ -329,7 +331,10 @@ new Clndr(container, {
   // `classes.selected` class) at the time the calendar is initialized.
   selectedDate: null,
 
-  // Whether to show the dates of days in months adjacent to the current month.
+  // Whether to show the items of pages adjacent to the current page.
+  // Currently, only relevant for the `month` view where it allows rendering
+  // days of months adjacent to the current month for achieving an fully
+  // populated grid of days.
   showAdjacent: true,
 
   // Determines which month to display initially by providing either a date string or a Date object.
@@ -395,10 +400,10 @@ items: ClndrItem[] | ClndrItem[][]
 
 // The events of the current page as well as the events of the previous and
 // next scope. `events.currentPage` is a multi-dimensional array if
-// `pagination.scope` is `month` and `pagination.size` is greater than 1.
+// the pagination size of the current view is greater than 1.
 // `events.previousScope` and `events.nextScope` may be used to get the events
-// if the `showAdjacentMonths` option is turned on. Both are empty if
-// `pagination.scope` is set to `day`.
+// of adjacent months if the `showAdjacent` option is turned on. Currently,
+// these will only be populated on the `month` view.
 events: {
   currentPage: ClndrEvent[] | ClndrEvent[][]
   previousScope: ClndrEvent[]
@@ -428,7 +433,7 @@ type ClndrItem = {
   date?: Date
   events?: ClndrEvent[]
   classes: string
-  properties?: {isToday: boolean, isInactive: boolean, isAdjacentMonth: boolean}
+  properties?: {isToday: boolean, isInactive: boolean, isAdjacent: boolean}
 }
 ```
 

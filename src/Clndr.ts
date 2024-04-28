@@ -64,7 +64,7 @@ const defaults: InternalOptions = {
 	render: () => {
 		throw new Error('Missing render function');
 	},
-	adjacentDaysChangeMonth: false,
+	adjacentItemsChangePage: false,
 	classes: {
 		past: 'past',
 		now: 'now',
@@ -602,8 +602,8 @@ class Clndr {
 		const element = event.target as HTMLElement;
 		const options: ClndrNavigationOptions = {element, withCallbacks: true};
 
-		this.handleDayEvent(event);
-		this.handleEmptyEvent(event);
+		this.handleItemClick(event);
+		this.handleEmptyClick(event);
 
 		if (element.closest('.' + targets.todayButton)) {
 			this.today(options);
@@ -633,9 +633,9 @@ class Clndr {
 	}
 
 	/**
-	 * Handles click event on day boxes.
+	 * Handles a click event on an item.
 	 */
-	private handleDayEvent(event: Event) {
+	private handleItemClick(event: Event) {
 		const eventTarget = event.target as HTMLElement | null;
 		const currentTarget = eventTarget?.closest(
 			'.' + this.options.targets.item
@@ -645,7 +645,7 @@ class Clndr {
 			return;
 		}
 
-		this.navigatePerAdjacentDay(currentTarget);
+		this.navigatePerAdjacentItem(currentTarget);
 
 		this.switchView(currentTarget);
 
@@ -663,10 +663,10 @@ class Clndr {
 	}
 
 	/**
-	 * Navigates to another month according to the target element provided.
+	 * Navigates to another page according to the target element provided.
 	 */
-	private navigatePerAdjacentDay(target: HTMLElement) {
-		if (!this.options.adjacentDaysChangeMonth) {
+	private navigatePerAdjacentItem(target: HTMLElement) {
+		if (!this.options.adjacentItemsChangePage) {
 			return;
 		}
 
@@ -717,9 +717,9 @@ class Clndr {
 	}
 
 	/**
-	 * Handles click event on empty day boxes.
+	 * Handles the click event on empty items.
 	 */
-	private handleEmptyEvent(event: Event) {
+	private handleEmptyClick(event: Event) {
 		const eventTarget = event.target as HTMLElement | null;
 		const currentTarget = eventTarget?.closest(
 			'.' + this.options.targets.empty
@@ -734,7 +734,7 @@ class Clndr {
 			this.options.clickEvents.onClick.apply(this, [target]);
 		}
 
-		if (this.options.adjacentDaysChangeMonth) {
+		if (this.options.adjacentItemsChangePage) {
 			if (currentTarget.classList.contains(this.options.classes.previous)) {
 				this.back({element: currentTarget, withCallbacks: true});
 			} else if (currentTarget.classList.contains(this.options.classes.next)) {

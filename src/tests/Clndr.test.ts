@@ -896,19 +896,6 @@ describe('Handling errors', () => {
 		expect(mockWarn).toHaveBeenCalledTimes(1);
 	});
 
-	test('Missing CSS classes to detect month change when not showing adjacent months', async () => {
-		clndr = new Clndr(container, {
-			render: provideRender(),
-			adjacentDaysChangeMonth: true,
-			showAdjacent: false,
-		});
-
-		const emptyElement = container.querySelector('.empty');
-		expect(emptyElement).not.toBeNull();
-		(emptyElement as Element).classList.remove('previous');
-		await user.click(emptyElement as Element);
-	});
-
 	test('Invalid start date parameter on multi-day event', () => {
 		const mockWarn = jest.fn();
 		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
