@@ -389,10 +389,10 @@ export const Default: Story = {
 
 		document.addEventListener('keydown', event => {
 			if (event.key === 'ArrowLeft') {
-				clndr.back();
+				clndr.previous();
 			}
 			if (event.key === 'ArrowRight') {
-				clndr.forward();
+				clndr.next();
 			}
 		});
 

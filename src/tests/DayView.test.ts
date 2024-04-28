@@ -197,11 +197,11 @@ describe('DAY view', () => {
 		expect(screen.getByText('Day 19')).toBeInTheDocument();
 		expect(container.querySelectorAll('.item').length).toBe(2);
 
-		clndr.forward();
+		clndr.next();
 		expect(screen.getByText('Day 20')).toBeInTheDocument();
 		expect(screen.getByText('Day 21')).toBeInTheDocument();
 
-		clndr.back();
+		clndr.previous();
 		expect(screen.getByText('Day 18')).toBeInTheDocument();
 		expect(screen.getByText('Day 19')).toBeInTheDocument();
 	});

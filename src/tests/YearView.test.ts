@@ -232,11 +232,11 @@ describe('YEAR view', () => {
 		expect(screen.getByText('1993')).toBeInTheDocument();
 		expect(container.querySelectorAll('.item').length).toBe(24);
 
-		clndr.forward();
+		clndr.next();
 		expect(screen.getByText('1994')).toBeInTheDocument();
 		expect(screen.getByText('1995')).toBeInTheDocument();
 
-		clndr.back();
+		clndr.previous();
 		expect(screen.getByText('1992')).toBeInTheDocument();
 		expect(screen.getByText('1993')).toBeInTheDocument();
 	});

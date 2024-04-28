@@ -148,8 +148,6 @@ export type ClndrItemProperties = {
 	isAdjacent: boolean
 }
 
-export type ClndrNavigationOptions = {element?: HTMLElement, withCallbacks?: boolean}
-
 export type NavigationConstraint = 'next' | 'today' | 'previous' | 'nextYear' | 'previousYear'
 export type NavigationConstraints = {[key in NavigationConstraint]: boolean}
 

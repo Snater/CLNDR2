@@ -218,11 +218,11 @@ describe('WEEK view', () => {
 		expect(screen.getByText('Week 4')).toBeInTheDocument();
 		expect(container.querySelectorAll('.item').length).toBe(14);
 
-		clndr.forward();
+		clndr.next();
 		expect(screen.getByText('Week 5')).toBeInTheDocument();
 		expect(screen.getByText('Week 6')).toBeInTheDocument();
 
-		clndr.back();
+		clndr.previous();
 		expect(screen.getByText('Week 3')).toBeInTheDocument();
 		expect(screen.getByText('Week 4')).toBeInTheDocument();
 	});

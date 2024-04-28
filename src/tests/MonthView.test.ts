@@ -208,11 +208,11 @@ describe('MONTH view', () => {
 		expect(screen.getByText('February 2024')).toBeInTheDocument();
 		expect(container.querySelectorAll('.item').length).toBe(70);
 
-		clndr.forward();
+		clndr.next();
 		expect(screen.getByText('March 2024')).toBeInTheDocument();
 		expect(screen.getByText('April 2024')).toBeInTheDocument();
 
-		clndr.back();
+		clndr.previous();
 		expect(screen.getByText('January 2024')).toBeInTheDocument();
 		expect(screen.getByText('February 2024')).toBeInTheDocument();
 	});

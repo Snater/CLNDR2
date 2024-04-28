@@ -424,7 +424,7 @@ describe('Navigation', () => {
 		});
 
 		expect(screen.getByText('January 2024')).toBeInTheDocument();
-		clndr.setMonth(2, {withCallbacks: true});
+		clndr.setMonth(2);
 		expect(screen.getByText('March 2024')).toBeInTheDocument();
 
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
@@ -450,7 +450,7 @@ describe('Navigation', () => {
 		});
 
 		expect(screen.getByText('January 2024')).toBeInTheDocument();
-		clndr.setYear(1992, {withCallbacks: true});
+		clndr.setYear(1992);
 		expect(screen.getByText('January 1992')).toBeInTheDocument();
 
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
@@ -476,7 +476,7 @@ describe('Navigation', () => {
 		});
 
 		expect(screen.getByText('January 2024')).toBeInTheDocument();
-		clndr.setIntervalStart('2000-06-01', {withCallbacks: true});
+		clndr.setIntervalStart('2000-06-01');
 		expect(screen.getByText('June 2000')).toBeInTheDocument();
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
 
@@ -527,8 +527,8 @@ describe('Events', () => {
 			},
 		});
 
-		clndr.next({withCallbacks: true});
-		clndr.back({withCallbacks: true});
+		clndr.next();
+		clndr.previous();
 
 		expect(handleNavigate).toHaveBeenCalledTimes(2);
 

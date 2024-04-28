@@ -550,16 +550,16 @@ There is no need to configure `defaultView` when only using one view or when the
 
 ## Public API
 
-It's possible to programmatically update the calendar after initialization.
+It's possible to programmatically update the calendar after initialization. Navigating and updating the calendar will trigger relevant event handlers provided per the `clickEvents` option.
 
 ```typescript
 const clndr = new Clndr(container, {render: {...}});
 
 // Navigate to the next page
-clndr.forward();
+clndr.next();
 
 // Navigate to the previous page
-clndr.back();
+clndr.previous();
 
 // Set the month using a number from 0-11
 clndr.setMonth(0);
@@ -591,19 +591,6 @@ clndr.removeEvents((event => event.id === idToRemove}));
 
 // Destroy the calendar instance. This will empty the DOM node containing the calendar.
 clndr.destroy();
-```
-
-When having provided `onMonthChange` and `onYearChange` callbacks per the `clickEvents` option,
-those should potentially be triggered whenever calling `setMonth`, `setYear`, `forward`,
-`back`, etc. This can be achieved by passing in an object as an argument containing
-`withCallbacks: true`:
-
-```typescript
-// Month will be set to October and then onMonthChange will be fired
-clndr.setMonth(9, {withCallbacks: true});
-
-// Month will increment and onMonthChange, and possibly onYearChange, will be triggered
-clndr.next({withCallbacks: true});
 ```
 
 ## Internationalization
