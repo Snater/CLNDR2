@@ -78,7 +78,7 @@ describe('WEEK view', () => {
 				end: new Date('1992-10-31'),
 			},
 			pagination: {week: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('Week 42 in 1992')).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe('WEEK view', () => {
 				start: new Date('1992-11-15'),
 			},
 			pagination: {week: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('Week 47 in 1992')).toBeInTheDocument();
@@ -122,7 +122,7 @@ describe('WEEK view', () => {
 				end: new Date('1992-09-15'),
 			},
 			pagination: {week: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('Week 38 in 1992')).toBeInTheDocument();
@@ -139,7 +139,7 @@ describe('WEEK view', () => {
 				onNavigate: handleNavigate,
 			},
 			pagination: {week: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		await user.click(screen.getByText('next'));

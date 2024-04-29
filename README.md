@@ -337,9 +337,10 @@ new Clndr(container, {
   // populated grid of days.
   showAdjacent: true,
 
-  // Determines which month to display initially by providing either a date string or a Date object.
-  // If not provided, today's date is used.
-  startOn: new Date('1992-10'),
+  // Determines the point in time that should be within the view rendered
+  // initially. May be either a Date object, a string or number to be passed to
+  // the `Date` constructor. If not provided, today's date is used.
+  startOn: '1992-10',
 
   // The target classnames that the calendar will look for to bind events.
   // These are the defaults:

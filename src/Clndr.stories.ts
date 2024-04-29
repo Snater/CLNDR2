@@ -239,14 +239,14 @@ const meta: Meta<ClndrOptions> = {
 			},
 		},
 		startOn: {
-			description: 'Set up the start point which the calendar should initially be rendered from. The value provided will be mapped to the setup of the calendar, i.e. if setting up the calendar using `pagination.scope === \'month\'` (which is also set by default), the calendar will start on, for example, October 1992 no matter if `startOn` is `new Date(\'1992-10\')` or new Date(\'1992-10-15\')`. `undefined` will use today\'s date.',
+			description: 'Set up the start point which the calendar should initially be rendered from. The value provided will be mapped to the setup of the calendar, i.e. if setting up the calendar using `month` pagination (which is also set by default), the calendar will start on, for example, October 1992 no matter if `startOn` is `new Date(\'1992-10\')` or new Date(\'1992-10-15\')`. `undefined` will use today\'s date.',
 			control: 'date',
 			table: {
 				defaultValue: {
 					summary: 'undefined',
 				},
 				type: {
-					summary: 'Date | undefined',
+					summary: 'Date | string | number | undefined',
 				},
 			},
 		},

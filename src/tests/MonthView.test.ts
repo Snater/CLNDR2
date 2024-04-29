@@ -68,7 +68,7 @@ describe('MONTH view', () => {
 				end: new Date('1992-12-31'),
 			},
 			pagination: {month: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -99,7 +99,7 @@ describe('MONTH view', () => {
 				start: new Date('1992-11-15'),
 			},
 			pagination: {month: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('November 1992')).toBeInTheDocument();
@@ -112,7 +112,7 @@ describe('MONTH view', () => {
 				end: new Date('1992-09-15'),
 			},
 			pagination: {month: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('September 1992')).toBeInTheDocument();
@@ -129,7 +129,7 @@ describe('MONTH view', () => {
 				onNavigate: handleNavigate,
 			},
 			pagination: {month: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		await user.click(screen.getByText('next'));
@@ -231,7 +231,7 @@ describe('MONTH view', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			forceSixRows: true,
-			startOn: new Date('1992-02'),
+			startOn: '1992-02',
 		});
 
 		expect(container.querySelector('.calendar-day-1992-03-07')).toBeInTheDocument();
@@ -242,7 +242,7 @@ describe('MONTH view', () => {
 			render: provideRender(),
 			forceSixRows: true,
 			showAdjacent: false,
-			startOn: new Date('1992-02'),
+			startOn: '1992-02',
 		});
 
 		expect(container.querySelectorAll('.empty').length).toBeGreaterThan(0);
@@ -253,7 +253,7 @@ describe('MONTH view', () => {
 			render: provideRender(),
 			events: [{date: '1992-10-15'}],
 			showAdjacent: false,
-			startOn: new Date('1992-10'),
+			startOn: '1992-10',
 		});
 
 		expect(screen.queryAllByText('1').length).toBe(1);
@@ -266,7 +266,7 @@ describe('MONTH view', () => {
 			adjacentItemsChangePage: true,
 			pagination: {month: {size: 1}},
 			showAdjacent: false,
-			startOn: new Date('1992-10'),
+			startOn: '1992-10',
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -282,7 +282,7 @@ describe('MONTH view', () => {
 			adjacentItemsChangePage: true,
 			pagination: {month: {size: 1}},
 			showAdjacent: false,
-			startOn: new Date('1992-09'),
+			startOn: '1992-09',
 		});
 
 		expect(screen.getByText('September 1992')).toBeInTheDocument();
@@ -294,7 +294,7 @@ describe('MONTH view', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			adjacentItemsChangePage: true,
-			startOn: new Date('1992-10'),
+			startOn: '1992-10',
 		});
 
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
@@ -307,7 +307,7 @@ describe('MONTH view', () => {
 			render: provideRender(),
 			adjacentItemsChangePage: true,
 			pagination: {month: {size: 1}},
-			startOn: new Date('1992-09'),
+			startOn: '1992-09',
 		});
 
 		expect(screen.getByText('September 1992')).toBeInTheDocument();

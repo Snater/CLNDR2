@@ -218,7 +218,9 @@ class Clndr {
 		this.events = this.parseToInternalEvents(this.options.events);
 
 		// For supporting arbitrary lengths of time, the current range is stored
-		this.interval = this.adapter.initInterval(this.options.startOn);
+		this.interval = this.adapter.initInterval(
+			this.options.startOn !== undefined ? new Date(this.options.startOn) : undefined
+		);
 
 		// If there are constraints, make sure the interval is within them
 		if (this.options.constraints) {
@@ -478,7 +480,7 @@ class Clndr {
 			daysOfTheWeek: this.daysOfTheWeek,
 			numberOfRows: 0,
 			interval: this.interval,
-			format: (date: Date, formatStr: string, options: FormatOptions = {}) => {
+			format: (date: Date | string | number, formatStr: string, options: FormatOptions = {}) => {
 				return format(date, formatStr, {locale: this.options.locale || undefined, ...options});
 			},
 		};
@@ -973,7 +975,7 @@ class Clndr {
 	today(element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
-		this.interval = this.adapter.setDay(new Date(), this.options.startOn);
+		this.interval = this.adapter.setDay(new Date());
 
 		// No need to re-render if the page was not changed
 		if (
@@ -1018,10 +1020,10 @@ class Clndr {
 	/**
 	 * Sets the start of the time period.
 	 */
-	setIntervalStart(newDate: Date | string, element?: HTMLElement) {
+	setIntervalStart(newDate: Date | string | number, element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
-		this.interval = this.adapter.setDay(new Date(newDate), this.options.startOn);
+		this.interval = this.adapter.setDay(new Date(newDate));
 
 		this.render();
 

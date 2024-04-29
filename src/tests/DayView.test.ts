@@ -61,7 +61,7 @@ describe('DAY view', () => {
 				end: new Date('1992-10-17'),
 			},
 			pagination: {day: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 		expect(screen.getByText('Day 289 in 1992')).toBeInTheDocument();
 		await user.click(screen.getByText('previous'));
@@ -91,7 +91,7 @@ describe('DAY view', () => {
 				start: new Date('1992-10-16'),
 			},
 			pagination: {day: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('Day 290 in 1992')).toBeInTheDocument();
@@ -104,7 +104,7 @@ describe('DAY view', () => {
 				end: new Date('1992-10-14'),
 			},
 			pagination: {day: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('Day 288 in 1992')).toBeInTheDocument();
@@ -121,7 +121,7 @@ describe('DAY view', () => {
 				onNavigate: handleNavigate,
 			},
 			pagination: {day: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		await user.click(screen.getByText('next'));

@@ -5,7 +5,6 @@ import type {TargetOption as YearTargetOption} from './YearAdapter';
 
 type RenderFn = (data: ClndrTemplateData) => string
 
-// TODO: Extend Date types to also allow Date compatible types string and number
 export type InternalOptions = {
 	render: RenderFn | {[key in Scope]?: RenderFn}
 	adjacentItemsChangePage: boolean
@@ -26,7 +25,7 @@ export type InternalOptions = {
 	ready?: () => void
 	selectedDate?: Date | string | number
 	showAdjacent: boolean
-	startOn?: Date
+	startOn?: Date | string | number
 	targets: {[key in TargetOption]: string}
 	trackSelectedDate: boolean
 	useTouchEvents: boolean
@@ -129,7 +128,7 @@ export type ClndrTemplateData = {
 	}
 	daysOfTheWeek: string[]
 	numberOfRows: number
-	format: (date: Date, formatStr: string, options: FormatOptions) => string
+	format: (date: Date | string | number, formatStr: string, options: FormatOptions) => string
 	extras: unknown | null
 }
 

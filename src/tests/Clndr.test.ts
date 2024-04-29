@@ -413,7 +413,7 @@ describe('Navigation', () => {
 		});
 	})
 
-	test('Programmatically set month with callbacks', () => {
+	test('Programmatically set month', () => {
 		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
@@ -439,7 +439,7 @@ describe('Navigation', () => {
 		});
 	});
 
-	test('Programmatically set year with callbacks', () => {
+	test('Programmatically set year', () => {
 		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
@@ -465,7 +465,7 @@ describe('Navigation', () => {
 		});
 	});
 
-	test('Programmatically set new interval with callbacks', () => {
+	test('Programmatically set new interval', () => {
 		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {

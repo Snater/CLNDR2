@@ -91,7 +91,7 @@ describe('YEAR view', () => {
 				end: new Date('1994'),
 			},
 			pagination: {year: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		await user.click(screen.getByText('previous'));
@@ -121,7 +121,7 @@ describe('YEAR view', () => {
 				start: new Date('1993'),
 			},
 			pagination: {year: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('1993')).toBeInTheDocument();
@@ -134,7 +134,7 @@ describe('YEAR view', () => {
 				end: new Date('1991'),
 			},
 			pagination: {year: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('1991')).toBeInTheDocument();
@@ -151,7 +151,7 @@ describe('YEAR view', () => {
 				onNavigate: handleNavigate,
 			},
 			pagination: {year: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		await user.click(screen.getByText('next'));
@@ -213,7 +213,7 @@ describe('YEAR view', () => {
 				{date: '1993-10-15', title: 'event out of range'},
 			],
 			pagination: {year: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('September').classList.contains('event')).toBeFalsy();
@@ -225,7 +225,7 @@ describe('YEAR view', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiYearTemplate),
 			pagination: {year: {size: 2}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('1992')).toBeInTheDocument();

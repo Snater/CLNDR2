@@ -89,7 +89,7 @@ describe('DECADE view', () => {
 				end: new Date('2014'),
 			},
 			pagination: {decade: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('1990 to 1999')).toBeInTheDocument();
@@ -120,7 +120,7 @@ describe('DECADE view', () => {
 				start: new Date('2003'),
 			},
 			pagination: {decade: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('2000 to 2009')).toBeInTheDocument();
@@ -133,7 +133,7 @@ describe('DECADE view', () => {
 				end: new Date('1981'),
 			},
 			pagination: {decade: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('1980 to 1989')).toBeInTheDocument();
@@ -150,7 +150,7 @@ describe('DECADE view', () => {
 				onNavigate: handleNavigate,
 			},
 			pagination: {decade: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		await user.click(screen.getByText('next'));
@@ -212,7 +212,7 @@ describe('DECADE view', () => {
 				{date: '2003-10-15', title: 'event out of range'},
 			],
 			pagination: {decade: {size: 1}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('1991').classList.contains('event')).toBeFalsy();
@@ -224,7 +224,7 @@ describe('DECADE view', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(multiDecadeTemplate),
 			pagination: {decade: {size: 2}},
-			startOn: new Date('1992-10-15'),
+			startOn: '1992-10-15',
 		});
 
 		expect(screen.getByText('1990 to 1999')).toBeInTheDocument();
