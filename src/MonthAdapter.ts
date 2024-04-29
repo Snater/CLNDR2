@@ -17,21 +17,21 @@ import {
 	subMonths,
 } from 'date-fns';
 import DayBasedAdapter from './DayBasedAdapter';
-import type {Adjacent, InternalClndrEvent, Interval, PageDates, Scope} from './types';
+import type {Adjacent, InternalClndrEvent, Interval, PageDates, View} from './types';
 
 export type TargetOption = 'switchMonthButton'
 
 export default class MonthAdapter extends DayBasedAdapter {
 
-	protected static scope: Scope = 'month';
+	protected static view: View = 'month';
 
 	static targets: Record<TargetOption, string> = {
 		switchMonthButton: 'clndr-switch-month-button',
 	}
 
-	static eventListener(element: HTMLElement, callback: (scope: Scope) => void) {
+	static eventListener(element: HTMLElement, callback: (view: View) => void) {
 		if (element.closest('.' + MonthAdapter.targets.switchMonthButton)) {
-			callback(MonthAdapter.scope);
+			callback(MonthAdapter.view);
 		}
 	}
 
@@ -80,7 +80,7 @@ export default class MonthAdapter extends DayBasedAdapter {
 		return adjustedInterval;
 	}
 
-	aggregateAdjacentScopeEvents(
+	aggregateAdjacentPageEvents(
 		interval: Interval,
 		events: InternalClndrEvent[]
 	): [InternalClndrEvent[], InternalClndrEvent[]] {
@@ -110,7 +110,7 @@ export default class MonthAdapter extends DayBasedAdapter {
 		return [eventsPreviousMonth, eventsNextMonth];
 	}
 
-	aggregateScopeItems(interval: Interval, weekOffset: number): PageDates {
+	aggregatePageItems(interval: Interval, weekOffset: number): PageDates {
 		const daysOfPreviousMonth = this.aggregateDaysOfPreviousMonth(interval.start, weekOffset);
 		const daysOfCurrentMonth = this.aggregateDaysOfCurrentPage(interval);
 
@@ -176,11 +176,11 @@ export default class MonthAdapter extends DayBasedAdapter {
 		return days;
 	}
 
-	endOfScope(date: Date): Date {
+	endOfPage(date: Date): Date {
 		return endOfMonth(date);
 	}
 
-	protected addScope(date: Date, count: number): Date {
+	protected addPages(date: Date, count: number): Date {
 		return addMonths(date, count);
 	}
 

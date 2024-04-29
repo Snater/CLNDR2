@@ -140,6 +140,7 @@ describe('Setup', () => {
 
 		expect(handleClick.mock.calls[0][0]).toEqual({
 			date: new Date('2024-01-16'),
+			view: 'month',
 			events: [],
 			selectedDateChanged: true,
 			isToday: false,
@@ -371,6 +372,7 @@ describe('Navigation', () => {
 
 		expect(handleClick.mock.calls[0][0]).toEqual({
 			date: new Date('2024-01-18'),
+			view: 'month',
 			events: [],
 			selectedDateChanged: true,
 			isToday: true,
@@ -570,6 +572,7 @@ describe('Events', () => {
 
 		expect(handleClick.mock.calls[0][0]).toEqual({
 			date: new Date('2024-01-19'),
+			view: 'month',
 			events: [{title: 'This is an event', date: '2024-01-19'}],
 			selectedDateChanged: true,
 			isToday: false,
@@ -597,6 +600,7 @@ describe('Events', () => {
 
 		expect(handleClick.mock.calls[0][0]).toEqual({
 			date: new Date('2024-01-16'),
+			view: 'month',
 			events: [{
 				title: 'Multi-day event',
 				start: '2024-01-12',
@@ -691,9 +695,9 @@ describe('Data manipulations', () => {
 
 });
 
-describe('Multiple scopes', () => {
+describe('Multiple views', () => {
 
-	const multiScopeTemplates = {
+	const multiViewTemplates = {
 		day: provideRender(`
 			<div class="day">Day <%= format(items[0].date, 'D', {useAdditionalDayOfYearTokens: true}) %> in <%= format(items[0].date, 'yyyy') %></div>
 			<div class="clndr-switch-week-button">Switch to week view</div>
@@ -726,9 +730,9 @@ describe('Multiple scopes', () => {
 		`),
 	};
 
-	test('Switching scope', async () => {
+	test('Switching view', async () => {
 		clndr = new Clndr(container, {
-			render: multiScopeTemplates,
+			render: multiViewTemplates,
 			defaultView: 'day',
 		});
 
@@ -756,7 +760,7 @@ describe('Multiple scopes', () => {
 
 	test('Tracking selected date across multiple views', async () => {
 		clndr = new Clndr(container, {
-			render: multiScopeTemplates,
+			render: multiViewTemplates,
 			defaultView: 'decade',
 			trackSelectedDate: true,
 		});
@@ -774,8 +778,8 @@ describe('Multiple scopes', () => {
 	test('Tracking selected date on non-day based view', async () => {
 		clndr = new Clndr(container, {
 			render: {
-				year: multiScopeTemplates.year,
-				decade: multiScopeTemplates.decade,
+				year: multiViewTemplates.year,
+				decade: multiViewTemplates.decade,
 			},
 			defaultView: 'decade',
 			trackSelectedDate: true,
@@ -827,7 +831,7 @@ describe('Multiple scopes', () => {
 		expect(screen.getByText('February')).toBeInTheDocument();
 	});
 
-	test('Missing render function for scope', async () => {
+	test('Missing render function for view', async () => {
 		const mockWarn = jest.fn();
 		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
 
@@ -846,7 +850,7 @@ describe('Multiple scopes', () => {
 		expect(mockWarn).toHaveBeenCalledTimes(1);
 	});
 
-	test('Try to switch to invalid scope', async () => {
+	test('Try to switch to invalid view', async () => {
 		clndr = new Clndr(container, {
 			render: {
 				month: provideRender(`

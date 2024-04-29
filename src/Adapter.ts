@@ -3,7 +3,7 @@ import type {
 	InternalClndrEvent,
 	Interval,
 	PageDates,
-	Scope,
+	View,
 	WeekOffset,
 } from './types';
 
@@ -16,11 +16,11 @@ export type AdapterOptions = {
 
 export abstract class Adapter {
 
-	protected static scope: Scope;
+	protected static view: View;
 
-	getScope()  {
+	getView()  {
 		const adapter = <typeof Adapter>this.constructor;
-		return adapter.scope;
+		return adapter.view;
 	}
 
 	protected readonly options: AdapterOptions
@@ -34,15 +34,15 @@ export abstract class Adapter {
 	abstract initStartConstraint(constraintStart: Date, interval: Interval): Interval
 	abstract initEndConstraint(constraintEnd: Date, interval: Interval): Interval
 
-	abstract aggregateAdjacentScopeEvents(
+	abstract aggregateAdjacentPageEvents(
 		interval: Interval,
 		events: InternalClndrEvent[]
 	): [InternalClndrEvent[], InternalClndrEvent[]]
 
-	abstract aggregateScopeItems(interval: Interval, weekOffset?: number): PageDates
+	abstract aggregatePageItems(interval: Interval, weekOffset?: number): PageDates
 
-	abstract endOfScope(date: Date): Date
-	protected abstract addScope(date: Date, count: number): Date
+	abstract endOfPage(date: Date): Date
+	protected abstract addPages(date: Date, count: number): Date
 
 	abstract isToday(date: Date): boolean
 	abstract isAdjacent(itemInterval: Interval, interval: Interval): Adjacent
@@ -62,8 +62,8 @@ export abstract class Adapter {
 		const pageIntervals: Interval[] = [];
 
 		for (let i = 0; i < this.options.pageSize; i++) {
-			const start = this.addScope(startDate, i);
-			pageIntervals.push({start, end: this.endOfScope(start)});
+			const start = this.addPages(startDate, i);
+			pageIntervals.push({start, end: this.endOfPage(start)});
 		}
 
 		return pageIntervals;

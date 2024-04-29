@@ -39,16 +39,16 @@ import type {
 	NavigationConstraint,
 	NavigationConstraints,
 	Pagination,
-	Scope,
 	TargetOption,
+	View,
 	WeekOffset,
 } from './types';
 
-const orderedScopes: Scope[] = ['day', 'week', 'month', 'year', 'decade'] as const;
+const orderedViews: View[] = ['day', 'week', 'month', 'year', 'decade'] as const;
 
-const adapters: Record<Scope,
+const adapters: Record<View,
 	(new (options: AdapterOptions) => Adapter) & {
-		eventListener?: (element: HTMLElement, callback: (scope: Scope) => void) => void,
+		eventListener?: (element: HTMLElement, callback: (view: View) => void) => void,
 		targets?: Record<string, string>
 	}
 > = {
@@ -166,7 +166,7 @@ class Clndr {
 	}
 
 	private readonly element: HTMLElement;
-	private readonly availableScopes: Scope[];
+	private readonly availableViews: View[];
 	private adapter: Adapter;
 	/**
 	 * Boolean values used to log whether any constraints are met
@@ -184,22 +184,22 @@ class Clndr {
 
 		this.options = Clndr.mergeOptions<InternalOptions, ClndrOptions>(defaults, options);
 
-		this.availableScopes = typeof this.options.render === 'function'
-			? Object.keys(this.options.pagination) as Scope[]
-			: orderedScopes.filter(scope => Object.keys(this.options.render).includes(scope));
+		this.availableViews = typeof this.options.render === 'function'
+			? Object.keys(this.options.pagination) as View[]
+			: orderedViews.filter(view => Object.keys(this.options.render).includes(view));
 
 		const defaultView = this.options.defaultView !== defaults.defaultView
 			? this.options.defaultView
 			: this.options.pagination[this.options.defaultView]
 				? this.options.defaultView
-				// Pick the smallest scope configured when pagination is not configured for the default
+				// Pick the smallest view configured when pagination is not configured for the default
 				// view.
-				: orderedScopes.filter(scope => this.options.pagination[scope] !== undefined)[0];
+				: orderedViews.filter(view => this.options.pagination[view] !== undefined)[0];
 
 		this.adapter = new adapters[defaultView]({
 			forceSixRows: this.options.forceSixRows,
-			// There will always be at least one scope's pagination be configured as there is a default
-			// value. Therefore, `defaultView` will be a valid scope having pagination configured.
+			// There will always be at least one view's pagination be configured as there is a default
+			// value. Therefore, `defaultView` will be a valid view having pagination configured.
 			pageSize: (this.options.pagination[defaultView] as Pagination)?.size ?? 1,
 			showAdjacent: this.options.showAdjacent,
 			weekOffset: this.options.weekOffset,
@@ -299,18 +299,18 @@ class Clndr {
 		return adjustedDaysOfTheWeek;
 	}
 
-	private createScopeObjects(
+	private createPageItems(
 		interval: Interval,
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
 	) {
 
-		const dates = this.adapter.aggregateScopeItems(interval, this.options.weekOffset);
+		const dates = this.adapter.aggregatePageItems(interval, this.options.weekOffset);
 
 		// This array will contain the data of the entire grid (including blank spaces)
 		return [
 			...dates[0].map(date => {
 				if (this.options.showAdjacent) {
-					return this.createScopeObject(date, events[0], interval)
+					return this.createPageItem(date, events[0], interval)
 				} else {
 					return this.compileClndrItem({
 						classes: [this.options.targets.empty, this.options.classes.previous].join(' '),
@@ -318,11 +318,11 @@ class Clndr {
 				}
 			}),
 			...dates[1].map(date => {
-				return this.createScopeObject(date, events[1], interval)
+				return this.createPageItem(date, events[1], interval)
 			}),
 			...dates[2].map(date => {
 				if (this.options.showAdjacent) {
-					return this.createScopeObject(date, events[2], interval)
+					return this.createPageItem(date, events[2], interval)
 				} else {
 					return this.compileClndrItem({
 						classes: [this.options.targets.empty, this.options.classes.next].join(' '),
@@ -333,8 +333,8 @@ class Clndr {
 	}
 
 	/**
-	 * Filters the events list to events that are happening in the previous scope, the current scope
-	 * and the next scope, so if the adjacent option is on, the events will also be available in the
+	 * Filters the events list to events that are happening on the previous page, the current page and
+	 * the next page, so if the adjacent option is on, the events will also be available in the
 	 * template.
 	 */
 	private parseEvents(interval: Interval) {
@@ -348,16 +348,16 @@ class Clndr {
 			return !(beforeStart || afterEnd);
 		});
 
-		const [previousScopeEvents, nextScopeEvents]
-			= this.adapter.aggregateAdjacentScopeEvents(interval, this.events);
+		const [previousPageEvents, nextPageEvents]
+			= this.adapter.aggregateAdjacentPageEvents(interval, this.events);
 
-		parsedEvents[0] = previousScopeEvents;
-		parsedEvents[2] = nextScopeEvents;
+		parsedEvents[0] = previousPageEvents;
+		parsedEvents[2] = nextPageEvents;
 
 		return parsedEvents;
 	}
 
-	private createScopeObject(date: Date, events: InternalClndrEvent[], interval: Interval) {
+	private createPageItem(date: Date, events: InternalClndrEvent[], interval: Interval) {
 		const now = new Date();
 		const classes = [this.options.targets.item];
 		const properties: ClndrItemProperties = {
@@ -418,8 +418,8 @@ class Clndr {
 		}
 
 		if(!properties.isInactive) {
-			const adjacentScope = this.getAdjacentScope(this.adapter.getScope());
-			adjacentScope && classes.push(this.options.classes.switch);
+			const adjacentView = this.getAdjacentView(this.adapter.getView());
+			adjacentView && classes.push(this.options.classes.switch);
 		}
 
 		if (this.selectedDate && isWithinInterval(this.selectedDate, itemInterval)) {
@@ -436,10 +436,10 @@ class Clndr {
 		});
 	}
 
-	private getAdjacentScope(scope: Scope): Scope | undefined {
-		const index = this.availableScopes.indexOf(scope);
+	private getAdjacentView(view: View): View | undefined {
+		const index = this.availableViews.indexOf(view);
 		const adjacentIndex = index - 1;
-		return this.availableScopes[adjacentIndex];
+		return this.availableViews[adjacentIndex];
 	}
 
 	private render() {
@@ -447,10 +447,10 @@ class Clndr {
 
 		const renderFn = typeof this.options.render === 'function'
 			? this.options.render
-			: this.options.render[this.adapter.getScope()];
+			: this.options.render[this.adapter.getView()];
 
 		if (!renderFn) {
-			console.warn(`No render function defined for ${this.adapter.getScope()} scope`);
+			console.warn(`No render function defined for ${this.adapter.getView()} view`);
 			return;
 		}
 
@@ -462,7 +462,7 @@ class Clndr {
 		this.applyInactiveClasses();
 
 		if (this.options.doneRendering) {
-			// TODO: Pass information about scope along the event
+			// TODO: Pass information about view along the event
 			this.options.doneRendering.apply(this, []);
 		}
 	}
@@ -473,8 +473,8 @@ class Clndr {
 			items: [],
 			events: {
 				currentPage: [],
-				previousScope: [],
-				nextScope: [],
+				previousPage: [],
+				nextPage: [],
 			},
 			extras: this.options.extras,
 			daysOfTheWeek: this.daysOfTheWeek,
@@ -494,7 +494,7 @@ class Clndr {
 		for (const pageInterval of pageIntervals) {
 			data.pages.push(pageInterval.start);
 
-			data.items.push(this.createScopeObjects(pageInterval, parsedEvents));
+			data.items.push(this.createPageItems(pageInterval, parsedEvents));
 
 			data.events.currentPage.push(
 				parsedEvents[1]
@@ -503,10 +503,10 @@ class Clndr {
 			);
 		}
 
-		data.events.previousScope = parsedEvents[0].map(event => event.originalEvent);
-		data.events.nextScope = parsedEvents[2].map(event => event.originalEvent);
+		data.events.previousPage = parsedEvents[0].map(event => event.originalEvent);
+		data.events.nextPage = parsedEvents[2].map(event => event.originalEvent);
 
-		if ((this.options.pagination[this.adapter.getScope()]?.size ?? 1) > 1) {
+		if ((this.options.pagination[this.adapter.getView()]?.size ?? 1) > 1) {
 			return data;
 		}
 
@@ -542,7 +542,7 @@ class Clndr {
 			? new Date(this.options.constraints.start)
 			: null;
 		const end = this.options.constraints.end
-			? this.adapter.endOfScope(new Date(this.options.constraints.end))
+			? this.adapter.endOfPage(new Date(this.options.constraints.end))
 			: null;
 
 		// Month control
@@ -675,20 +675,19 @@ class Clndr {
 		}
 	}
 
+	// TODO: Make this function public
 	/**
-	 * Clicking on an item to switch the scope will always switch to the next smaller scope.
-	 * Switching to a larger scope by clicking on an item does not make a lot of sense.
+	 * Clicking on an item to switch the view will always switch to the next smaller view.
+	 * Switching to a larger view by clicking on an item does not make a lot of sense.
 	 */
 	private switchView(target: HTMLElement) {
 		if (!target.classList.contains('switch')) {
 			return;
 		}
 
-		const adjacentScope = this.getAdjacentScope(this.adapter.getScope());
+		const adjacentView = this.getAdjacentView(this.adapter.getView());
 
-		if (adjacentScope) {
-			this.setPagination(adjacentScope, this.getTargetDate(target));
-		}
+		adjacentView && this.setPagination(adjacentView, this.getTargetDate(target));
 	}
 
 	/**
@@ -753,6 +752,7 @@ class Clndr {
 
 		return {
 			date,
+			view: this.adapter.getView(),
 			events: targetWasDay && date ? this.getEventsOfDate(date) : [],
 			selectedDateChanged: !!date && (
 				!previouslySelectedDate || !isSameDay(date, previouslySelectedDate)
@@ -863,10 +863,10 @@ class Clndr {
 		return Clndr.mergeOptions<ClndrItem>(defaults, options);
 	}
 
-	private setPagination(scope: Scope, date?: Date) {
-		this.adapter = new adapters[scope]({
+	private setPagination(view: View, date?: Date) {
+		this.adapter = new adapters[view]({
 			forceSixRows: this.options.forceSixRows,
-			pageSize: this.options.pagination[scope]?.size ?? 1,
+			pageSize: this.options.pagination[view]?.size ?? 1,
 			showAdjacent: this.options.showAdjacent,
 			weekOffset: this.options.weekOffset,
 		});
@@ -896,7 +896,7 @@ class Clndr {
 
 		this.interval = this.adapter.back(
 			this.interval,
-			this.options.pagination[this.adapter.getScope()]?.step
+			this.options.pagination[this.adapter.getView()]?.step
 		);
 
 		this.render();
@@ -918,7 +918,7 @@ class Clndr {
 
 		this.interval = this.adapter.forward(
 			this.interval,
-			this.options.pagination[this.adapter.getScope()]?.step
+			this.options.pagination[this.adapter.getView()]?.step
 		);
 
 		this.render();

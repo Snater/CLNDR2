@@ -10,11 +10,11 @@ import {
 	subDays,
 } from 'date-fns';
 import DayBasedAdapter from './DayBasedAdapter';
-import type {Adjacent, InternalClndrEvent, Interval, PageDates, Scope} from './types';
+import type {Adjacent, InternalClndrEvent, Interval, PageDates, View} from './types';
 
 export default class DayAdapter extends DayBasedAdapter {
 
-	static scope: Scope = 'day';
+	static view: View = 'day';
 
 	initInterval(startOn?: Date): Interval {
 		const start = startOfDay(startOn ? startOn : new Date());
@@ -48,13 +48,13 @@ export default class DayAdapter extends DayBasedAdapter {
 		return adjustedInterval;
 	}
 
-	aggregateAdjacentScopeEvents(): [InternalClndrEvent[], InternalClndrEvent[]] {
+	aggregateAdjacentPageEvents(): [InternalClndrEvent[], InternalClndrEvent[]] {
 		// Since "day" is the smallest unit, there is no point in having an implementation for this
-		// scope as there will never be adjacent days visible.
+		// view as there will never be adjacent days visible.
 		return [[], []];
 	}
 
-	aggregateScopeItems(interval: Interval): PageDates {
+	aggregatePageItems(interval: Interval): PageDates {
 		const days: Date[] = [];
 		for (let i = 0; i <= differenceInDays(interval.end, interval.start); i++) {
 			days.push(addDays(interval.start, i));
@@ -62,11 +62,11 @@ export default class DayAdapter extends DayBasedAdapter {
 		return [[], days, []];
 	}
 
-	endOfScope(date: Date): Date {
+	endOfPage(date: Date): Date {
 		return endOfDay(date);
 	}
 
-	protected addScope(date: Date, count: number): Date {
+	protected addPages(date: Date, count: number): Date {
 		return addDays(date, count);
 	}
 

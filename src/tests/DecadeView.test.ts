@@ -182,6 +182,7 @@ describe('DECADE view', () => {
 
 		expect(handleClick.mock.calls[0][0]).toEqual({
 			date: new Date('1994'),
+			view: 'decade',
 			events: [],
 			selectedDateChanged: true,
 			isToday: false,
@@ -262,6 +263,7 @@ describe('DECADE view', () => {
 
 		expect(handleClick.mock.calls[0][0]).toEqual({
 			date: new Date('2023'),
+			view: 'decade',
 			events: [],
 			selectedDateChanged: true,
 			isToday: false,
@@ -290,6 +292,7 @@ describe('DECADE view', () => {
 
 		expect(handleClick.mock.calls[0][0]).toEqual({
 			date: undefined,
+			view: 'decade',
 			events: [],
 			selectedDateChanged: false,
 			isToday: false,

@@ -6,14 +6,14 @@ import type {TargetOption as YearTargetOption} from './YearAdapter';
 type RenderFn = (data: ClndrTemplateData) => string
 
 export type InternalOptions = {
-	render: RenderFn | {[key in Scope]?: RenderFn}
+	render: RenderFn | {[key in View]?: RenderFn}
 	adjacentItemsChangePage: boolean
 	classes: {[key in ItemStatus]: string}
 	clickEvents: ClickEvents
 	constraints?: Constraints
 	dateParameter: DateParameterDefinition
 	daysOfTheWeek?: DaysOfTheWeek
-	defaultView: Scope
+	defaultView: View
 	doneRendering?: () => void
 	events: ClndrEvent[]
 	extras?: unknown
@@ -21,7 +21,7 @@ export type InternalOptions = {
 	formatWeekdayHeader?: (day: Date, locale?: Locale) => string
 	ignoreInactiveDaysInSelection: boolean
 	locale?: Locale
-	pagination: {[key in Scope]?: Pagination}
+	pagination: {[key in View]?: Pagination}
 	ready?: () => void
 	selectedDate?: Date | string | number
 	showAdjacent: boolean
@@ -35,12 +35,12 @@ export type InternalOptions = {
 export type ClndrOptions = Partial<
 	Omit<InternalOptions, 'classes' | 'defaultView' | 'pagination' | 'render' | 'targets'> & {
 		classes?: {[key in ItemStatus]?: string}
-		defaultView?: Scope
-		pagination?: {[key in Scope]?: Pagination}
+		defaultView?: View
+		pagination?: {[key in View]?: Pagination}
 		targets?: {[key in TargetOption]?: string}
 	}
 > & {
-	render: RenderFn | {[key in Scope]?: RenderFn}
+	render: RenderFn | {[key in View]?: RenderFn}
 }
 
 export type ClndrEvent = {
@@ -71,20 +71,20 @@ export type Pagination = {
 	step?: number
 }
 
-export type Scope = 'decade' | 'year' | 'month' | 'week' | 'day'
+export type View = 'decade' | 'year' | 'month' | 'week' | 'day'
 
 type ClickEvents = {
 	onClick?: (parameters: ClndrItemEventParameters) => void
 	onNavigate?: (parameters: NavigationEventParameters) => void
 }
 
-// TODO: This will need to contain the scope when being able to switch the scope
 export type ClndrItemEventParameters = {
 	date?: Date
+	view: View
 	events: ClndrEvent[]
 	selectedDateChanged: boolean
 	isToday: boolean
-	element?: HTMLElement
+	element: HTMLElement
 }
 
 export type NavigationEventParameters = {
@@ -123,8 +123,8 @@ export type ClndrTemplateData = {
 	items: ClndrItem[] | ClndrItem[][]
 	events: {
 		currentPage: ClndrEvent[] | ClndrEvent[][]
-		previousScope: ClndrEvent[]
-		nextScope: ClndrEvent[]
+		previousPage: ClndrEvent[]
+		nextPage: ClndrEvent[]
 	}
 	daysOfTheWeek: string[]
 	numberOfRows: number

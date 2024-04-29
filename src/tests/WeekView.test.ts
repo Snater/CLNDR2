@@ -171,6 +171,7 @@ describe('WEEK view', () => {
 
 		expect(handleClick.mock.calls[0][0]).toEqual({
 			date: new Date('1992-10-15'),
+			view: 'week',
 			events: [],
 			selectedDateChanged: true,
 			isToday: false,
@@ -249,6 +250,7 @@ describe('WEEK view', () => {
 
 		expect(handleClick.mock.calls[0][0]).toEqual({
 			date: new Date('2024-01-20'),
+			view: 'week',
 			events: [],
 			selectedDateChanged: true,
 			isToday: false,
@@ -277,6 +279,7 @@ describe('WEEK view', () => {
 
 		expect(handleClick.mock.calls[0][0]).toEqual({
 			date: undefined,
+			view: 'week',
 			events: [],
 			selectedDateChanged: false,
 			isToday: false,

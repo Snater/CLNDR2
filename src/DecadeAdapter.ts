@@ -13,21 +13,21 @@ import {
 	subYears,
 } from 'date-fns';
 import {Adapter} from './Adapter';
-import type {Adjacent, InternalClndrEvent, Interval, PageDates, Scope} from './types';
+import type {Adjacent, InternalClndrEvent, Interval, PageDates, View} from './types';
 
 export type TargetOption = 'switchDecadeButton'
 
 export default class DecadeAdapter extends Adapter {
 
-	static scope: Scope = 'decade';
+	static view: View = 'decade';
 
 	static targets: Record<TargetOption, string> = {
 		switchDecadeButton: 'clndr-switch-decade-button',
 	}
 
-	static eventListener(element: HTMLElement, callback: (scope: Scope) => void) {
+	static eventListener(element: HTMLElement, callback: (view: View) => void) {
 		if (element.closest('.' + DecadeAdapter.targets.switchDecadeButton)) {
-			callback(DecadeAdapter.scope);
+			callback(DecadeAdapter.view);
 		}
 	}
 
@@ -67,21 +67,21 @@ export default class DecadeAdapter extends Adapter {
 		return adjustedInterval;
 	}
 
-	aggregateAdjacentScopeEvents(): [InternalClndrEvent[], InternalClndrEvent[]] {
+	aggregateAdjacentPageEvents(): [InternalClndrEvent[], InternalClndrEvent[]] {
 		// Since "day" is the smallest unit, there is no point in having an implementation for this
-		// scope as there will never be adjacent years visible.
+		// view as there will never be adjacent years visible.
 		return [[], []];
 	}
 
-	aggregateScopeItems(interval: Interval): PageDates {
+	aggregatePageItems(interval: Interval): PageDates {
 		return [[], eachYearOfInterval(interval), []];
 	}
 
-	endOfScope(date: Date): Date {
+	endOfPage(date: Date): Date {
 		return endOfDecade(date);
 	}
 
-	protected addScope(date: Date, count: number): Date {
+	protected addPages(date: Date, count: number): Date {
 		return addYears(date, count * 10);
 	}
 

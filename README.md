@@ -17,6 +17,7 @@ It is the unofficial successor to awesome [CLNDR](https://github.com/kylestetz/C
   - [Template Rendering Engine](#template-rendering-engine)
 - [Calendar Events](#calendar-events)
 - [All Options](#all-options)
+- [Click Events](#click-events)
 - [Data provided to the Template](#data-provided-to-the-template)
   - [All Parameters](#all-parameters)
   - [The "items" Array](#the-items-array)
@@ -190,7 +191,8 @@ new Clndr(container, {
   },
 
   // Event handlers for the click event. The keyword 'this' is set to the CLNDR
-  // instance in all callbacks.
+  // instance in all callbacks. See further below for a description of the
+  // event parameters.
   clickEvents: {
     // Triggered whenever a calendar box is clicked.
     onClick: function(parameters: {
@@ -371,6 +373,53 @@ new Clndr(container, {
 });
 ```
 
+## Click Events
+
+The `onClick` event is triggered when clicking on a calendar item, for example clicking a day in a month view, or a month in a year view. The `onClick` event handler will receive the following parameters:
+
+```typescript
+{
+  // The date clicked on; not necessarily provided, since it might be an empty
+  // "filler" object that was clicked on.
+  date?: Date
+  // The origin view of the event.
+  view: 'decade' | 'year' | 'month' | 'week' | 'day'
+  // The events linked to the calendar item as provided to the `events` option.
+  events: ClndrEvent[]
+  // Whether the selected date has changed, if the `trackSelectedDate` option
+  // is activated.
+  selectedDateChanged: boolean
+  // Whether the calendar item clicked is or contains today.
+  isToday: boolean
+  // The element clicked on.
+  element: HTMLElement
+}
+```
+
+The `onNavigate` event is triggered when clicking any navigation element, i.e. the "today" button or the "previous" and "forward" button. It is also triggered when navigating programmatically, i.e. by issuing `clndr.next()` or `clndr.setYear(2024)`. The `onNavigate` event handler will receive the following parameters:
+
+```typescript
+{
+  // Date objects describing the lower and upper end of the new page's
+  // interval.
+  interval: {start: Date, end: Date}
+  // Whether the new page is rendering items with dates earlier than the items
+  // on the current page. Basically, navigating backward.
+  isBefore: boolean
+  // Whether the new page is rendering items with dates later than the items
+  // on the current page. Basically, navigating forward.
+  isAfter: boolean
+  // Whether the month was changed by the navigation operation, also considers
+  // the year.
+  monthChanged: boolean
+  // Whether the year was changed by the navigation operation.
+  yearChanged: boolean
+  // The element clicked on; empty if the event was triggered
+  // programmatically.
+  element?: HTMLElement
+}
+```
+
 ## Data provided to the Template
 
 While the properties of the data being passed to the template will always be defined, the population of some of the data properties depends on whether custom pagination is configured (using the `pagination` option).
@@ -400,15 +449,15 @@ pages: Date[]
 items: ClndrItem[] | ClndrItem[][]
 
 // The events of the current page as well as the events of the previous and
-// next scope. `events.currentPage` is a multi-dimensional array if
-// the pagination size of the current view is greater than 1.
-// `events.previousScope` and `events.nextScope` may be used to get the events
-// of adjacent months if the `showAdjacent` option is turned on. Currently,
-// these will only be populated on the `month` view.
+// next page. `events.currentPage` is a multi-dimensional array if the
+// pagination size of the current view is greater than 1.
+// `events.previousPage` and `events.nextPage` may be used to get the events of
+// adjacent pages if the `showAdjacent` option is turned on. Currently, that
+// option is relevant for the `month` view only.
 events: {
   currentPage: ClndrEvent[] | ClndrEvent[][]
-  previousScope: ClndrEvent[]
-  nextScope: ClndrEvent[]
+  previousPage: ClndrEvent[]
+  nextPage: ClndrEvent[]
 }
 
 // An array of day-of-the-week abbreviations, shifted as configured by the

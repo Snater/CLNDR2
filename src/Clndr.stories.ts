@@ -18,7 +18,7 @@ const meta: Meta<ClndrOptions> = {
 					summary: 'undefined',
 				},
 				type: {
-					summary: '(data: ClndrTemplateData) => string | {[key in Scope]?: (data: ClndrTemplateData) => string}',
+					summary: '(data: ClndrTemplateData) => string | {[key in View]?: (data: ClndrTemplateData) => string}',
 					detail: 'See Readme for details on the template data.',
 				},
 			},
@@ -54,7 +54,7 @@ const meta: Meta<ClndrOptions> = {
 				},
 				type: {
 					summary: '{onClick?: (params: ClndrItemEventParameters) => void, onNavigate: (params: NavigationEventParameters) => void}',
-					detail: 'See Readme for details on the template data.',
+					detail: 'See Readme for details on the event parameters.',
 				},
 			},
 		},
