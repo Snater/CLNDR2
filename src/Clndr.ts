@@ -645,7 +645,13 @@ class Clndr {
 
 		this.navigatePerAdjacentItem(currentTarget);
 
-		this.switchView(currentTarget);
+		if (currentTarget.classList.contains('switch')) {
+			// Clicking on an item to switch the view will always switch to the next smaller view.
+			// Switching to a larger view by clicking on an item does not make a lot of sense.
+			const adjacentView = this.getAdjacentView(this.adapter.getView());
+
+			adjacentView && this.switchView(adjacentView, currentTarget);
+		}
 
 		const previouslySelectedDate = this.selectedDate;
 
@@ -673,21 +679,6 @@ class Clndr {
 		} else if (target.classList.contains(this.options.classes.next)) {
 			this.next(target);
 		}
-	}
-
-	// TODO: Make this function public
-	/**
-	 * Clicking on an item to switch the view will always switch to the next smaller view.
-	 * Switching to a larger view by clicking on an item does not make a lot of sense.
-	 */
-	private switchView(target: HTMLElement) {
-		if (!target.classList.contains('switch')) {
-			return;
-		}
-
-		const adjacentView = this.getAdjacentView(this.adapter.getView());
-
-		adjacentView && this.setPagination(adjacentView, this.getTargetDate(target));
 	}
 
 	/**
@@ -882,6 +873,26 @@ class Clndr {
 
 	getSelectedDate() {
 		return this.selectedDate;
+	}
+
+	// TODO: Remove internal parameter types
+	/**
+	 * Switch the view while ensuring the provided date is on the page.
+	 */
+	switchView(view: View, dateOrTarget?: Date | string | number | HTMLElement) {
+		if (view === this.adapter.getView() || !this.availableViews.includes(view)) {
+			return;
+		}
+
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
+
+		const date = dateOrTarget instanceof HTMLElement
+			? this.getTargetDate(dateOrTarget)
+			: dateOrTarget !== undefined ? new Date(dateOrTarget) : this.interval.start;
+
+		this.setPagination(view, date);
+
+		this.triggerEvents(orig, dateOrTarget instanceof HTMLElement ? dateOrTarget : undefined);
 	}
 
 	/**

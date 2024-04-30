@@ -605,6 +605,10 @@ It's possible to programmatically update the calendar after initialization. Navi
 ```typescript
 const clndr = new Clndr(container, {render: {...}});
 
+// Switch the view ensuring the provided date is on the page. If no date is
+// provided, the start of the current page's interval is used.
+clndr.switchView('year', 2024);
+
 // Navigate to the next page
 clndr.next();
 

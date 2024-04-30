@@ -758,6 +758,43 @@ describe('Multiple views', () => {
 		expect(screen.getByText('March 2024')).toBeInTheDocument();
 	});
 
+	test('Programmatically switching view', () => {
+		const handleNavigate = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: multiViewTemplates,
+			clickEvents: {
+				onNavigate: handleNavigate,
+			},
+			defaultView: 'day',
+		});
+
+		expect(screen.getByText('Day 18 in 2024')).toBeInTheDocument();
+		clndr.switchView('decade');
+		expect(screen.getByText('2024')).toBeInTheDocument();
+		// Try again switching to the same view:
+		clndr.switchView('decade');
+		expect(screen.getByText('2024')).toBeInTheDocument();
+		clndr.switchView('month', '1992-10');
+		expect(screen.getByText('October 1992')).toBeInTheDocument();
+
+		expect(handleNavigate.mock.calls[0][0]).toEqual({
+			interval: {start: startOfDay(new Date('2020-01-01')), end: endOfDay(new Date('2029-12-31'))},
+			isBefore: true,
+			isAfter: false,
+			monthChanged: true,
+			yearChanged: true,
+		});
+
+		expect(handleNavigate.mock.calls[1][0]).toEqual({
+			interval: {start: startOfDay(new Date('1992-10-01')), end: endOfDay(new Date('1992-10-31'))},
+			isBefore: true,
+			isAfter: false,
+			monthChanged: true,
+			yearChanged: true,
+		});
+	});
+
 	test('Tracking selected date across multiple views', async () => {
 		clndr = new Clndr(container, {
 			render: multiViewTemplates,

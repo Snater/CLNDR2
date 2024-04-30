@@ -40,7 +40,7 @@ export default class MonthAdapter extends DayBasedAdapter {
 
 		// Subtract a day so that we are at the end of the interval. We always want intervalEnd to be
 		// inclusive.
-		const end = subDays(addMonths(start, this.options.pageSize), 1);
+		const end = endOfMonth(addMonths(start, this.options.pageSize - 1));
 		return {start, end};
 	}
 
