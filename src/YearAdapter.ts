@@ -110,7 +110,7 @@ export default class YearAdapter extends Adapter {
 		return index === -1 ? null : new Date(classNames.substring(index + 15, index + 22));
 	}
 
-	setDay(day: Date): Interval {
+	setDate(day: Date): Interval {
 		const start = startOfYear(day);
 		return {start, end: endOfYear(addYears(start, this.options.pageSize - 1))};
 	}

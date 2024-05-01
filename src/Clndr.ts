@@ -604,23 +604,23 @@ class Clndr {
 		this.handleEmptyClick(event);
 
 		if (element.closest('.' + targets.todayButton)) {
-			this.today(element);
+			this.todayInternal(element);
 		}
 
 		if (element.closest('.' + targets.nextButton)) {
-			this.next(element);
+			this.nextInternal(element);
 		}
 
 		if (element.closest('.' + targets.previousButton)) {
-			this.previous(element);
+			this.previousInternal(element);
 		}
 
 		if (element.closest('.' + targets.nextYearButton)) {
-			this.nextYear(element);
+			this.nextYearInternal(element);
 		}
 
 		if (element.closest('.' + targets.previousYearButton)) {
-			this.previousYear(element);
+			this.previousYearInternal(element);
 		}
 
 		Object.values(adapters).forEach(adapterConstructor => {
@@ -650,7 +650,7 @@ class Clndr {
 			// Switching to a larger view by clicking on an item does not make a lot of sense.
 			const adjacentView = this.getAdjacentView(this.adapter.getView());
 
-			adjacentView && this.switchView(adjacentView, currentTarget);
+			adjacentView && this.switchViewInternal(adjacentView, currentTarget);
 		}
 
 		const previouslySelectedDate = this.selectedDate;
@@ -675,9 +675,9 @@ class Clndr {
 		}
 
 		if (target.classList.contains(this.options.classes.previous)) {
-			this.previous(target);
+			this.previousInternal(target);
 		} else if (target.classList.contains(this.options.classes.next)) {
-			this.next(target);
+			this.nextInternal(target);
 		}
 	}
 
@@ -724,9 +724,9 @@ class Clndr {
 
 		if (this.options.adjacentItemsChangePage) {
 			if (currentTarget.classList.contains(this.options.classes.previous)) {
-				this.previous(currentTarget);
+				this.previousInternal(currentTarget);
 			} else if (currentTarget.classList.contains(this.options.classes.next)) {
-				this.next(currentTarget);
+				this.nextInternal(currentTarget);
 			}
 		}
 	}
@@ -875,11 +875,14 @@ class Clndr {
 		return this.selectedDate;
 	}
 
-	// TODO: Remove internal parameter types
 	/**
 	 * Switch the view while ensuring the provided date is on the page.
 	 */
-	switchView(view: View, dateOrTarget?: Date | string | number | HTMLElement) {
+	switchView(view: View, date?: Date | string | number) {
+		this.switchViewInternal(view, date);
+	}
+
+	private switchViewInternal(view: View, dateOrTarget?: Date | string | number | HTMLElement) {
 		if (view === this.adapter.getView() || !this.availableViews.includes(view)) {
 			return;
 		}
@@ -896,13 +899,17 @@ class Clndr {
 	}
 
 	/**
-	 * Action to go backward one or more periods.
+	 * Action to go backward one or more pages.
 	 */
-	previous(element?: HTMLElement) {
+	previous() {
+		this.previousInternal();
+	}
+
+	private previousInternal(element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		if (!this.constraints.previous) {
-			return this;
+			return;
 		}
 
 		this.interval = this.adapter.back(
@@ -913,18 +920,20 @@ class Clndr {
 		this.render();
 
 		this.triggerEvents(orig, element);
-
-		return this;
 	}
 
 	/**
-	 * Action to go forward one or more periods.
+	 * Action to go forward one or more pages.
 	 */
-	next(element?: HTMLElement) {
+	next() {
+		this.nextInternal();
+	}
+
+	private nextInternal(element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		if (!this.constraints.next) {
-			return this;
+			return;
 		}
 
 		this.interval = this.adapter.forward(
@@ -935,18 +944,17 @@ class Clndr {
 		this.render();
 
 		this.triggerEvents(orig, element);
-
-		return this;
 	}
 
-	/**
-	 * Action to go back one year.
-	 */
-	previousYear(element?: HTMLElement) {
+	previousYear() {
+		this.previousYearInternal();
+	}
+
+	private previousYearInternal(element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		if (!this.constraints.previousYear) {
-			return this;
+			return;
 		}
 
 		this.interval = {
@@ -958,17 +966,18 @@ class Clndr {
 
 		this.triggerEvents(orig, element);
 
-		return this;
+		return;
 	}
 
-	/**
-	 * Action to go forward one year.
-	 */
-	nextYear(element?: HTMLElement) {
+	nextYear() {
+		this.nextYearInternal();
+	}
+
+	private nextYearInternal(element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		if (!this.constraints.nextYear) {
-			return this;
+			return;
 		}
 
 		this.interval = {
@@ -979,14 +988,16 @@ class Clndr {
 		this.render();
 
 		this.triggerEvents(orig, element);
-
-		return this;
 	}
 
-	today(element?: HTMLElement) {
+	today() {
+		this.todayInternal();
+	}
+
+	private todayInternal(element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
-		this.interval = this.adapter.setDay(new Date());
+		this.interval = this.adapter.setDate(new Date());
 
 		// No need to re-render if the page was not changed
 		if (
@@ -1002,9 +1013,30 @@ class Clndr {
 	// TODO: Add setWeek and setDecade
 
 	/**
+	 * Ensures a provided date is on the page.
+	 */
+	setDate(newDate: Date | string | number) {
+		this.setDateInternal(newDate);
+	}
+
+	private setDateInternal(newDate: Date | string | number, element?: HTMLElement) {
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
+
+		this.interval = this.adapter.setDate(new Date(newDate));
+
+		this.render();
+
+		this.triggerEvents(orig, element);
+	}
+
+	/**
 	 * Changes the month being provided a value between 0 and 11.
 	 */
-	setMonth(newMonth: number, element?: HTMLElement) {
+	setMonth(newMonth: number) {
+		this.setMonthInternal(newMonth);
+	}
+
+	private setMonthInternal(newMonth: number, element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		this.interval = this.adapter.setMonth(newMonth, this.interval);
@@ -1012,11 +1044,13 @@ class Clndr {
 		this.render();
 
 		this.triggerEvents(orig, element);
-
-		return this;
 	}
 
-	setYear(newYear: number, element?: HTMLElement) {
+	setYear(newYear: number) {
+		this.setYearInternal(newYear);
+	}
+
+	private setYearInternal(newYear: number, element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		this.interval = this.adapter.setYear(newYear, this.interval);
@@ -1024,23 +1058,6 @@ class Clndr {
 		this.render();
 
 		this.triggerEvents(orig, element);
-
-		return this;
-	}
-
-	/**
-	 * Sets the start of the time period.
-	 */
-	setIntervalStart(newDate: Date | string | number, element?: HTMLElement) {
-		const orig: Interval = {start: this.interval.start, end: this.interval.end};
-
-		this.interval = this.adapter.setDay(new Date(newDate));
-
-		this.render();
-
-		this.triggerEvents(orig, element);
-
-		return this;
 	}
 
 	/**
@@ -1049,8 +1066,6 @@ class Clndr {
 	setExtras(extras: unknown) {
 		this.options.extras = extras;
 		this.render();
-
-		return this;
 	}
 
 	/**
@@ -1059,8 +1074,6 @@ class Clndr {
 	setEvents(events: ClndrEvent[]) {
 		this.events = this.parseToInternalEvents(events);
 		this.render();
-
-		return this;
 	}
 
 	/**
@@ -1073,8 +1086,6 @@ class Clndr {
 		if (reRender) {
 			this.render();
 		}
-
-		return this;
 	}
 
 	/**
@@ -1089,8 +1100,6 @@ class Clndr {
 		}
 
 		this.render();
-
-		return this;
 	}
 
 	destroy() {

@@ -106,7 +106,7 @@ export default class DecadeAdapter extends Adapter {
 		return index === -1 ? null : new Date(classNames.substring(index + 14, index + 18));
 	}
 
-	setDay(day: Date): Interval {
+	setDate(day: Date): Interval {
 		const start = startOfDecade(day);
 		return {start, end: endOfDecade(addYears(start, (this.options.pageSize - 1) * 10))};
 	}

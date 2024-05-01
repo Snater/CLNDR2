@@ -105,7 +105,7 @@ export default class WeekAdapter extends DayBasedAdapter {
 		return {start: startOfDay(date), end: endOfDay(date)};
 	}
 
-	setDay(day: Date): Interval {
+	setDate(day: Date): Interval {
 		const start = startOfWeek(day, {weekStartsOn: this.options.weekOffset});
 		const end = endOfWeek(
 			addWeeks(start, this.options.pageSize - 1),

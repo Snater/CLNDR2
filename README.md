@@ -615,6 +615,9 @@ clndr.next();
 // Navigate to the previous page
 clndr.previous();
 
+// Sets a specific date ensuring that date is on the page.
+clndr.setDate('2024-01-18');
+
 // Set the month using a number from 0-11
 clndr.setMonth(0);
 

@@ -44,7 +44,7 @@ describe('DAY view', () => {
 		clndr.setMonth(4);
 		expect(screen.getByText('Day 138 in 2025')).toBeInTheDocument();
 
-		clndr.setIntervalStart(new Date('1992-10-15'));
+		clndr.setDate(new Date('1992-10-15'));
 		expect(screen.getByText('Day 289 in 1992')).toBeInTheDocument();
 	});
 

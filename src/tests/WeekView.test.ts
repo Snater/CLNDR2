@@ -61,7 +61,7 @@ describe('WEEK view', () => {
 		clndr.setMonth(4);
 		expect(screen.getByText('Week 20 in 2025')).toBeInTheDocument();
 
-		clndr.setIntervalStart(new Date('1992-10-15'));
+		clndr.setDate(new Date('1992-10-15'));
 		expect(screen.getByText('Week 42 in 1992')).toBeInTheDocument();
 	});
 

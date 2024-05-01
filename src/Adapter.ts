@@ -51,7 +51,7 @@ export abstract class Adapter {
 	abstract getIdForItem(date: Date): string
 	abstract getDateFromClassNames(classNames: string): Date | null
 
-	abstract setDay(day: Date): Interval
+	abstract setDate(day: Date): Interval
 	abstract setMonth(newMonth: number, interval: Interval): Interval
 	abstract setYear(newYear: number, interval: Interval): Interval
 

@@ -51,7 +51,7 @@ describe('MONTH view', () => {
 		clndr.setMonth(4);
 		expect(screen.getByText('May 2025')).toBeInTheDocument();
 
-		clndr.setIntervalStart(new Date('1992-10-15'));
+		clndr.setDate(new Date('1992-10-15'));
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
 	});
 

@@ -71,7 +71,7 @@ describe('YEAR view', () => {
 		// expected when calling setMonth.
 		expect(screen.getByText('2024')).toBeInTheDocument();
 
-		clndr.setIntervalStart(new Date('1992-10-15'));
+		clndr.setDate(new Date('1992-10-15'));
 		expect(screen.getByText('1992')).toBeInTheDocument();
 
 		clndr.setYear(2000);

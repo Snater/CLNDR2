@@ -78,7 +78,7 @@ export default class DayAdapter extends DayBasedAdapter {
 		return {start: startOfDay(date), end: endOfDay(date)};
 	}
 
-	setDay(day: Date): Interval {
+	setDate(day: Date): Interval {
 		const start = startOfDay(day);
 		return {start, end: endOfDay(addDays(start, this.options.pageSize - 1))};
 	}

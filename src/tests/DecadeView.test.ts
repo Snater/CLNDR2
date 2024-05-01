@@ -69,7 +69,7 @@ describe('DECADE view', () => {
 		// need to check if the behaviour is indeed as expected.
 		expect(screen.getByText('2020 to 2029')).toBeInTheDocument();
 
-		clndr.setIntervalStart(new Date('1992-10-15'));
+		clndr.setDate(new Date('1992-10-15'));
 		expect(screen.getByText('1990 to 1999')).toBeInTheDocument();
 
 		clndr.setYear(2000);

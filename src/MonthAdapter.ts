@@ -197,7 +197,7 @@ export default class MonthAdapter extends DayBasedAdapter {
 		return {start: startOfDay(date), end: endOfDay(date)};
 	}
 
-	setDay(day: Date): Interval {
+	setDate(day: Date): Interval {
 		const start = startOfMonth(day);
 		return {start, end: endOfMonth(subDays(addMonths(start, this.options.pageSize), 1))};
 	}

@@ -478,7 +478,7 @@ describe('Navigation', () => {
 		});
 
 		expect(screen.getByText('January 2024')).toBeInTheDocument();
-		clndr.setIntervalStart('2000-06-01');
+		clndr.setDate('2000-06-01');
 		expect(screen.getByText('June 2000')).toBeInTheDocument();
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
 
