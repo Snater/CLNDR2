@@ -83,8 +83,8 @@ describe('YEAR view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneYearTemplate),
-			clickEvents: {
-				onNavigate: handleNavigate,
+			on: {
+				navigate: handleNavigate,
 			},
 			constraints: {
 				start: new Date('1991'),
@@ -146,9 +146,9 @@ describe('YEAR view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneYearTemplate),
-			clickEvents: {
-				onClick: handleClick,
-				onNavigate: handleNavigate,
+			on: {
+				click: handleClick,
+				navigate: handleNavigate,
 			},
 			pagination: {year: {size: 1}},
 			startOn: '1992-10-15',
@@ -247,8 +247,8 @@ describe('YEAR view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneYearTemplate),
-			clickEvents: {
-				onClick: handleClick,
+			on: {
+				click: handleClick,
 			},
 			pagination: {year: {size: 1}},
 			selectedDate: '2024-10',
@@ -277,8 +277,8 @@ describe('YEAR view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneYearTemplate),
-			clickEvents: {
-				onClick: handleClick,
+			on: {
+				click: handleClick,
 			},
 			pagination: {year: {size: 1}},
 			trackSelectedDate: true,

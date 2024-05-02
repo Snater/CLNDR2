@@ -70,8 +70,8 @@ describe('WEEK view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			clickEvents: {
-				onNavigate: handleNavigate,
+			on: {
+				navigate: handleNavigate,
 			},
 			constraints: {
 				start: new Date('1992-10-07'),
@@ -134,9 +134,9 @@ describe('WEEK view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			clickEvents: {
-				onClick: handleClick,
-				onNavigate: handleNavigate,
+			on: {
+				click: handleClick,
+				navigate: handleNavigate,
 			},
 			pagination: {week: {size: 1}},
 			startOn: '1992-10-15',
@@ -233,8 +233,8 @@ describe('WEEK view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			clickEvents: {
-				onClick: handleClick,
+			on: {
+				click: handleClick,
 			},
 			pagination: {week: {size: 1}},
 			selectedDate: '2024-01-19',
@@ -263,8 +263,8 @@ describe('WEEK view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneWeekTemplate),
-			clickEvents: {
-				onClick: handleClick,
+			on: {
+				click: handleClick,
 			},
 			pagination: {week: {size: 1}},
 			trackSelectedDate: true,

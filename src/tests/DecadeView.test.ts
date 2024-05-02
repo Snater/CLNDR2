@@ -81,12 +81,12 @@ describe('DECADE view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneDecadeTemplate),
-			clickEvents: {
-				onNavigate: handleNavigate,
-			},
 			constraints: {
 				start: new Date('1981'),
 				end: new Date('2014'),
+			},
+			on: {
+				navigate: handleNavigate,
 			},
 			pagination: {decade: {size: 1}},
 			startOn: '1992-10-15',
@@ -145,9 +145,9 @@ describe('DECADE view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneDecadeTemplate),
-			clickEvents: {
-				onClick: handleClick,
-				onNavigate: handleNavigate,
+			on: {
+				click: handleClick,
+				navigate: handleNavigate,
 			},
 			pagination: {decade: {size: 1}},
 			startOn: '1992-10-15',
@@ -246,8 +246,8 @@ describe('DECADE view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneDecadeTemplate),
-			clickEvents: {
-				onClick: handleClick,
+			on: {
+				click: handleClick,
 			},
 			pagination: {decade: {size: 1}},
 			selectedDate: '2025',
@@ -276,8 +276,8 @@ describe('DECADE view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneDecadeTemplate),
-			clickEvents: {
-				onClick: handleClick,
+			on: {
+				click: handleClick,
 			},
 			pagination: {decade: {size: 1}},
 			trackSelectedDate: true,

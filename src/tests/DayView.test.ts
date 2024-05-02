@@ -53,12 +53,12 @@ describe('DAY view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneDayTemplate),
-			clickEvents: {
-				onNavigate: handleNavigate,
-			},
 			constraints: {
 				start: new Date('1992-10-14'),
 				end: new Date('1992-10-17'),
+			},
+			on: {
+				navigate: handleNavigate,
 			},
 			pagination: {day: {size: 1}},
 			startOn: '1992-10-15',
@@ -116,9 +116,9 @@ describe('DAY view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneDayTemplate),
-			clickEvents: {
-				onClick: handleClick,
-				onNavigate: handleNavigate,
+			on: {
+				click: handleClick,
+				navigate: handleNavigate,
 			},
 			pagination: {day: {size: 1}},
 			startOn: '1992-10-15',
@@ -212,8 +212,8 @@ describe('DAY view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneDayTemplate),
-			clickEvents: {
-				onClick: handleClick,
+			on: {
+				click: handleClick,
 			},
 			pagination: {day: {size: 1}},
 			selectedDate: '1992-10-15',
@@ -241,8 +241,8 @@ describe('DAY view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneDayTemplate),
-			clickEvents: {
-				onClick: handleClick,
+			on: {
+				click: handleClick,
 			},
 			pagination: {day: {size: 1}},
 			trackSelectedDate: true,

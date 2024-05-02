@@ -17,7 +17,6 @@ It is the unofficial successor to awesome [CLNDR](https://github.com/kylestetz/C
   - [Template Rendering Engine](#template-rendering-engine)
 - [Calendar Events](#calendar-events)
 - [All Options](#all-options)
-- [Click Events](#click-events)
 - [Data provided to the Template](#data-provided-to-the-template)
   - [All Parameters](#all-parameters)
   - [The "items" Array](#the-items-array)
@@ -190,35 +189,44 @@ new Clndr(container, {
     adjacent: "adjacent",
   },
 
-  // Event handlers for the click event. The keyword 'this' is set to the CLNDR
-  // instance in all callbacks. See further below for a description of the
-  // event parameters.
-  clickEvents: {
+  // Handlers for interaction events. The keyword 'this' is set to the
+  // calendar instance in all callbacks.
+  on: {
     // Triggered whenever a calendar box is clicked.
-    onClick: function(parameters: {
-      // Date represented by the calendar box. The date is `undefined` when
-      // clicking on an "empty" box.
+    click: function(parameters: {
+      // The date clicked on; not necessarily provided, since it might be an
+      // empty "filler" element that was clicked on.
       date?: Date,
+
+      // The origin view of the event.
+      view: 'decade' | 'year' | 'month' | 'week' | 'day'
 
       // The events on the date being clicked as provided by `options.events`.
       events: ClndrEvent[],
 
-      // Whether the clicked triggered changing the selected date.
+      // Whether the clicked triggered changing the selected date, if the
+      // `trackSelectedDate` option is activated.
       selectedDateChanged: boolean,
 
-      // Wether the date clicked is today.
+      // Whether the calendar item clicked is or contains today.
       isToday: boolean,
 
-      // The HTML element targeted by the click; `undefined` when navigating
-      // programmatically.
-      element?: HTMLElement,
+      // The element clicked on.
+      element: HTMLElement,
+    }) {...},
+
+    // A callback triggered when the calendar is done rendering.
+    doneRendering: function(parameters: {
+      // The view rendered.
+      view: 'decade' | 'year' | 'month' | 'week' | 'day'
     }) {...},
 
     // Triggered whenever navigating the calendar, which is any operation other
     // than directly clicking a calendar box, i.e. clicking the "back" and
     // "forward" buttons, clicking the "today" button etc. 
-    onNavigate: function(parameters: {
-      // The interval of the new page.
+    navigate: function(parameters: {
+      // Date objects describing the lower and upper end of the new page's
+      // interval.
       interval?: {start: Date, end: Date},
 
       // Whether the new page is before the one previously rendered (i.e.
@@ -239,6 +247,12 @@ new Clndr(container, {
       // The HTML element targeted by the click; `undefined` when navigating
       // programmatically.
       element?: HTMLElement,
+    }) {...},
+
+    // Callback triggered once the calendar has been initialized and rendered.
+    ready: function(parameters: {
+      // The view rendered.
+      view: 'decade' | 'year' | 'month' | 'week' | 'day'
     }) {...},
   },
 
@@ -269,9 +283,6 @@ new Clndr(container, {
   // The view that should be rendered initially; Only relevant when configuring
   // multiple views to allow switching between views.
   defaultView: 'month',
-
-  // A callback triggered when the calendar is done rendering.
-  doneRendering: function() {...},
 
   // An array of event objects
   events: [
@@ -325,10 +336,6 @@ new Clndr(container, {
   // the day abbreveiations in the calendar header).
   locale: undefined,
 
-  // Callback triggered once the calendar has been initialized and rendered.
-  // `this.element` refers to the parent element that holds the calendar.
-  ready: function() {...},
-
   // A date that should be selected (that is its element is supposed to receive the
   // `classes.selected` class) at the time the calendar is initialized.
   selectedDate: null,
@@ -371,53 +378,6 @@ new Clndr(container, {
   // Start the week off on Sunday (0), Monday (1), etc. Sunday is the default.
   weekOffset: 0,
 });
-```
-
-## Click Events
-
-The `onClick` event is triggered when clicking on a calendar item, for example clicking a day in a month view, or a month in a year view. The `onClick` event handler will receive the following parameters:
-
-```typescript
-{
-  // The date clicked on; not necessarily provided, since it might be an empty
-  // "filler" object that was clicked on.
-  date?: Date
-  // The origin view of the event.
-  view: 'decade' | 'year' | 'month' | 'week' | 'day'
-  // The events linked to the calendar item as provided to the `events` option.
-  events: ClndrEvent[]
-  // Whether the selected date has changed, if the `trackSelectedDate` option
-  // is activated.
-  selectedDateChanged: boolean
-  // Whether the calendar item clicked is or contains today.
-  isToday: boolean
-  // The element clicked on.
-  element: HTMLElement
-}
-```
-
-The `onNavigate` event is triggered when clicking any navigation element, i.e. the "today" button or the "previous" and "forward" button. It is also triggered when navigating programmatically, i.e. by issuing `clndr.next()` or `clndr.setYear(2024)`. The `onNavigate` event handler will receive the following parameters:
-
-```typescript
-{
-  // Date objects describing the lower and upper end of the new page's
-  // interval.
-  interval: {start: Date, end: Date}
-  // Whether the new page is rendering items with dates earlier than the items
-  // on the current page. Basically, navigating backward.
-  isBefore: boolean
-  // Whether the new page is rendering items with dates later than the items
-  // on the current page. Basically, navigating forward.
-  isAfter: boolean
-  // Whether the month was changed by the navigation operation, also considers
-  // the year.
-  monthChanged: boolean
-  // Whether the year was changed by the navigation operation.
-  yearChanged: boolean
-  // The element clicked on; empty if the event was triggered
-  // programmatically.
-  element?: HTMLElement
-}
 ```
 
 ## Data provided to the Template

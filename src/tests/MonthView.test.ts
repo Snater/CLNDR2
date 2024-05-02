@@ -60,8 +60,8 @@ describe('MONTH view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneMonthTemplate),
-			clickEvents: {
-				onNavigate: handleNavigate,
+			on: {
+				navigate: handleNavigate,
 			},
 			constraints: {
 				start: new Date('1992-09-01'),
@@ -124,9 +124,9 @@ describe('MONTH view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneMonthTemplate),
-			clickEvents: {
-				onClick: handleClick,
-				onNavigate: handleNavigate,
+			on: {
+				click: handleClick,
+				navigate: handleNavigate,
 			},
 			pagination: {month: {size: 1}},
 			startOn: '1992-10-15',
@@ -321,8 +321,8 @@ describe('MONTH view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(oneMonthTemplate),
-			clickEvents: {
-				onClick: handleClick,
+			on: {
+				click: handleClick,
 			},
 			pagination: {month: {size: 1}},
 			selectedDate: '2024-01-15',
@@ -368,8 +368,8 @@ describe('MONTH view', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			clickEvents: {
-				onClick: handleClick,
+			on: {
+				click: handleClick,
 			},
 			showAdjacent: false,
 		});

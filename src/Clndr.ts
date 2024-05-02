@@ -75,7 +75,7 @@ const defaults: InternalOptions = {
 		adjacent: 'adjacent',
 		switch: 'switch',
 	},
-	clickEvents: {},
+	on: {},
 	dateParameter: {
 		date: 'date',
 		start: 'start',
@@ -249,7 +249,7 @@ class Clndr {
 
 		this.render();
 
-		this.options.ready?.apply(this, []);
+		this.options.on.ready?.apply(this, [{view: this.adapter.getView()}]);
 	}
 
 	private initConstraints(constraints: Constraints, interval: Interval) {
@@ -461,9 +461,8 @@ class Clndr {
 
 		this.applyInactiveClasses();
 
-		if (this.options.doneRendering) {
-			// TODO: Pass information about view along the event
-			this.options.doneRendering.apply(this, []);
+		if (this.options.on.doneRendering) {
+			this.options.on.doneRendering.apply(this, [{view: this.adapter.getView()}]);
 		}
 	}
 
@@ -657,12 +656,12 @@ class Clndr {
 
 		this.updateSelectedDate(currentTarget);
 
-		if (this.options.clickEvents.onClick) {
+		if (this.options.on.click) {
 			const target = this.aggregateInteractionEventParameters(
 				currentTarget,
 				previouslySelectedDate
 			);
-			this.options.clickEvents.onClick.apply(this, [target]);
+			this.options.on.click.apply(this, [target]);
 		}
 	}
 
@@ -717,9 +716,9 @@ class Clndr {
 			return;
 		}
 
-		if (this.options.clickEvents.onClick) {
+		if (this.options.on.click) {
 			const target = this.aggregateInteractionEventParameters(currentTarget);
-			this.options.clickEvents.onClick.apply(this, [target]);
+			this.options.on.click.apply(this, [target]);
 		}
 
 		if (this.options.adjacentItemsChangePage) {
@@ -787,8 +786,8 @@ class Clndr {
 			element,
 		}
 
-		if (this.options.clickEvents.onNavigate) {
-			this.options.clickEvents.onNavigate.apply(this, [eventParameters]);
+		if (this.options.on.navigate) {
+			this.options.on.navigate.apply(this, [eventParameters]);
 		}
 	}
 
@@ -1009,8 +1008,6 @@ class Clndr {
 
 		this.triggerEvents(orig, element);
 	}
-
-	// TODO: Add setWeek and setDecade
 
 	/**
 	 * Ensures a provided date is on the page.

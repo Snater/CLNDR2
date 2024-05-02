@@ -46,18 +46,6 @@ const meta: Meta<ClndrOptions> = {
 				},
 			},
 		},
-		clickEvents: {
-			description: 'Callbacks to be triggered when clicking particular elements.',
-			table: {
-				defaultValue: {
-					summary: 'undefined',
-				},
-				type: {
-					summary: '{onClick?: (params: ClndrItemEventParameters) => void, onNavigate: (params: NavigationEventParameters) => void}',
-					detail: 'See Readme for details on the event parameters.',
-				},
-			},
-		},
 		constraints: {
 			control: 'object',
 			description: 'Restrict calendar navigation specifying the calendar\'s boundaries.',
@@ -104,18 +92,6 @@ const meta: Meta<ClndrOptions> = {
 				},
 				type: {
 					summary: '\'day\' | \'week\' | \'month\' | \'year\' | \'decade\'',
-				},
-			},
-		},
-		doneRendering: {
-			description: 'A callback triggered each time the calendar is (re-)rendered.',
-			control: false,
-			table: {
-				defaultValue: {
-					summary: 'undefined',
-				},
-				type: {
-					summary: '() => void',
 				},
 			},
 		},
@@ -191,6 +167,18 @@ const meta: Meta<ClndrOptions> = {
 				},
 			},
 		},
+		on: {
+			description: 'Callbacks to be triggered on particular event, e.g. when clicking calendar elements.',
+			table: {
+				defaultValue: {
+					summary: '{}',
+				},
+				type: {
+					summary: '{click?: (params: ClndrItemEventParameters) => void, doneRendering: (params: {view: View}) => void, navigate: (params: NavigationEventParameters) => void, ready: (params: {view: View}) => void}',
+					detail: 'See Readme for details on the event parameters.',
+				},
+			},
+		},
 		pagination: {
 			description: 'Specify custom pagination, i.e. display more than one month or a custom amount of days, like two weeks. You can also define the pagination step.',
 			table: {
@@ -200,18 +188,6 @@ const meta: Meta<ClndrOptions> = {
 				type: {
 					summary: '{[key in \'decade\' | \'year\' | \'month\' | \'week\' | \'day\']?: {size: number, step?: number}}',
 					detail: 'If `step` is not defined, `size` is used as the step size when navigating.',
-				},
-			},
-		},
-		ready: {
-			control: false,
-			description: 'Callback triggered after the calendar has finished initialization and rendered for the first time.',
-			table: {
-				defaultValue: {
-					summary: 'undefined',
-				},
-				type: {
-					summary: '() => void',
 				},
 			},
 		},
@@ -330,16 +306,17 @@ const meta: Meta<ClndrOptions> = {
 				</tbody>
 			</table>`, data),
 		adjacentItemsChangePage: false,
-		clickEvents: {
-			onClick: action('click'),
-			onNavigate: action('navigate'),
+		on: {
+			click: action('click'),
+			doneRendering: action('doneRendering'),
+			navigate: action('navigate'),
+			ready: action('ready'),
 		},
 		dateParameter: {
 			date: 'date',
 			start: 'start',
 			end: 'end',
 		},
-		doneRendering: action('doneRendering'),
 		events: [
 			{
 				title: 'Multi-Day Event',
@@ -353,7 +330,6 @@ const meta: Meta<ClndrOptions> = {
 		],
 		forceSixRows: false,
 		ignoreInactiveDaysInSelection: false,
-		ready: action('ready'),
 		useTouchEvents: false,
 		weekOffset: 0,
 	},
@@ -478,8 +454,27 @@ export const MiniCalendarWithClickEvent: Story = {
 				</div>
 			</div>
 		`, data),
-		clickEvents: {
-			onClick: target => {
+		events: [{
+			title: 'Boogie Night',
+			description: 'Bring your vinyls.',
+			date: getDateOfCurrentMonth(12),
+		}, {
+			title: 'Walk In The Park',
+			description: 'A step in the dark!',
+			date: getDateOfCurrentMonth(16),
+		}, {
+			title: 'Trip To A Remote Island',
+			description: 'Don\'t forget to take three things.',
+			start: getDateOfCurrentMonth(22),
+			end: getDateOfCurrentMonth(28),
+		}, {
+			title: 'Prepare for exam',
+			description: 'Make sure to buy enough food.',
+			start: getDateOfCurrentMonth(11),
+			end: getDateOfCurrentMonth(13),
+		}],
+		on: {
+			click: target => {
 				action('click')(target);
 
 				if (!target.date) {
@@ -516,27 +511,8 @@ export const MiniCalendarWithClickEvent: Story = {
 
 				eventList.innerHTML = html;
 			},
-			onNavigate: action('navigate'),
+			navigate: action('navigate'),
 		},
-		events: [{
-			title: 'Boogie Night',
-			description: 'Bring your vinyls.',
-			date: getDateOfCurrentMonth(12),
-		}, {
-			title: 'Walk In The Park',
-			description: 'A step in the dark!',
-			date: getDateOfCurrentMonth(16),
-		}, {
-			title: 'Trip To A Remote Island',
-			description: 'Don\'t forget to take three things.',
-			start: getDateOfCurrentMonth(22),
-			end: getDateOfCurrentMonth(28),
-		}, {
-			title: 'Prepare for exam',
-			description: 'Make sure to buy enough food.',
-			start: getDateOfCurrentMonth(11),
-			end: getDateOfCurrentMonth(13),
-		}],
 		trackSelectedDate: true,
 	},
 	render: args => {

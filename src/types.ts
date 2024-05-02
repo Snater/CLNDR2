@@ -9,12 +9,11 @@ export type InternalOptions = {
 	render: RenderFn | {[key in View]?: RenderFn}
 	adjacentItemsChangePage: boolean
 	classes: {[key in ItemStatus]: string}
-	clickEvents: ClickEvents
+	on: InteractionEvents
 	constraints?: Constraints
 	dateParameter: DateParameterDefinition
 	daysOfTheWeek?: DaysOfTheWeek
 	defaultView: View
-	doneRendering?: () => void
 	events: ClndrEvent[]
 	extras?: unknown
 	forceSixRows: boolean
@@ -22,7 +21,6 @@ export type InternalOptions = {
 	ignoreInactiveDaysInSelection: boolean
 	locale?: Locale
 	pagination: {[key in View]?: Pagination}
-	ready?: () => void
 	selectedDate?: Date | string | number
 	showAdjacent: boolean
 	startOn?: Date | string | number
@@ -73,9 +71,11 @@ export type Pagination = {
 
 export type View = 'decade' | 'year' | 'month' | 'week' | 'day'
 
-type ClickEvents = {
-	onClick?: (parameters: ClndrItemEventParameters) => void
-	onNavigate?: (parameters: NavigationEventParameters) => void
+type InteractionEvents = {
+	click?: (parameters: ClndrItemEventParameters) => void
+	doneRendering?: ({view}: {view: View}) => void
+	navigate?: (parameters: NavigationEventParameters) => void
+	ready?: ({view}: {view: View}) => void
 }
 
 export type ClndrItemEventParameters = {

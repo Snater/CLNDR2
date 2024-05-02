@@ -124,8 +124,8 @@ describe('Setup', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			clickEvents: {
-				onClick: handleClick,
+			on: {
+				click: handleClick,
 			},
 			selectedDate: new Date('2024-01-18'),
 			trackSelectedDate: true,
@@ -160,10 +160,10 @@ describe('Setup', () => {
 	test('Pass in locale', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			clickEvents: {
-				onClick: jest.fn(),
-			},
 			locale: de,
+			on: {
+				click: jest.fn(),
+			},
 		});
 
 		expect(screen.getByText('Januar 2024')).toBeInTheDocument();
@@ -174,8 +174,8 @@ describe('Setup', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			clickEvents: {
-				onNavigate: handleNavigate,
+			on: {
+				navigate: handleNavigate,
 			},
 			useTouchEvents: true,
 		});
@@ -268,12 +268,12 @@ describe('Navigation', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(multiNavigationTemplate),
-			clickEvents: {
-				onClick: jest.fn(),
-			},
 			constraints: {
 				start: new Date('2023-01'),
 				end: new Date('2025-12'),
+			},
+			on: {
+				click: jest.fn(),
 			},
 		});
 
@@ -357,9 +357,9 @@ describe('Navigation', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			clickEvents: {
-				onClick: handleClick,
-				onNavigate: handleNavigate,
+			on: {
+				click: handleClick,
+				navigate: handleNavigate,
 			},
 			trackSelectedDate: true,
 		});
@@ -395,8 +395,8 @@ describe('Navigation', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			clickEvents: {
-				onNavigate: handleNavigate,
+			on: {
+				navigate: handleNavigate,
 			},
 			startOn: new Date('1992-10'),
 		});
@@ -420,8 +420,8 @@ describe('Navigation', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			clickEvents: {
-				onNavigate: handleNavigate,
+			on: {
+				navigate: handleNavigate,
 			},
 		});
 
@@ -446,8 +446,8 @@ describe('Navigation', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			clickEvents: {
-				onNavigate: handleNavigate,
+			on: {
+				navigate: handleNavigate,
 			},
 		});
 
@@ -472,8 +472,8 @@ describe('Navigation', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			clickEvents: {
-				onNavigate: handleNavigate,
+			on: {
+				navigate: handleNavigate,
 			},
 		});
 
@@ -502,13 +502,15 @@ describe('Events', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			doneRendering: function() {
-				expect(this).toBeInstanceOf(Clndr);
-				handleDoneRendering();
-			},
-			ready: function() {
-				expect(this).toBeInstanceOf(Clndr);
-				handleReady();
+			on: {
+				doneRendering: function() {
+					expect(this).toBeInstanceOf(Clndr);
+					handleDoneRendering();
+				},
+				ready: function() {
+					expect(this).toBeInstanceOf(Clndr);
+					handleReady();
+				},
 			},
 		});
 
@@ -521,8 +523,8 @@ describe('Events', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			clickEvents: {
-				onNavigate: function(params) {
+			on: {
+				navigate: function(params) {
 					expect(this).toBeInstanceOf(Clndr);
 					handleNavigate(params);
 				},
@@ -558,13 +560,13 @@ describe('Events', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			clickEvents: {
-				onClick: handleClick,
-			},
 			events: [{
 				title: 'This is an event',
 				date: '2024-01-19',
 			}],
+			on: {
+				click: handleClick,
+			},
 		})
 
 		await user.click(screen.getByText('19'));
@@ -585,14 +587,14 @@ describe('Events', () => {
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
-			clickEvents: {
-				onClick: handleClick,
-			},
 			events: [{
 				title: 'Multi-day event',
 				start: '2024-01-12',
 				end: '2024-01-17',
 			}],
+			on: {
+				click: handleClick,
+			},
 		})
 
 		await user.click(screen.getByText('16'));
@@ -763,10 +765,10 @@ describe('Multiple views', () => {
 
 		clndr = new Clndr(container, {
 			render: multiViewTemplates,
-			clickEvents: {
-				onNavigate: handleNavigate,
-			},
 			defaultView: 'day',
+			on: {
+				navigate: handleNavigate,
+			},
 		});
 
 		expect(screen.getByText('Day 18 in 2024')).toBeInTheDocument();
