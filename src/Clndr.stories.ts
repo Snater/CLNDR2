@@ -1,11 +1,12 @@
 import './clndr.stories.less';
 import {Meta, StoryObj} from '@storybook/html';
+import {addDays, addMonths, format} from 'date-fns';
 import {de, enUS, es, fr} from 'date-fns/locale';
 import Clndr from './Clndr.js';
 import {action} from '@storybook/addon-actions';
 import ejs from 'ejs';
 
-import type {ClndrOptions} from './types';
+import type {ClndrEvent, ClndrOptions, Interval, View} from './types';
 
 const meta: Meta<ClndrOptions> = {
 	title: 'CLNDR2',
@@ -174,10 +175,11 @@ const meta: Meta<ClndrOptions> = {
 					summary: '{}',
 				},
 				type: {
-					summary: '{click?: (params: ClndrItemEventParameters) => void, doneRendering: (params: {view: View}) => void, navigate: (params: NavigationEventParameters) => void, ready: (params: {view: View}) => void}',
+					summary: '{afterRender: (params: {element: HTMLElement, interval: Interval, view: View}) => Promise<void>, beforeRender: (params: {element: HTMLElement, interval: Interval, view: View}) => Promise<void>, click?: (params: ClndrItemEventParameters) => void, afterRender: (params: {view: View}) => void, navigate: (params: NavigationEventParameters) => void, ready: (params: {element: HTMLElement, interval: Interval, view: View}) => void, switchView: (params: {view: View}) => Promise<void>}',
 					detail: 'See Readme for details on the event parameters.',
 				},
 			},
+			control: false,
 		},
 		pagination: {
 			description: 'Specify custom pagination, i.e. display more than one month or a custom amount of days, like two weeks. You can also define the pagination step.',
@@ -227,7 +229,7 @@ const meta: Meta<ClndrOptions> = {
 			},
 		},
 		targets: {
-			description: 'Override the CSS class names applied to the calendar elements for binding the `clickEvents` to.',
+			description: 'Override the CSS class names applied to the calendar elements for binding the `on` event handlers to.',
 			table: {
 				defaultValue: {
 					summary: '{item: \'item\', empty: \'empty\', nextButton: \'clndr-next-button\', todayButton: \'clndr-today-button\', previousButton: \'clndr-previous-button\', nextYearButton: \'clndr-next-year-button\', previousYearButton: \'clndr-previous-year-button\', switchWeekButton: \'clndr-switch-week-button\', switchMonthButton: \'clndr-switch-month-button\', switchYearButton: \'clndr-switch-year-button\', switchDecadeButton: \'clndr-switch-decade-button\'}',
@@ -250,7 +252,7 @@ const meta: Meta<ClndrOptions> = {
 			},
 		},
 		useTouchEvents: {
-			description: 'Whether to use `touchstart` instead of `click` for triggering the `clickEvents` handlers.',
+			description: 'Whether to use `touchstart` instead of `click` for triggering relevant `on` handlers.',
 			table: {
 				defaultValue: {
 					summary: 'false',
@@ -307,10 +309,18 @@ const meta: Meta<ClndrOptions> = {
 			</table>`, data),
 		adjacentItemsChangePage: false,
 		on: {
+			afterRender: async (...args) => {
+				action('afterRender')(...args);
+			},
+			beforeRender: async (...args) => {
+				action('beforeRender')(...args);
+			},
 			click: action('click'),
-			doneRendering: action('doneRendering'),
 			navigate: action('navigate'),
 			ready: action('ready'),
+			switchView: async (...args) => {
+				action('switchView')(...args);
+			},
 		},
 		dateParameter: {
 			date: 'date',
@@ -350,6 +360,30 @@ function getDateOfCurrentMonth(day: number) {
 	return new Date(new Date().getFullYear(), new Date().getMonth(), day + 1)
 		.toISOString()
 		.slice(0, 10);
+}
+
+function simulateFetchingEvents(interval: Interval, view: View = 'month'): Promise<ClndrEvent[]> {
+	return new Promise(resolve => {
+		const add = view === 'month' ? addDays : addMonths;
+
+		// Use some random time to provoke race conditions.
+		setTimeout(() => {
+			resolve([
+				{
+					title: 'Event 1',
+					date: view === 'month'
+						? new Date(interval.start)
+						: new Date(interval.start).setMonth(Math.floor(Math.random() * 11 + 1)),
+				}, {
+					title: 'Event 2',
+					date: add(interval.start, interval.start.getMonth() + 4),
+				}, {
+					title: 'Event 3',
+					date: add(interval.start, view === 'month' ? 25 : 9),
+				},
+			]);
+		}, Math.floor(Math.random() * 3 + 1) * 500);
+	});
 }
 
 export const Default: Story = {
@@ -408,23 +442,25 @@ export const FullCalendar: Story = {
 				</div>
 			</div>
 		`, data),
-		events: [{
-			date: getDateOfCurrentMonth(12),
-			title: 'Football Match',
-			location: 'Stadium',
-		}, {
-			date: getDateOfCurrentMonth(16),
-			title: 'Walk In The Park',
-			location: 'Nick Straker Park',
-		}, {
-			date: getDateOfCurrentMonth(22),
-			title: 'Trip To A Remote Island',
-			location: 'In The Middle Of Nowhere',
-		}, {
-			date: getDateOfCurrentMonth(7),
-			title: 'Boogie Night',
-			location: 'Seahorse Club',
-		}],
+		events: [
+			{
+				date: getDateOfCurrentMonth(12),
+				title: 'Football Match',
+				location: 'Stadium',
+			}, {
+				date: getDateOfCurrentMonth(16),
+				title: 'Walk In The Park',
+				location: 'Nick Straker Park',
+			}, {
+				date: getDateOfCurrentMonth(22),
+				title: 'Trip To A Remote Island',
+				location: 'In The Middle Of Nowhere',
+			}, {
+				date: getDateOfCurrentMonth(7),
+				title: 'Boogie Night',
+				location: 'Seahorse Club',
+			},
+		],
 		forceSixRows: true,
 	},
 	render: args => {
@@ -454,26 +490,29 @@ export const MiniCalendarWithClickEvent: Story = {
 				</div>
 			</div>
 		`, data),
-		events: [{
-			title: 'Boogie Night',
-			description: 'Bring your vinyls.',
-			date: getDateOfCurrentMonth(12),
-		}, {
-			title: 'Walk In The Park',
-			description: 'A step in the dark!',
-			date: getDateOfCurrentMonth(16),
-		}, {
-			title: 'Trip To A Remote Island',
-			description: 'Don\'t forget to take three things.',
-			start: getDateOfCurrentMonth(22),
-			end: getDateOfCurrentMonth(28),
-		}, {
-			title: 'Prepare for exam',
-			description: 'Make sure to buy enough food.',
-			start: getDateOfCurrentMonth(11),
-			end: getDateOfCurrentMonth(13),
-		}],
+		events: [
+			{
+				title: 'Boogie Night',
+				description: 'Bring your vinyls.',
+				date: getDateOfCurrentMonth(12),
+			}, {
+				title: 'Walk In The Park',
+				description: 'A step in the dark!',
+				date: getDateOfCurrentMonth(16),
+			}, {
+				title: 'Trip To A Remote Island',
+				description: 'Don\'t forget to take three things.',
+				start: getDateOfCurrentMonth(22),
+				end: getDateOfCurrentMonth(28),
+			}, {
+				title: 'Prepare for exam',
+				description: 'Make sure to buy enough food.',
+				start: getDateOfCurrentMonth(11),
+				end: getDateOfCurrentMonth(13),
+			},
+		],
 		on: {
+			...meta.args?.on,
 			click: target => {
 				action('click')(target);
 
@@ -511,7 +550,6 @@ export const MiniCalendarWithClickEvent: Story = {
 
 				eventList.innerHTML = html;
 			},
-			navigate: action('navigate'),
 		},
 		trackSelectedDate: true,
 	},
@@ -773,6 +811,241 @@ export const SwitchBetweenViews: Story = {
 		const container = document.createElement('div');
 		container.classList.add('cal-month-year');
 		new Clndr(container, args);
+		return container;
+	},
+};
+
+export const AsyncBeforeRenderCalendar: Story = {
+	args: {
+		render: data => ejs.render(`
+			<div class="clndr-controls">
+				<div class="clndr-previous-button" role="button">&lsaquo;</div>
+				<div class="month"><%= format(interval.start, 'MMMM') %></div>
+				<div class="clndr-next-button" role="button">&rsaquo;</div>
+			</div>
+			<div class="clndr-grid">
+				<div class="loading">loading</div>
+				<div class="days-of-the-week">
+					<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }) %>
+				</div>
+				<div class="days">
+					<% items.forEach(day => { %>
+						<div class="<%= day.classes %>" role="button"><%= day.day %></div>
+					<% }) %>
+				</div>
+			</div>
+		`, data),
+		events: [],
+		trackSelectedDate: true,
+	},
+	render: args => {
+		const container = document.createElement('div');
+		container.classList.add('mini-clndr');
+		container.classList.add('async-clndr');
+
+		const cache: string[] = [];
+
+		function createEventsForInterval(interval: Interval): Promise<ClndrEvent[]> {
+			return new Promise(resolve => {
+				// Use some random time to provoke race conditions.
+				setTimeout(() => {
+					resolve([
+						{
+							title: 'Event 1',
+							date: new Date(interval.start),
+						}, {
+							title: 'Event 2',
+							date: addDays(interval.start, interval.start.getMonth() + 4),
+						}, {
+							title: 'Event 3',
+							date: addDays(interval.start, 25),
+						},
+					]);
+				}, Math.floor(Math.random() * 3 + 1) * 500);
+			});
+		}
+
+		async function beforeRender(
+			this: Clndr,
+			{element, interval, view}: {element: HTMLElement, interval: Interval, view: View}
+		) {
+			action('beforeRender')({element, interval, view});
+
+			if (cache.includes(format(interval.start, 'yyyy-MM'))) {
+				return;
+			}
+
+			element.querySelector('.clndr .loading')?.classList.add('show');
+
+			const additionalEvents = await createEventsForInterval(interval);
+			cache.push(format(interval.start, 'yyyy-MM'));
+
+			element.querySelector('.clndr .loading')?.classList.remove('show');
+
+			this.addEvents(additionalEvents);
+		}
+
+		new Clndr(container, {...args, on: {...args.on, beforeRender}});
+		return container;
+	},
+};
+
+export const AsyncAfterRenderCalendar: Story = {
+	args: {
+		render: data => ejs.render(`
+			<div class="clndr-controls">
+				<div class="clndr-previous-button" role="button">&lsaquo;</div>
+				<div class="month"><%= format(interval.start, 'MMMM') %></div>
+				<div class="clndr-next-button" role="button">&rsaquo;</div>
+			</div>
+			<div class="clndr-grid">
+				<div class="loading">loading</div>
+				<div class="days-of-the-week">
+					<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }) %>
+				</div>
+				<div class="days">
+					<% items.forEach(day => { %>
+						<div class="<%= day.classes %>" role="button"><%= day.day %></div>
+					<% }) %>
+				</div>
+			</div>
+		`, data),
+		events: [],
+		trackSelectedDate: true,
+	},
+	render: args => {
+		const container = document.createElement('div');
+		container.classList.add('mini-clndr');
+		container.classList.add('async-clndr');
+
+		const cache: string[] = [];
+
+		async function afterRender(
+			this: Clndr,
+			{element, interval, view}: {element: HTMLElement, interval: Interval, view: View}
+		) {
+			action('afterRender')({element, interval, view});
+
+			if (cache.includes(format(interval.start, 'yyyy-MM'))) {
+				return;
+			}
+
+			element.querySelector('.clndr .loading')?.classList.add('show');
+
+			const additionalEvents = await simulateFetchingEvents(interval);
+			cache.push(format(interval.start, 'yyyy-MM'));
+
+			this.addEvents(additionalEvents);
+
+			// Re-render only if the interval events were requested for is the interval currently
+			// rendered.
+			if (interval.start === this.getInterval().start) {
+				element.querySelector('.clndr .loading')?.classList.remove('show');
+				await this.render();
+			}
+		}
+
+		new Clndr(container, {...args, on: {...args.on, afterRender}});
+		return container;
+	},
+};
+
+export const AsyncSwitchBetweenViews: Story = {
+	args: {
+		render: {
+			year: data => ejs.render(`
+				<div class="year-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title"><%= interval.start.getFullYear() %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<div class="loading">loading</div>
+						<% items.forEach(month => { %>
+							<div class="<%= month.classes %>" role="button"><%= format(month.date, 'MMM') %></div>
+						<% }) %>
+					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to current year</div>
+				</div>
+			`, data),
+			month: data => ejs.render(`
+				<div class="month-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title"><%= format(interval.start, 'MMMM yyyy') %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<div class="loading">loading</div>
+						<div class="days-of-the-week grid-template">
+							<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }) %>
+						</div>
+						<div class="days grid-template">
+							<% items.forEach(day => { %>
+								<div class="<%= day.classes %>" role="button"><%= day.day %></div>
+							<% }) %>
+						</div>
+					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to current month</div>
+					<div class="clndr-switch-year-button footer-button" role="button">Switch to year view</div>
+				</div>
+			`, data),
+		},
+		events: [],
+		forceSixRows: true,
+	},
+	render: args => {
+		const cache: Record<'month' | 'year', Record<string, ClndrEvent[]>> = {
+			month: {},
+			year: {},
+		};
+
+		async function afterRender(
+			this: Clndr,
+			{element, interval, view}: {element: HTMLElement, interval: Interval, view: View}
+		) {
+			action('afterRender')({element, interval, view});
+
+			if (view !== 'month' && view !== 'year') {
+				return;
+			}
+
+			const cacheId = format(interval.start, view === 'month' ? 'yyyy-MM' : 'yyyy');
+			const cacheForThisInterval = cache[view][cacheId];
+
+			if (cacheForThisInterval) {
+				return;
+			}
+
+			element.querySelector('.clndr .loading')?.classList.add('show');
+
+			const additionalEvents = await simulateFetchingEvents(interval, view);
+			cache[view][cacheId] = additionalEvents;
+
+			this.addEvents(additionalEvents);
+
+			// Re-render only if the interval events were requested for is the interval currently
+			// rendered and if the view is
+			const currentInterval = this.getInterval();
+			if (interval.start === currentInterval.start && interval.end === currentInterval.end) {
+				element.querySelector('.clndr .loading')?.classList.remove('show');
+				await this.render();
+			}
+		}
+
+		async function switchView(this: Clndr, {view} : {view: View}) {
+			if (view !== 'month' && view !== 'year') {
+				return;
+			}
+
+			this.setEvents(Object.values(cache[view]).flat());
+		}
+
+		const container = document.createElement('div');
+		container.classList.add('cal-month-year');
+		container.classList.add('async-clndr');
+		new Clndr(container, {...args, on: {...args.on, afterRender, switchView}});
 		return container;
 	},
 };

@@ -33,8 +33,8 @@ import type {
 	ClndrTemplateData,
 	Constraints,
 	DaysOfTheWeek,
+	DefaultOptions,
 	InternalClndrEvent,
-	InternalOptions,
 	Interval,
 	NavigationConstraint,
 	NavigationConstraints,
@@ -59,10 +59,7 @@ const adapters: Record<View,
 	day: DayAdapter,
 } as const;
 
-const defaults: InternalOptions = {
-	render: () => {
-		throw new Error('Missing render function');
-	},
+const defaults: DefaultOptions = {
 	adjacentItemsChangePage: false,
 	classes: {
 		past: 'past',
@@ -118,14 +115,18 @@ class Clndr {
 		return item && typeof item === 'object' && !Array.isArray(item);
 	}
 
-	static mergeDeep<T extends {[key: string]: unknown}, S extends {[key: string]: unknown} = T>(
+	static mergeDeep<
+		T extends {[key: string]: unknown},
+		S extends {[key: string]: unknown} = T,
+		R = T
+	>(
 		target: T,
 		...sources: [T, S] | [T]
-	): T {
+	): R {
 		const source = sources.shift();
 
 		if (!source) {
-			return target;
+			return target as unknown as R;
 		}
 
 		const targetObject = target as {[k: string]: unknown};
@@ -158,11 +159,15 @@ class Clndr {
 		return Clndr.mergeDeep(target, ...sources);
 	}
 
-	static mergeOptions<T extends {[key: string]: unknown}, S extends {[key: string]: unknown} = T>(
+	static mergeOptions<
+		T extends {[key: string]: unknown},
+		S extends {[key: string]: unknown} = T,
+		R = T
+	>(
 		target: T,
 		source: S
-	) {
-		return Clndr.mergeDeep<T, S>({} as T, target, source);
+	): R {
+		return Clndr.mergeDeep<T, S, R>({} as T, target, source);
 	}
 
 	private readonly element: HTMLElement;
@@ -174,7 +179,7 @@ class Clndr {
 	private readonly constraints: NavigationConstraints;
 	private readonly daysOfTheWeek: DaysOfTheWeek;
 	private interval: Interval;
-	private options: InternalOptions;
+	private options: Omit<DefaultOptions, 'render'> & Pick<ClndrOptions, 'render'>
 	private calendarContainer: HTMLElement;
 	private events: InternalClndrEvent[];
 	private selectedDate?: Date;
@@ -182,7 +187,9 @@ class Clndr {
 	constructor(element: HTMLElement, options: ClndrOptions) {
 		this.element = element;
 
-		this.options = Clndr.mergeOptions<InternalOptions, ClndrOptions>(defaults, options);
+		this.options = Clndr.mergeOptions<DefaultOptions, ClndrOptions,
+			Omit<DefaultOptions, 'render'> & Pick<ClndrOptions, 'render'>
+		>(defaults, options);
 
 		this.availableViews = typeof this.options.render === 'function'
 			? Object.keys(this.options.pagination) as View[]
@@ -247,9 +254,12 @@ class Clndr {
 			this.handleEvent.bind(this)
 		);
 
-		this.render();
-
-		this.options.on.ready?.apply(this, [{view: this.adapter.getView()}]);
+		this.render().then(() => {
+			this.options.on.ready?.apply(
+				this,
+				[{element: this.element, interval: this.interval, view: this.adapter.getView()}]
+			);
+		});
 	}
 
 	private initConstraints(constraints: Constraints, interval: Interval) {
@@ -442,8 +452,13 @@ class Clndr {
 		return this.availableViews[adjacentIndex];
 	}
 
-	private render() {
-		this.calendarContainer.innerHTML = '';
+	async render() {
+		if (this.options.on.beforeRender) {
+			await this.options.on.beforeRender.apply(
+				this,
+				[{element: this.element, interval: this.interval, view: this.adapter.getView()}]
+			);
+		}
 
 		const renderFn = typeof this.options.render === 'function'
 			? this.options.render
@@ -454,6 +469,8 @@ class Clndr {
 			return;
 		}
 
+		this.calendarContainer.innerHTML = '';
+
 		this.calendarContainer.innerHTML = renderFn.apply(
 			this,
 			[this.aggregateTemplateData()]
@@ -461,8 +478,11 @@ class Clndr {
 
 		this.applyInactiveClasses();
 
-		if (this.options.on.doneRendering) {
-			this.options.on.doneRendering.apply(this, [{view: this.adapter.getView()}]);
+		if (this.options.on.afterRender) {
+			await this.options.on.afterRender.apply(
+				this,
+				[{element: this.element, interval: this.interval, view: this.adapter.getView()}]
+			);
 		}
 	}
 
@@ -624,7 +644,7 @@ class Clndr {
 
 		Object.values(adapters).forEach(adapterConstructor => {
 			if (adapterConstructor.eventListener) {
-				adapterConstructor.eventListener.apply(this, [element, this.setPagination.bind(this)]);
+				adapterConstructor.eventListener.apply(this, [element, this.switchViewInternal.bind(this)]);
 			}
 		});
 	}
@@ -786,9 +806,7 @@ class Clndr {
 			element,
 		}
 
-		if (this.options.on.navigate) {
-			this.options.on.navigate.apply(this, [eventParameters]);
-		}
+		this.options.on.navigate?.apply(this, [eventParameters]);
 	}
 
 	private parseToInternalEvents(events: ClndrEvent[]) {
@@ -853,7 +871,7 @@ class Clndr {
 		return Clndr.mergeOptions<ClndrItem>(defaults, options);
 	}
 
-	private setPagination(view: View, date?: Date) {
+	private async setPagination(view: View, date: Date) {
 		this.adapter = new adapters[view]({
 			forceSixRows: this.options.forceSixRows,
 			pageSize: this.options.pagination[view]?.size ?? 1,
@@ -861,15 +879,32 @@ class Clndr {
 			weekOffset: this.options.weekOffset,
 		});
 
-		this.interval = this.adapter.initInterval(date || this.interval.start);
+		this.interval = this.adapter.initInterval(date);
 
 		if (this.options.constraints) {
 			this.interval = this.initConstraints(this.options.constraints, this.interval);
 		}
 
-		this.render();
+		return this.render();
 	}
 
+	/**
+	 * Returns the view currently rendered.
+	 */
+	getView() {
+		return this.adapter.getView();
+	}
+
+	/**
+	 * Returns the interval currently rendered.
+	 */
+	getInterval() {
+		return this.interval;
+	}
+
+	/**
+	 * Returns the date currently selected, if the `trackSelectedDate` option is activated.
+	 */
 	getSelectedDate() {
 		return this.selectedDate;
 	}
@@ -877,11 +912,14 @@ class Clndr {
 	/**
 	 * Switch the view while ensuring the provided date is on the page.
 	 */
-	switchView(view: View, date?: Date | string | number) {
-		this.switchViewInternal(view, date);
+	async switchView(view: View, date?: Date | string | number) {
+		return this.switchViewInternal(view, date);
 	}
 
-	private switchViewInternal(view: View, dateOrTarget?: Date | string | number | HTMLElement) {
+	private async switchViewInternal(
+		view: View,
+		dateOrTarget?: Date | string | number | HTMLElement
+	) {
 		if (view === this.adapter.getView() || !this.availableViews.includes(view)) {
 			return;
 		}
@@ -889,22 +927,29 @@ class Clndr {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		const date = dateOrTarget instanceof HTMLElement
-			? this.getTargetDate(dateOrTarget)
+			? this.getTargetDate(dateOrTarget) ?? this.interval.start
 			: dateOrTarget !== undefined ? new Date(dateOrTarget) : this.interval.start;
 
-		this.setPagination(view, date);
+		if (this.options.on.switchView) {
+			await this.options.on.switchView.apply(this, [{view}]);
+		}
 
-		this.triggerEvents(orig, dateOrTarget instanceof HTMLElement ? dateOrTarget : undefined);
+		return this.setPagination(view, date).then(() => {
+			return this.triggerEvents(
+				orig,
+				dateOrTarget instanceof HTMLElement ? dateOrTarget : undefined
+			);
+		});
 	}
 
 	/**
 	 * Action to go backward one or more pages.
 	 */
-	previous() {
-		this.previousInternal();
+	async previous() {
+		return this.previousInternal();
 	}
 
-	private previousInternal(element?: HTMLElement) {
+	private async previousInternal(element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		if (!this.constraints.previous) {
@@ -916,19 +961,17 @@ class Clndr {
 			this.options.pagination[this.adapter.getView()]?.step
 		);
 
-		this.render();
-
-		this.triggerEvents(orig, element);
+		return this.render().then(() => this.triggerEvents(orig, element));
 	}
 
 	/**
 	 * Action to go forward one or more pages.
 	 */
-	next() {
-		this.nextInternal();
+	async next() {
+		return this.nextInternal();
 	}
 
-	private nextInternal(element?: HTMLElement) {
+	private async nextInternal(element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		if (!this.constraints.next) {
@@ -940,16 +983,16 @@ class Clndr {
 			this.options.pagination[this.adapter.getView()]?.step
 		);
 
-		this.render();
-
-		this.triggerEvents(orig, element);
+		return this.render().then(() => {
+			this.triggerEvents(orig, element);
+		});
 	}
 
-	previousYear() {
-		this.previousYearInternal();
+	async previousYear() {
+		return this.previousYearInternal();
 	}
 
-	private previousYearInternal(element?: HTMLElement) {
+	private async previousYearInternal(element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		if (!this.constraints.previousYear) {
@@ -961,18 +1004,16 @@ class Clndr {
 			end: subYears(this.interval.end, 1),
 		};
 
-		this.render();
-
-		this.triggerEvents(orig, element);
+		this.render().then(() => this.triggerEvents(orig, element));
 
 		return;
 	}
 
-	nextYear() {
-		this.nextYearInternal();
+	async nextYear() {
+		return this.nextYearInternal();
 	}
 
-	private nextYearInternal(element?: HTMLElement) {
+	private async nextYearInternal(element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		if (!this.constraints.nextYear) {
@@ -984,16 +1025,14 @@ class Clndr {
 			end: addYears(this.interval.end, 1),
 		};
 
-		this.render();
-
-		this.triggerEvents(orig, element);
+		this.render().then(() => this.triggerEvents(orig, element));
 	}
 
-	today() {
-		this.todayInternal();
+	async today() {
+		return this.todayInternal();
 	}
 
-	private todayInternal(element?: HTMLElement) {
+	private async todayInternal(element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		this.interval = this.adapter.setDate(new Date());
@@ -1003,90 +1042,82 @@ class Clndr {
 			!isSameMonth(this.interval.start, orig.start)
 			|| !isSameMonth(this.interval.end, orig.end)
 		) {
-			this.render();
+			this.render().then(() => this.triggerEvents(orig, element));
 		}
-
-		this.triggerEvents(orig, element);
 	}
 
 	/**
 	 * Ensures a provided date is on the page.
 	 */
-	setDate(newDate: Date | string | number) {
-		this.setDateInternal(newDate);
+	async setDate(newDate: Date | string | number) {
+		return this.setDateInternal(newDate);
 	}
 
-	private setDateInternal(newDate: Date | string | number, element?: HTMLElement) {
+	private async setDateInternal(newDate: Date | string | number, element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		this.interval = this.adapter.setDate(new Date(newDate));
 
-		this.render();
-
-		this.triggerEvents(orig, element);
+		this.render().then(() => this.triggerEvents(orig, element));
 	}
 
 	/**
 	 * Changes the month being provided a value between 0 and 11.
 	 */
-	setMonth(newMonth: number) {
-		this.setMonthInternal(newMonth);
+	async setMonth(newMonth: number) {
+		return this.setMonthInternal(newMonth);
 	}
 
-	private setMonthInternal(newMonth: number, element?: HTMLElement) {
+	private async setMonthInternal(newMonth: number, element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		this.interval = this.adapter.setMonth(newMonth, this.interval);
 
-		this.render();
-
-		this.triggerEvents(orig, element);
+		this.render().then(() => this.triggerEvents(orig, element));
 	}
 
-	setYear(newYear: number) {
-		this.setYearInternal(newYear);
+	async setYear(newYear: number) {
+		return this.setYearInternal(newYear);
 	}
 
-	private setYearInternal(newYear: number, element?: HTMLElement) {
+	private async setYearInternal(newYear: number, element?: HTMLElement) {
 		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		this.interval = this.adapter.setYear(newYear, this.interval);
 
-		this.render();
-
-		this.triggerEvents(orig, element);
+		this.render().then(() => this.triggerEvents(orig, element));
 	}
 
 	/**
-	 * Overwrites extras and triggers re-rendering.
+	 * Overwrites extras.
 	 */
 	setExtras(extras: unknown) {
 		this.options.extras = extras;
-		this.render();
+
+		return this;
 	}
 
 	/**
-	 * Overwrites events and triggers re-rendering.
+	 * Overwrites events.
 	 */
 	setEvents(events: ClndrEvent[]) {
 		this.events = this.parseToInternalEvents(events);
-		this.render();
+
+		return this;
 	}
 
 	/**
-	 * Adds additional events and triggers re-rendering.
+	 * Adds additional events.
 	 */
-	addEvents(events: ClndrEvent[], reRender = true) {
+	addEvents(events: ClndrEvent[]) {
 		this.options.events = [...this.options.events, ...events];
 		this.events = [...this.events, ...this.parseToInternalEvents(events)];
 
-		if (reRender) {
-			this.render();
-		}
+		return this;
 	}
 
 	/**
-	 * Removes all events according to a matching function and triggers rendering.
+	 * Removes all events according to a matching function.
 	 */
 	removeEvents(matchingFn: (event: ClndrEvent) => boolean) {
 		for (let i = this.options.events.length - 1; i >= 0; i--) {
@@ -1096,14 +1127,7 @@ class Clndr {
 			}
 		}
 
-		this.render();
-	}
-
-	destroy() {
-		(this.calendarContainer as HTMLElement).innerHTML = '';
-		(this.calendarContainer as HTMLElement).remove();
-
-		this.options = defaults;
+		return this;
 	}
 
 }

@@ -23,6 +23,7 @@ It is the unofficial successor to awesome [CLNDR](https://github.com/kylestetz/C
 - [Custom CSS Classes](#custom-css-classes)
 - [Constraints & Date Pickers](#constraints--date-pickers)
 - [Switching the View](#switching-the-view)
+- [Asynchronously loading Calendar Events](#asynchronously-loading-calendar-events)
 - [Public API](#public-api)
 - [Internationalization](#internationalization)
 - [Key Differences to CLNDR](#key-differences-to-clndr)
@@ -55,7 +56,7 @@ const compiled = compile('... your template HTML string ...');
 
 const clndr = new Clndr(
   document.getElementById('calendar'),
-  {render: data => compiled(data)}
+  {render: compiled}
 );
 ```
 
@@ -109,7 +110,7 @@ The basic concept is to provide a `render` function:
 const precompiledTemplate = myRenderingEngine.template('...my template HTML string...');
 
 new Clndr(container, {
-  render: data => precompiledTemplate(data),
+  render: precompiledTemplate,
 });
 ```
 
@@ -146,7 +147,7 @@ const mixedEvents = [
 ];
 
 new Clndr(document.getElementById('calendar'), {
-  render: data => template(data),
+  render: template,
   events: mixedEvents,
 });
 ```
@@ -192,6 +193,30 @@ new Clndr(container, {
   // Handlers for interaction events. The keyword 'this' is set to the
   // calendar instance in all callbacks.
   on: {
+    // A callback triggered when the calendar is done rendering.
+    afterRender: function(this: Clndr, parameters: {
+      // The calendar's root element.
+      element: HTMLElement
+
+      // The interval that is about to be rendered.
+      interval: {start: Date, end: Date},
+      
+      // The view rendered.
+      view: 'decade' | 'year' | 'month' | 'week' | 'day',
+    }) {/*...*/},
+
+    // A callback triggered when the calendar is about to render.
+    beforeRender: async function(this: Clndr, parameters: {
+      // The calendar's root element.
+      element: HTMLElement
+
+      // The interval that is about to be rendered.
+      interval: {start: Date, end: Date},
+      
+      // The view rendered.
+      view: 'decade' | 'year' | 'month' | 'week' | 'day',
+    }) {/*...*/},
+
     // Triggered whenever a calendar box is clicked.
     click: function(parameters: {
       // The date clicked on; not necessarily provided, since it might be an
@@ -213,13 +238,7 @@ new Clndr(container, {
 
       // The element clicked on.
       element: HTMLElement,
-    }) {...},
-
-    // A callback triggered when the calendar is done rendering.
-    doneRendering: function(parameters: {
-      // The view rendered.
-      view: 'decade' | 'year' | 'month' | 'week' | 'day'
-    }) {...},
+    }) {/*...*/},
 
     // Triggered whenever navigating the calendar, which is any operation other
     // than directly clicking a calendar box, i.e. clicking the "back" and
@@ -247,13 +266,27 @@ new Clndr(container, {
       // The HTML element targeted by the click; `undefined` when navigating
       // programmatically.
       element?: HTMLElement,
-    }) {...},
+    }) {/*...*/},
 
     // Callback triggered once the calendar has been initialized and rendered.
-    ready: function(parameters: {
-      // The view rendered.
-      view: 'decade' | 'year' | 'month' | 'week' | 'day'
-    }) {...},
+    ready: async function(this: Clndr, parameters: {
+      // The calendar's root element.
+      element: HTMLElement
+
+      // The interval that has been rendered initially.
+      interval: {start: Date, end: Date},
+      
+      // The view that hass been rendered initially.
+      view: 'decade' | 'year' | 'month' | 'week' | 'day',
+    }) {/*...*/},
+
+    // Callback triggered whenever the view is switched. The callback is
+    // triggered before rendering, hence any updated to the calendar events
+    // done here, will be considered when rendering the new view. 
+    switchView: async function(this: Clndr, parameters: {
+      // The view that is switched to.
+      view: 'decade' | 'year' | 'month' | 'week' | 'day',
+    }) {/*...*/},
   },
 
   // Prevent the user from navigating the calendar outside of a certain date
@@ -290,7 +323,7 @@ new Clndr(container, {
       title: 'This is an event',
       date: '2000-08-20'
     },
-    ...
+    /*...*/
   ],
 
   // Any other data variables you want access to in your template. Use this option if you would like
@@ -372,7 +405,7 @@ new Clndr(container, {
   // applied only to the most recently clicked date; otherwise selectedDate will not change.
   trackSelectedDate: false,
 
-  // Use the "touchstart" event instead of "click" for binding the `clickEvents` handlers.
+  // Use the "touchstart" event instead of "click" for binding the relevant `on` handlers.
   useTouchEvents: false,
   
   // Start the week off on Sunday (0), Monday (1), etc. Sunday is the default.
@@ -494,7 +527,7 @@ new Clndr(container, {
 
 This causes the calendar's next and previous buttons to only work within this date range. When they become disabled they will have the class `inactive` applied to them, which can be used to make them appear disabled.
 
-The days in the grid that are outside the range will also have the `inactive` class applied. Therefore, the click callbacks provided to the `clickEvents` option should check whether or not a day has the class `inactive` applied:
+The days in the grid that are outside the range will also have the `inactive` class applied. Therefore, the click callbacks provided to relevant `on` callbacks should check whether a day has the class `inactive` applied:
 
 ```typescript
 new Clndr(container, {
@@ -503,8 +536,8 @@ new Clndr(container, {
     start: '1992-10-15',
     end: '2024-10-15',
   },
-  clickEvents: {
-    onClick: target => {
+  on: {
+    click: target => {
       if (!target.element.classList.contains('inactive')) {
         console.log('You picked a valid date!');
       } else {
@@ -556,58 +589,143 @@ const clndr = new Clndr(container, {
 });
 ```
 
-There is no need to configure `defaultView` when only using one view or when the default view is supposed to be `month`.
+There is no need to configure `defaultView` when either
+- only using one view, or
+- when the default view is supposed to be `month` while `render` is a function instead of an object, or
+- when the default view is supposed to be the most granular view, i.e. `day` when configuring views for `day`, `month` and `year`.
+
+## Asynchronously loading Calendar Events
+
+The `beforeRender` and `afterRender` callbacks may be used to asynchronously load events and add them to the calendar.
+
+For `beforeRender`, the callback may be implemented like in the following simple example:
+
+```typescript
+const cache: string[] = [];
+
+async function beforeRender(
+  // Tell TypeScript about the function's context:
+  // https://www.typescriptlang.org/docs/handbook/2/functions.html#declaring-this-in-a-function
+  this: Clndr,
+  {element, interval}: {element: HTMLElement, interval: Interval}
+) {
+  if (cache.includes(format(interval.start, 'yyyy-MM'))) {
+    // Events for this interval have already been fetched.
+    return;
+  }
+
+  // Set some loading indication in the UI.
+  element.querySelector('.clndr .loading')?.classList.add('show');
+
+  // Fetch events within the interval and add a reference for the interval to
+  // the cache.
+  const additionalEvents = await fetchEvents(interval);
+  cache.push(format(interval.start, 'yyyy-MM'));
+
+  this.addEvents(additionalEvents);
+
+  // Remove the loading indication.
+  element.querySelector('.clndr .loading')?.classList.remove('show');
+}
+
+new Clndr(container, {
+  /*...*/
+  on: {beforeRender}
+  /*...*/
+});
+```
+
+Updating the calendar events on `afterRender` has to be done slightly different:
+
+```typescript
+async function afterRender(
+  this: Clndr,
+  {element, interval}: {element: HTMLElement, interval: Interval}
+) {
+  /* ... same as in the `beforeRender` example ... */
+
+  // Since rendering has already been performed, it needs to be retriggered;
+  // yet only in case the calendar events were requested for the interval
+  // currently rendered. Otherwise, there might be a race conditions when doing
+  // async operations like fetching data from a server. Therefore, doing this
+  // check prevents unneccesary re-renderings.
+  if (interval.start === this.getInterval().start) {
+    element.querySelector('.clndr .loading')?.classList.remove('show');
+    await this.render();
+  }
+}
+
+new Clndr(container, {
+  /*...*/
+  on: {afterRender}
+  /*...*/
+});
+```
+
+Caching like in the examples will only work for a calendar setup featuring just one view. When configuring multiple views, more sophisticated caching is necessary. The most simple cache would be to assign an `id` property to each calendar event and check if the event with that `id` was already added to the calendar. However, that would be one of the least performant options, particularly when dealing with a large number of events, because the operation fetching events would still need to be triggered on all navigation, as well as the whole cached array of events would need to be compared to the (potentially duplicate) fetched events.
+
+An improvement would be to cache the events on "view" level, i.e. per `month`, `year` etc. The events would be fetched in either `beforeRender` or `afterRender`. A callback triggered on `switchView` would exchange the events rendered in the calendar calling `setEvents()`. An example of this concept can be found in the [Storybook demos](https://clndr2.snater.com).
 
 ## Public API
 
-It's possible to programmatically update the calendar after initialization. Navigating and updating the calendar will trigger relevant event handlers provided per the `clickEvents` option.
+It's possible to programmatically update the calendar after initialization. Navigating and updating the calendar will trigger relevant event handlers provided per the `on` option.
 
 ```typescript
 const clndr = new Clndr(container, {render: {...}});
 
+// Gets the currently rendered view.
+const view: 'decade' | 'year' | 'month' | 'week' | 'day' = clndr.getView();
+
+// Gets the interval currently rendered.
+const interval: {start: Date, end: Date} = clndr.getInterval();
+
+// Gets the date currently selected, if the `trackSelectedDate` option is
+// activated.
+const selectedDate: Date = clndr.getSelectedDate();
+
 // Switch the view ensuring the provided date is on the page. If no date is
 // provided, the start of the current page's interval is used.
-clndr.switchView('year', 2024);
+await clndr.switchView('year', '2024');
 
-// Navigate to the next page
-clndr.next();
+// Navigate to the next page.
+await clndr.next();
 
-// Navigate to the previous page
-clndr.previous();
+// Navigate to the previous page.
+await clndr.previous();
 
 // Sets a specific date ensuring that date is on the page.
-clndr.setDate('2024-01-18');
+await clndr.setDate('2024-01-18');
 
-// Set the month using a number from 0-11
-clndr.setMonth(0);
+// Set the month using a number from 0-11.
+await clndr.setMonth(0);
 
-// Navigate to the next year
-clndr.nextYear();
+// Navigate to the next year.
+await clndr.nextYear();
 
-// Navigate to the previous year
-clndr.previousYear();
+// Navigate to the previous year.
+await clndr.previousYear();
 
-// Set the year
-clndr.setYear(1992);
+// Set the year.
+await clndr.setYear(1992);
 
-// Navigate to today:
-clndr.today();
+// Navigate to today.
+await clndr.today();
 
-// Overwrite the extras. Note that this triggers re-rendering the calendar.
+// Overwrite the extras. Note that this does NOT trigger re-rendering the calendar.
 clndr.setExtras(newExtras);
 
-// Change the events. Note that this triggers re-rendering the calendar.
+// Change the events. Note that this does NOT trigger re-rendering the calendar.
 clndr.setEvents(newEventsArray);
 
-// Add events. Note that this triggers re-rendering the calendar.
+// Add events. Note that this does NOT trigger re-rendering the calendar.
 clndr.addEvents(additionalEventsArray);
 
 // Remove events. All events for which the provided function returns true will be removed from the
-// calendar. Note that this triggers re-rendering the calendar.
-clndr.removeEvents((event => event.id === idToRemove}));
+// calendar. Note that this odes NOT trigger re-rendering the calendar.
+clndr.removeEvents(event => event.id === idToRemove);
 
-// Destroy the calendar instance. This will empty the DOM node containing the calendar.
-clndr.destroy();
+// Trigger re-rendering the calendar.
+clndr.render();
 ```
 
 ## Internationalization
@@ -648,7 +766,7 @@ import _ from 'underscore';
 const template = _.compile(document.getElementById('calendar-template').innerHTML);
 
 const clndr = new Clndr(document.getElementById('calendar'), {
-  render: data => template(data),
+  render: template,
 });
 ```
 

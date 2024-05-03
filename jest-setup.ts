@@ -46,7 +46,7 @@ beforeEach(() => {
 
 afterEach(() => {
 	if (globalThis.clndr) {
-		globalThis.clndr.destroy();
+		globalThis.clndr = null;
 	}
 
 	globalThis.container.remove();

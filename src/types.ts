@@ -5,11 +5,10 @@ import type {TargetOption as YearTargetOption} from './YearAdapter';
 
 type RenderFn = (data: ClndrTemplateData) => string
 
-export type InternalOptions = {
-	render: RenderFn | {[key in View]?: RenderFn}
+export type DefaultOptions = {
+	render?: never
 	adjacentItemsChangePage: boolean
 	classes: {[key in ItemStatus]: string}
-	on: InteractionEvents
 	constraints?: Constraints
 	dateParameter: DateParameterDefinition
 	daysOfTheWeek?: DaysOfTheWeek
@@ -20,6 +19,7 @@ export type InternalOptions = {
 	formatWeekdayHeader?: (day: Date, locale?: Locale) => string
 	ignoreInactiveDaysInSelection: boolean
 	locale?: Locale
+	on: InteractionEvents
 	pagination: {[key in View]?: Pagination}
 	selectedDate?: Date | string | number
 	showAdjacent: boolean
@@ -31,7 +31,7 @@ export type InternalOptions = {
 }
 
 export type ClndrOptions = Partial<
-	Omit<InternalOptions, 'classes' | 'defaultView' | 'pagination' | 'render' | 'targets'> & {
+	Omit<DefaultOptions, 'classes' | 'defaultView' | 'pagination' | 'render' | 'targets'> & {
 		classes?: {[key in ItemStatus]?: string}
 		defaultView?: View
 		pagination?: {[key in View]?: Pagination}
@@ -71,11 +71,19 @@ export type Pagination = {
 
 export type View = 'decade' | 'year' | 'month' | 'week' | 'day'
 
-type InteractionEvents = {
+export type InteractionEvents = {
+	afterRender?: (
+		parameters: {element: HTMLElement, interval: Interval, view: View}
+	) => Promise<void>
+	beforeRender?: (
+		parameters: {element: HTMLElement, interval: Interval, view: View}
+	) => Promise<void>
 	click?: (parameters: ClndrItemEventParameters) => void
-	doneRendering?: ({view}: {view: View}) => void
 	navigate?: (parameters: NavigationEventParameters) => void
-	ready?: ({view}: {view: View}) => void
+	ready?: (
+		parameters: {element: HTMLElement, interval: Interval, view: View}
+	) => void
+	switchView?: (parameters: {view: View}) => Promise<void>
 }
 
 export type ClndrItemEventParameters = {

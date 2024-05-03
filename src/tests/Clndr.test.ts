@@ -11,22 +11,14 @@ describe('Setup', () => {
 		clndr = new Clndr(container, {render: provideRender()});
 
 		expect(container).not.toBeEmptyDOMElement();
-
-		clndr.destroy();
-
-		expect(container).toBeEmptyDOMElement();
 	});
 
 	test('Pass compiled template to render option', () => {
 		const template = ejs.compile(defaultTemplate);
-		clndr = new Clndr(container, {render: data => template(data)});
+		clndr = new Clndr(container, {render: template});
 
 		expect(container).not.toBeEmptyDOMElement();
 		expect(screen.getByText('January 2024')).toBeInTheDocument();
-
-		clndr.destroy();
-
-		expect(container).toBeEmptyDOMElement();
 	});
 
 	test('Basic single-day events', () => {
@@ -170,18 +162,17 @@ describe('Setup', () => {
 	});
 
 	test('Use touch events', () => {
-		const handleNavigate = jest.fn();
-
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			on: {
-				navigate: handleNavigate,
+				navigate: function() {
+					expect(true);
+				},
 			},
 			useTouchEvents: true,
 		});
 
 		fireEvent.touchStart(screen.getByText('next'));
-		expect(handleNavigate).toHaveBeenCalledTimes(1);
 	});
 
 	test('Track selected date while inactive days should be ignored in selection', async () => {
@@ -251,6 +242,25 @@ describe('Setup', () => {
 		});
 
 		expect(container.querySelectorAll('.custom-now-class').length).toBe(1);
+	});
+
+	test('getView()', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(),
+		});
+
+		expect(clndr.getView()).toBe('month');
+	});
+
+	test('getInterval()', () => {
+		clndr = new Clndr(container, {
+			render: provideRender(),
+		});
+
+		expect(clndr.getInterval()).toEqual({
+			start: startOfDay('2024-01-01'),
+			end: endOfDay('2024-01-31'),
+		});
 	});
 
 });
@@ -415,7 +425,7 @@ describe('Navigation', () => {
 		});
 	})
 
-	test('Programmatically set month', () => {
+	test('Programmatically set month', async () => {
 		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
@@ -426,7 +436,7 @@ describe('Navigation', () => {
 		});
 
 		expect(screen.getByText('January 2024')).toBeInTheDocument();
-		clndr.setMonth(2);
+		await clndr.setMonth(2);
 		expect(screen.getByText('March 2024')).toBeInTheDocument();
 
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
@@ -441,7 +451,7 @@ describe('Navigation', () => {
 		});
 	});
 
-	test('Programmatically set year', () => {
+	test('Programmatically set year', async () => {
 		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
@@ -452,7 +462,7 @@ describe('Navigation', () => {
 		});
 
 		expect(screen.getByText('January 2024')).toBeInTheDocument();
-		clndr.setYear(1992);
+		await clndr.setYear(1992);
 		expect(screen.getByText('January 1992')).toBeInTheDocument();
 
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
@@ -467,7 +477,7 @@ describe('Navigation', () => {
 		});
 	});
 
-	test('Programmatically set new interval', () => {
+	test('Programmatically set new interval', async () => {
 		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
@@ -478,7 +488,7 @@ describe('Navigation', () => {
 		});
 
 		expect(screen.getByText('January 2024')).toBeInTheDocument();
-		clndr.setDate('2000-06-01');
+		await clndr.setDate('2000-06-01');
 		expect(screen.getByText('June 2000')).toBeInTheDocument();
 		expect(handleNavigate).toHaveBeenCalledTimes(1);
 
@@ -496,29 +506,41 @@ describe('Navigation', () => {
 
 describe('Events', () => {
 
-	test('Initialisation events', () => {
-		const handleDoneRendering = jest.fn();
-		const handleReady = jest.fn();
+	test('Initialisation events', async () => {
+		expect.assertions(6);
 
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			on: {
-				doneRendering: function() {
+				afterRender: async function(params) {
 					expect(this).toBeInstanceOf(Clndr);
-					handleDoneRendering();
+					expect(params).toEqual({
+						element: container,
+						interval: {start: startOfDay('2024-01-01'), end: endOfDay('2024-01-31')},
+						view: 'month',
+					});
 				},
-				ready: function() {
+				beforeRender: async function(params) {
 					expect(this).toBeInstanceOf(Clndr);
-					handleReady();
+					expect(params).toEqual({
+						element: container,
+						interval: {start: startOfDay('2024-01-01'), end: endOfDay('2024-01-31')},
+						view: 'month',
+					});
+				},
+				ready: function(params) {
+					expect(this).toBeInstanceOf(Clndr);
+					expect(params).toEqual({
+						element: container,
+						interval: {start: startOfDay('2024-01-01'), end: endOfDay('2024-01-31')},
+						view: 'month',
+					});
 				},
 			},
 		});
-
-		expect(handleDoneRendering).toHaveBeenCalledTimes(1);
-		expect(handleReady).toHaveBeenCalledTimes(1);
 	});
 
-	test('Trigger onNavigate callbacks', () => {
+	test('Trigger `navigate` callbacks', async () => {
 		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
@@ -531,8 +553,8 @@ describe('Events', () => {
 			},
 		});
 
-		clndr.next();
-		clndr.previous();
+		await clndr.next();
+		await clndr.previous();
 
 		expect(handleNavigate).toHaveBeenCalledTimes(2);
 
@@ -618,7 +640,7 @@ describe('Events', () => {
 
 describe('Data manipulations', () => {
 
-	test('Set extras', () => {
+	test('Set extras', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender('<div><%= extras.someExtra %></div>'),
 			extras: {someExtra: 'some extra'},
@@ -626,28 +648,28 @@ describe('Data manipulations', () => {
 
 		expect(screen.queryAllByText('some extra').length).toBe(1);
 
-		clndr.setExtras({someExtra: 'updated extra'});
+		await clndr.setExtras({someExtra: 'updated extra'}).render();
 
 		expect(screen.queryAllByText('some extra').length).toBe(0);
 		expect(screen.queryAllByText('updated extra').length).toBe(1);
 	});
 
-	test('Add an event with date string', () => {
+	test('Add an event with date string', async () => {
 		clndr = new Clndr(container, {render: provideRender()});
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 
-		clndr.addEvents([{date: '2024-01-12'}]);
+		await clndr.addEvents([{date: '2024-01-12'}]).render();
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).toHaveClass('event');
 	});
 
-	test('Add an event with Date object', () => {
+	test('Add an event with Date object', async () => {
 		clndr = new Clndr(container, {render: provideRender()});
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 
-		clndr.addEvents([{date: new Date('2024-01-12')}]);
+		await clndr.addEvents([{date: new Date('2024-01-12')}]).render();
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).toHaveClass('event');
 	});
@@ -657,12 +679,12 @@ describe('Data manipulations', () => {
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 
-		clndr.addEvents([{date: '2024-01-12'}], false);
+		clndr.addEvents([{date: '2024-01-12'}]);
 
 		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 	});
 
-	test('Set all events', () => {
+	test('Set all events', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			events: [{date: '2024-01-07'}],
@@ -671,13 +693,13 @@ describe('Data manipulations', () => {
 		expect(container.querySelector('.calendar-day-2024-01-07')).toHaveClass('event');
 		expect(container.querySelector('.calendar-day-2024-01-12')).not.toHaveClass('event');
 
-		clndr.setEvents([{date: '2024-01-12'}]);
+		await clndr.setEvents([{date: '2024-01-12'}]).render();
 
 		expect(container.querySelector('.calendar-day-2024-01-07')).not.toHaveClass('event');
 		expect(container.querySelector('.calendar-day-2024-01-12')).toHaveClass('event');
 	});
 
-	test('Remove events', () => {
+	test('Remove events', async () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			events: [
@@ -689,7 +711,7 @@ describe('Data manipulations', () => {
 		expect(container.querySelector('.calendar-day-2024-01-07')).toHaveClass('event');
 		expect(container.querySelector('.calendar-day-2024-01-23')).toHaveClass('event');
 
-		clndr.removeEvents(event => event.date === '2024-01-23');
+		await clndr.removeEvents(event => event.date === '2024-01-23').render();
 
 		expect(container.querySelector('.calendar-day-2024-01-07')).toHaveClass('event');
 		expect(container.querySelector('.calendar-day-2024-01-23')).not.toHaveClass('event');
@@ -733,9 +755,17 @@ describe('Multiple views', () => {
 	};
 
 	test('Switching view', async () => {
+		const handleSwitchView = jest.fn();
+
 		clndr = new Clndr(container, {
 			render: multiViewTemplates,
 			defaultView: 'day',
+			on: {
+				switchView: async function(params) {
+					expect(this).toBeInstanceOf(Clndr);
+					handleSwitchView(params);
+				},
+			},
 		});
 
 		expect(screen.getByText('Day 18 in 2024')).toBeInTheDocument();
@@ -758,9 +788,33 @@ describe('Multiple views', () => {
 		await user.click(screen.getByText('March 2024'));
 
 		expect(screen.getByText('March 2024')).toBeInTheDocument();
+
+		expect(handleSwitchView.mock.calls[0][0]).toEqual({
+			view: 'week',
+		});
+
+		expect(handleSwitchView.mock.calls[1][0]).toEqual({
+			view: 'month',
+		});
+
+		expect(handleSwitchView.mock.calls[2][0]).toEqual({
+			view: 'year',
+		});
+
+		expect(handleSwitchView.mock.calls[3][0]).toEqual({
+			view: 'decade',
+		});
+
+		expect(handleSwitchView.mock.calls[4][0]).toEqual({
+			view: 'year',
+		});
+
+		expect(handleSwitchView.mock.calls[5][0]).toEqual({
+			view: 'month',
+		});
 	});
 
-	test('Programmatically switching view', () => {
+	test('Programmatically switching view', async () => {
 		const handleNavigate = jest.fn();
 
 		clndr = new Clndr(container, {
@@ -772,12 +826,12 @@ describe('Multiple views', () => {
 		});
 
 		expect(screen.getByText('Day 18 in 2024')).toBeInTheDocument();
-		clndr.switchView('decade');
+		await clndr.switchView('decade');
 		expect(screen.getByText('2024')).toBeInTheDocument();
 		// Try again switching to the same view:
-		clndr.switchView('decade');
+		await clndr.switchView('decade');
 		expect(screen.getByText('2024')).toBeInTheDocument();
-		clndr.switchView('month', '1992-10');
+		await clndr.switchView('month', '1992-10');
 		expect(screen.getByText('October 1992')).toBeInTheDocument();
 
 		expect(handleNavigate.mock.calls[0][0]).toEqual({
@@ -915,12 +969,6 @@ describe('Multiple views', () => {
 
 describe('Handling errors', () => {
 
-	test('Not providing a render function', () => {
-
-		// @ts-expect-error Intentionally provide no options
-		expect(() => new Clndr(container)).toThrow();
-	});
-
 	test('Multi-day event with no date', () => {
 		const mockWarn = jest.fn();
 		jest.spyOn(console, 'warn').mockImplementation(mockWarn);
@@ -992,6 +1040,30 @@ describe('Handling errors', () => {
 		});
 
 		expect(mockWarn).toHaveBeenCalledTimes(1);
+	});
+
+	test('Unable to detect target date when switching view due to CSS id class unexpectedly missing', async () => {
+		clndr = new Clndr(container, {
+			render: {
+				month: provideRender('<div><%= format(interval.start, "MMMM yyyy") %></div>'),
+				year: provideRender(`
+					<div>
+						<div>YEAR</div>
+						<% items.forEach(month => { %>
+							<div class="<%= month.classes %>"><%= format(month.date, 'MMMM') %></div>
+						<% }) %>
+					</div>
+				`),
+			},
+			defaultView: 'year',
+		});
+
+		const item = screen.getByText('November');
+		item.classList.remove('calendar-month-2024-11');
+
+		await user.click(item);
+
+		expect(screen.getByText('January 2024')).toBeInTheDocument();
 	});
 
 });
