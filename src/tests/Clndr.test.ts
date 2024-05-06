@@ -106,7 +106,7 @@ describe('Setup', () => {
 	});
 
 	test('Custom week offset', () => {
-		clndr = new Clndr(container, {render: provideRender(), weekOffset: 1});
+		clndr = new Clndr(container, {render: provideRender(), weekStartsOn: 1});
 
 		expect(screen.getByText('M')).toBe(container.querySelector('.header-day'));
 	});

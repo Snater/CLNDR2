@@ -262,7 +262,7 @@ const meta: Meta<ClndrOptions> = {
 				},
 			},
 		},
-		weekOffset: {
+		weekStartsOn: {
 			control: {
 				type: 'range',
 				min: 0,
@@ -341,7 +341,7 @@ const meta: Meta<ClndrOptions> = {
 		forceSixRows: false,
 		ignoreInactiveDaysInSelection: false,
 		useTouchEvents: false,
-		weekOffset: 0,
+		weekStartsOn: 0,
 	},
 	parameters: {
 		docs: {

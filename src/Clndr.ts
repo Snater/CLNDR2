@@ -32,6 +32,7 @@ import type {
 	ClndrOptions,
 	ClndrTemplateData,
 	Constraints,
+	Day,
 	DaysOfTheWeek,
 	DefaultOptions,
 	InternalClndrEvent,
@@ -41,7 +42,6 @@ import type {
 	Pagination,
 	TargetOption,
 	View,
-	WeekOffset,
 } from './types';
 
 const orderedViews: View[] = ['day', 'week', 'month', 'year', 'decade'] as const;
@@ -106,7 +106,7 @@ const defaults: DefaultOptions = {
 	} as {[key in TargetOption]: string},
 	trackSelectedDate: false,
 	useTouchEvents: false,
-	weekOffset: 0,
+	weekStartsOn: 0,
 };
 
 class Clndr {
@@ -209,7 +209,7 @@ class Clndr {
 			// value. Therefore, `defaultView` will be a valid view having pagination configured.
 			pageSize: (this.options.pagination[defaultView] as Pagination)?.size ?? 1,
 			showAdjacent: this.options.showAdjacent,
-			weekOffset: this.options.weekOffset,
+			weekStartsOn: this.options.weekStartsOn,
 		});
 
 		this.constraints = {
@@ -242,8 +242,8 @@ class Clndr {
 			? this.options.daysOfTheWeek
 			: this.initDaysOfTheWeek(this.options.formatWeekdayHeader, this.options.locale);
 
-		if (this.options.weekOffset) {
-			this.daysOfTheWeek = this.shiftWeekdayLabels(this.daysOfTheWeek, this.options.weekOffset);
+		if (this.options.weekStartsOn) {
+			this.daysOfTheWeek = this.shiftWeekdayLabels(this.daysOfTheWeek, this.options.weekStartsOn);
 		}
 
 		this.element.innerHTML = '<div class="clndr"></div>';
@@ -299,7 +299,7 @@ class Clndr {
 		return daysOfTheWeek as DaysOfTheWeek;
 	}
 
-	private shiftWeekdayLabels(daysOfTheWeek: DaysOfTheWeek, offset: WeekOffset) {
+	private shiftWeekdayLabels(daysOfTheWeek: DaysOfTheWeek, offset: Day) {
 		const adjustedDaysOfTheWeek: DaysOfTheWeek = [...daysOfTheWeek];
 
 		for (let i = 0; i < offset; i++) {
@@ -314,7 +314,7 @@ class Clndr {
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
 	) {
 
-		const dates = this.adapter.aggregatePageItems(interval, this.options.weekOffset);
+		const dates = this.adapter.aggregatePageItems(interval, this.options.weekStartsOn);
 
 		// This array will contain the data of the entire grid (including blank spaces)
 		return [
@@ -876,7 +876,7 @@ class Clndr {
 			forceSixRows: this.options.forceSixRows,
 			pageSize: this.options.pagination[view]?.size ?? 1,
 			showAdjacent: this.options.showAdjacent,
-			weekOffset: this.options.weekOffset,
+			weekStartsOn: this.options.weekStartsOn,
 		});
 
 		this.interval = this.adapter.initInterval(date);

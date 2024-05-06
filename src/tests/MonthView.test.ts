@@ -222,7 +222,7 @@ describe('MONTH view', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),
 			showAdjacent: false,
-			weekOffset: 3,
+			weekStartsOn: 3,
 		});
 
 		expect(container.querySelectorAll('.empty').length).toBeGreaterThan(0);

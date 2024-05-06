@@ -1,17 +1,17 @@
 import type {
 	Adjacent,
+	Day,
 	InternalClndrEvent,
 	Interval,
 	PageDates,
 	View,
-	WeekOffset,
 } from './types';
 
 export type AdapterOptions = {
 	forceSixRows: boolean
 	pageSize: number
 	showAdjacent: boolean
-	weekOffset: WeekOffset
+	weekStartsOn: Day
 }
 
 export abstract class Adapter {

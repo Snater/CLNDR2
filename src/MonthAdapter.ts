@@ -17,7 +17,7 @@ import {
 	subMonths,
 } from 'date-fns';
 import DayBasedAdapter from './DayBasedAdapter';
-import type {Adjacent, InternalClndrEvent, Interval, PageDates, View} from './types';
+import type {Adjacent, Day, InternalClndrEvent, Interval, PageDates, View} from './types';
 
 export type TargetOption = 'switchMonthButton'
 
@@ -110,8 +110,8 @@ export default class MonthAdapter extends DayBasedAdapter {
 		return [eventsPreviousMonth, eventsNextMonth];
 	}
 
-	aggregatePageItems(interval: Interval, weekOffset: number): PageDates {
-		const daysOfPreviousMonth = this.aggregateDaysOfPreviousMonth(interval.start, weekOffset);
+	aggregatePageItems(interval: Interval, weekStartsOn: Day): PageDates {
+		const daysOfPreviousMonth = this.aggregateDaysOfPreviousMonth(interval.start, weekStartsOn);
 		const daysOfCurrentMonth = this.aggregateDaysOfCurrentPage(interval);
 
 		return [
@@ -119,7 +119,7 @@ export default class MonthAdapter extends DayBasedAdapter {
 			daysOfCurrentMonth,
 			this.aggregateDaysOfNextMonth(
 				interval.end,
-				weekOffset,
+				weekStartsOn,
 				daysOfPreviousMonth.length + daysOfCurrentMonth.length
 			),
 		]
@@ -133,14 +133,14 @@ export default class MonthAdapter extends DayBasedAdapter {
 		return days;
 	}
 
-	aggregateDaysOfPreviousMonth(startDate: Date, weekOffset: number): Date[] {
+	aggregateDaysOfPreviousMonth(startDate: Date, weekStartsOn: Day): Date[] {
 		const days: Date[] = [];
 
 		// If greater than 0, the last days of the previous month have to be filled in to account for
-		// the empty boxes in the grid, also taking the weekOffset into account.
-		let remainingDaysOfPreviousMonth = getDay(startDate) - weekOffset;
+		// the empty boxes in the grid, also taking the weekStartsOn into account.
+		let remainingDaysOfPreviousMonth = getDay(startDate) - weekStartsOn;
 
-		// The weekOffset points to a day in the previous month
+		// The weekStartsOn points to a day in the previous month
 		if (remainingDaysOfPreviousMonth < 0) {
 			remainingDaysOfPreviousMonth += 7;
 		}
@@ -156,9 +156,9 @@ export default class MonthAdapter extends DayBasedAdapter {
 		return days;
 	}
 
-	aggregateDaysOfNextMonth(endDate: Date, weekOffset: number, numberOfDays: number): Date[] {
+	aggregateDaysOfNextMonth(endDate: Date, weekStartsOn: Day, numberOfDays: number): Date[] {
 		const days: Date[] = [];
-		const remainingDaysOfNextMonth = 7 - getDay(endDate) + weekOffset - 1;
+		const remainingDaysOfNextMonth = 7 - getDay(endDate) + weekStartsOn - 1;
 
 		for (let i = 1; i <= remainingDaysOfNextMonth; i++) {
 			days.push(addDays(endDate, i));

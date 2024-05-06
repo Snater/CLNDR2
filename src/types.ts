@@ -27,7 +27,7 @@ export type DefaultOptions = {
 	targets: {[key in TargetOption]: string}
 	trackSelectedDate: boolean
 	useTouchEvents: boolean
-	weekOffset: WeekOffset
+	weekStartsOn: Day
 }
 
 export type ClndrOptions = Partial<
@@ -50,7 +50,7 @@ export type InternalClndrEvent = {
 	originalEvent: ClndrEvent
 }
 
-export type WeekOffset = 0 | 1 | 2 | 3 | 4 | 5 | 6
+export type Day = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
 export type Constraints = {
 	start?: Date | string | number

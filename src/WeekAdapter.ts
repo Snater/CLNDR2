@@ -34,12 +34,12 @@ export default class WeekAdapter extends DayBasedAdapter {
 
 	initInterval(startOn?: Date): Interval {
 		const start = startOfWeek(
-			startOn ? startOn : setDay(new Date(), this.options.weekOffset),
-			{weekStartsOn: this.options.weekOffset}
+			startOn ? startOn : setDay(new Date(), this.options.weekStartsOn),
+			{weekStartsOn: this.options.weekStartsOn}
 		);
 		const end = endOfWeek(
 			addWeeks(start, this.options.pageSize - 1),
-			{weekStartsOn: this.options.weekOffset}
+			{weekStartsOn: this.options.weekStartsOn}
 		);
 
 		return {start, end};
@@ -54,7 +54,7 @@ export default class WeekAdapter extends DayBasedAdapter {
 
 		adjustedInterval.end = endOfWeek(
 			addWeeks(adjustedInterval.start, this.options.pageSize - 1),
-			{weekStartsOn: this.options.weekOffset}
+			{weekStartsOn: this.options.weekStartsOn}
 		);
 
 		return adjustedInterval;
@@ -66,12 +66,12 @@ export default class WeekAdapter extends DayBasedAdapter {
 		if (isAfter(adjustedInterval.start, addWeeks(constraintEnd, 1))) {
 			adjustedInterval.start = startOfWeek(
 				subWeeks(
-					endOfWeek(constraintEnd, {weekStartsOn: this.options.weekOffset}),
+					endOfWeek(constraintEnd, {weekStartsOn: this.options.weekStartsOn}),
 					this.options.pageSize - 1
 				),
-				{weekStartsOn: this.options.weekOffset}
+				{weekStartsOn: this.options.weekStartsOn}
 			);
-			adjustedInterval.end = endOfWeek(constraintEnd, {weekStartsOn: this.options.weekOffset});
+			adjustedInterval.end = endOfWeek(constraintEnd, {weekStartsOn: this.options.weekStartsOn});
 		}
 
 		return adjustedInterval;
@@ -106,10 +106,10 @@ export default class WeekAdapter extends DayBasedAdapter {
 	}
 
 	setDate(day: Date): Interval {
-		const start = startOfWeek(day, {weekStartsOn: this.options.weekOffset});
+		const start = startOfWeek(day, {weekStartsOn: this.options.weekStartsOn});
 		const end = endOfWeek(
 			addWeeks(start, this.options.pageSize - 1),
-			{weekStartsOn: this.options.weekOffset}
+			{weekStartsOn: this.options.weekStartsOn}
 		);
 
 		return {start, end};
@@ -118,11 +118,11 @@ export default class WeekAdapter extends DayBasedAdapter {
 	setMonth(newMonth: number, interval: Interval): Interval {
 		const start = startOfWeek(
 			setMonth(interval.start, newMonth),
-			{weekStartsOn: this.options.weekOffset}
+			{weekStartsOn: this.options.weekStartsOn}
 		);
 		const end = endOfWeek(
 			addWeeks(start, this.options.pageSize - 1),
-			{weekStartsOn: this.options.weekOffset}
+			{weekStartsOn: this.options.weekStartsOn}
 		);
 
 		return {start, end};
@@ -131,11 +131,11 @@ export default class WeekAdapter extends DayBasedAdapter {
 	setYear(newYear: number, interval: Interval): Interval {
 		const start = startOfWeek(
 			setYear(interval.start, newYear),
-			{weekStartsOn: this.options.weekOffset}
+			{weekStartsOn: this.options.weekStartsOn}
 		);
 		const end = endOfWeek(
 			addWeeks(start, this.options.pageSize - 1),
-			{weekStartsOn: this.options.weekOffset}
+			{weekStartsOn: this.options.weekStartsOn}
 		);
 
 		return {start, end};
@@ -144,11 +144,11 @@ export default class WeekAdapter extends DayBasedAdapter {
 	back(interval: Interval, step?: number): Interval {
 		const start = startOfWeek(
 			subWeeks(interval.start, step ?? this.options.pageSize),
-			{weekStartsOn: this.options.weekOffset}
+			{weekStartsOn: this.options.weekStartsOn}
 		);
 		const end = endOfWeek(
 			addWeeks(start, this.options.pageSize - 1),
-			{weekStartsOn: this.options.weekOffset}
+			{weekStartsOn: this.options.weekStartsOn}
 		);
 
 		return {start, end};
@@ -157,11 +157,11 @@ export default class WeekAdapter extends DayBasedAdapter {
 	forward(interval: Interval, step?: number): Interval {
 		const start = startOfWeek(
 			addWeeks(interval.start, step ?? this.options.pageSize),
-			{weekStartsOn: this.options.weekOffset}
+			{weekStartsOn: this.options.weekStartsOn}
 		);
 		const end = endOfWeek(
 			addWeeks(start, this.options.pageSize - 1),
-			{weekStartsOn: this.options.weekOffset}
+			{weekStartsOn: this.options.weekStartsOn}
 		);
 
 		return {start, end};
