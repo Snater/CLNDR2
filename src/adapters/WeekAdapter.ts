@@ -14,7 +14,7 @@ import {
 	subWeeks,
 } from 'date-fns';
 import DayBasedAdapter from './DayBasedAdapter';
-import type {Adjacent, InternalClndrEvent, Interval, PageDates, View} from './types';
+import type {Adjacent, InternalClndrEvent, Interval, PageDates, View} from '../types';
 
 export type TargetOption = 'switchWeekButton'
 

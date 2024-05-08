@@ -17,7 +17,7 @@ import {
 	subMonths,
 } from 'date-fns';
 import DayBasedAdapter from './DayBasedAdapter';
-import type {Adjacent, Day, InternalClndrEvent, Interval, PageDates, View} from './types';
+import type {Adjacent, Day, InternalClndrEvent, Interval, PageDates, View} from '../types';
 
 export type TargetOption = 'switchMonthButton'
 

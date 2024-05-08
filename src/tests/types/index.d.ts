@@ -1,4 +1,4 @@
-import Clndr, {ClndrTemplateData} from '../';
+import Clndr, {ClndrTemplateData} from '../../';
 import {UserEvent} from '@testing-library/user-event/index';
 
 declare global {

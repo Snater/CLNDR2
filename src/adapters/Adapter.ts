@@ -5,7 +5,7 @@ import type {
 	Interval,
 	PageDates,
 	View,
-} from './types';
+} from '../types';
 
 export type AdapterOptions = {
 	forceSixRows: boolean

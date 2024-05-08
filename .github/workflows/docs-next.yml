@@ -1,19 +1,19 @@
-name: Deploy Storybook
+name: Deploy Documentation (next)
 on:
-  release:
-    types: [published]
+  push:
+    branches: [next]
 jobs:
-  deploy-storybook:
+  deploy-docs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - run: npm run build-storybook
+    - run: npm run docs
     - name: Upload
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
       with:
         server: ${{secrets.FTP_SERVER}}
         username: ${{secrets.FTP_USERNAME}}
         password: ${{secrets.FTP_PASSWORD}}
-        local-dir: ./storybook-static/
-        server-dir: ./demos/
+        local-dir: ./docs/
+        server-dir: ./next/doc/
         dangerous-clean-slate: true

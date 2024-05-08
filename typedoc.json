@@ -1,0 +1,6 @@
+{
+	"entryPoints": ["src/index.ts", "src/Clndr.ts", "src/types.ts", "src/adapters/*.ts"],
+	"githubPages": false,
+	"hideGenerator": true,
+	"plugin": ["typedoc-plugin-rename-defaults"]
+}

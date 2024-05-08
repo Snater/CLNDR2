@@ -18,12 +18,14 @@ import {
 	subYears,
 	startOfDay,
 } from 'date-fns';
-import {Adapter, AdapterOptions} from './Adapter';
-import DayAdapter from './DayAdapter';
-import DecadeAdapter from './DecadeAdapter';
-import MonthAdapter from './MonthAdapter';
-import WeekAdapter from './WeekAdapter';
-import YearAdapter from './YearAdapter';
+import {
+	Adapter,
+	DayAdapter,
+	DecadeAdapter,
+	MonthAdapter,
+	WeekAdapter,
+	YearAdapter,
+} from './adapters';
 import type {
 	ClndrEvent,
 	ClndrItem,
@@ -43,6 +45,7 @@ import type {
 	TargetOption,
 	View,
 } from './types';
+import type {AdapterOptions} from './adapters';
 
 const orderedViews: View[] = ['day', 'week', 'month', 'year', 'decade'] as const;
 
@@ -111,11 +114,11 @@ const defaults: DefaultOptions = {
 
 class Clndr {
 
-	static isObject(item: unknown) {
+	private static isObject(item: unknown) {
 		return item && typeof item === 'object' && !Array.isArray(item);
 	}
 
-	static mergeDeep<
+	private static mergeDeep<
 		T extends {[key: string]: unknown},
 		S extends {[key: string]: unknown} = T,
 		R = T
@@ -159,7 +162,7 @@ class Clndr {
 		return Clndr.mergeDeep(target, ...sources);
 	}
 
-	static mergeOptions<
+	private static mergeOptions<
 		T extends {[key: string]: unknown},
 		S extends {[key: string]: unknown} = T,
 		R = T
@@ -452,6 +455,9 @@ class Clndr {
 		return this.availableViews[adjacentIndex];
 	}
 
+	/**
+	 * Trigger re-rendering the calendar.
+	 */
 	async render() {
 		if (this.options.on.beforeRender) {
 			await this.options.on.beforeRender.apply(
@@ -497,7 +503,6 @@ class Clndr {
 			},
 			extras: this.options.extras,
 			daysOfTheWeek: this.daysOfTheWeek,
-			numberOfRows: 0,
 			interval: this.interval,
 			format: (date: Date | string | number, formatStr: string, options: FormatOptions = {}) => {
 				return format(date, formatStr, {locale: this.options.locale || undefined, ...options});
@@ -910,7 +915,8 @@ class Clndr {
 	}
 
 	/**
-	 * Switch the view while ensuring the provided date is on the page.
+	 * Switch the view while ensuring the provided date is on the page. If no date is provided, the
+	 * start of the current page's interval is used.
 	 */
 	async switchView(view: View, date?: Date | string | number) {
 		return this.switchViewInternal(view, date);
@@ -988,6 +994,9 @@ class Clndr {
 		});
 	}
 
+	/**
+	 * Navigates backward by one year.
+	 */
 	async previousYear() {
 		return this.previousYearInternal();
 	}
@@ -1009,6 +1018,9 @@ class Clndr {
 		return;
 	}
 
+	/**
+	 * Navigates forward by one year.
+	 */
 	async nextYear() {
 		return this.nextYearInternal();
 	}
@@ -1028,6 +1040,9 @@ class Clndr {
 		this.render().then(() => this.triggerEvents(orig, element));
 	}
 
+	/**
+	 * Navigates to today.
+	 */
 	async today() {
 		return this.todayInternal();
 	}
@@ -1076,6 +1091,9 @@ class Clndr {
 		this.render().then(() => this.triggerEvents(orig, element));
 	}
 
+	/**
+	 * Changes the current date to a specific year.
+	 */
 	async setYear(newYear: number) {
 		return this.setYearInternal(newYear);
 	}
@@ -1089,7 +1107,7 @@ class Clndr {
 	}
 
 	/**
-	 * Overwrites extras.
+	 * Overwrite the extras. Note that this does NOT trigger re-rendering the calendar.
 	 */
 	setExtras(extras: unknown) {
 		this.options.extras = extras;
@@ -1098,7 +1116,7 @@ class Clndr {
 	}
 
 	/**
-	 * Overwrites events.
+	 * Overwrites all calendar events. Note that this does NOT trigger re-rendering the calendar.
 	 */
 	setEvents(events: ClndrEvent[]) {
 		this.events = this.parseToInternalEvents(events);
@@ -1107,7 +1125,7 @@ class Clndr {
 	}
 
 	/**
-	 * Adds additional events.
+	 * Adds additional calendar events.
 	 */
 	addEvents(events: ClndrEvent[]) {
 		this.options.events = [...this.options.events, ...events];
@@ -1117,7 +1135,10 @@ class Clndr {
 	}
 
 	/**
-	 * Removes all events according to a matching function.
+	 * Removes all events according to a matching function. Note that this does NOT trigger
+	 * re-rendering the calendar.
+	 * @param matchingFn - A function returning `true` for calendar events to be removed, `false`
+	 *   otherwise.
 	 */
 	removeEvents(matchingFn: (event: ClndrEvent) => boolean) {
 		for (let i = this.options.events.length - 1; i >= 0; i--) {

@@ -2,12 +2,16 @@ import './clndr.stories.less';
 import {Meta, StoryObj} from '@storybook/html';
 import {addDays, addMonths, format} from 'date-fns';
 import {de, enUS, es, fr} from 'date-fns/locale';
-import Clndr from './Clndr.js';
+import Clndr from './Clndr';
 import {action} from '@storybook/addon-actions';
 import ejs from 'ejs';
 
 import type {ClndrEvent, ClndrOptions, Interval, View} from './types';
 
+/**
+ * Documentation: https://clndr2.snater.com/docs<br/>
+ * Source code: https://github.com/Snater/CLNDR2/
+ */
 const meta: Meta<ClndrOptions> = {
 	title: 'CLNDR2',
 	argTypes: {
@@ -19,8 +23,7 @@ const meta: Meta<ClndrOptions> = {
 					summary: 'undefined',
 				},
 				type: {
-					summary: '(data: ClndrTemplateData) => string | {[key in View]?: (data: ClndrTemplateData) => string}',
-					detail: 'See Readme for details on the template data.',
+					summary: 'RenderFn | {[key in View]?: RenderFn}',
 				},
 			},
 		},
@@ -43,7 +46,7 @@ const meta: Meta<ClndrOptions> = {
 					summary: '{past: \'past\', now: \'now\', event: \'event\', inactive: \'inactive\', selected: \'selected\', previous: \'previous\', next: \'next\', adjacent: \'adjacent\', switch: \'switch\'}',
 				},
 				type: {
-					summary: '{past?: string, now?: string, event?: string, inactive?: string, selected?: string, previous?: string, next?: string, adjacent?: string, switch?: string}',
+					summary: '{[key in ItemStatus]: string}',
 				},
 			},
 		},
@@ -55,7 +58,7 @@ const meta: Meta<ClndrOptions> = {
 					summary: 'undefined',
 				},
 				type: {
-					summary: '{start?: Date | string | number, end?: Date | string | number}',
+					summary: 'Interval',
 				},
 			},
 		},
@@ -66,7 +69,7 @@ const meta: Meta<ClndrOptions> = {
 					summary: '{date: \'date\', start: \'start\', end: \'end\'},',
 				},
 				type: {
-					summary: '{date: string, start: never, end: never} | {date?: string, start: string, end: string} | {date: string, start: string, end: string}',
+					summary: 'DateParameterDefinition',
 				},
 			},
 		},
@@ -79,20 +82,20 @@ const meta: Meta<ClndrOptions> = {
 					detail: 'By default, the labels are acquired from date-fns using the `locale`, if provided.',
 				},
 				type: {
-					summary: '[string, string, string, string, string, string, string]',
-					detail: 'An array of seven strings, one per day of the week.',
+					summary: 'DaysOfTheWeek',
 				},
 			},
 		},
 		defaultView: {
 			description: 'The view the calendar should render initially. Particularly relevant when configuring multiple views for allowing to switch between views. When just configuring one view per `pagination` option, this will automatically point to that view.',
 			control: 'select',
+			options: ['day', 'week', 'month', 'year', 'decade'],
 			table: {
 				defaultValue: {
 					summary: 'month',
 				},
 				type: {
-					summary: '\'day\' | \'week\' | \'month\' | \'year\' | \'decade\'',
+					summary: 'View',
 				},
 			},
 		},
@@ -175,8 +178,7 @@ const meta: Meta<ClndrOptions> = {
 					summary: '{}',
 				},
 				type: {
-					summary: '{afterRender: (params: {element: HTMLElement, interval: Interval, view: View}) => Promise<void>, beforeRender: (params: {element: HTMLElement, interval: Interval, view: View}) => Promise<void>, click?: (params: ClndrItemEventParameters) => void, afterRender: (params: {view: View}) => void, navigate: (params: NavigationEventParameters) => void, ready: (params: {element: HTMLElement, interval: Interval, view: View}) => void, switchView: (params: {view: View}) => Promise<void>}',
-					detail: 'See Readme for details on the event parameters.',
+					summary: 'InteractionEvents',
 				},
 			},
 			control: false,
@@ -188,7 +190,7 @@ const meta: Meta<ClndrOptions> = {
 					summary: '{month:, {size: 1}',
 				},
 				type: {
-					summary: '{[key in \'decade\' | \'year\' | \'month\' | \'week\' | \'day\']?: {size: number, step?: number}}',
+					summary: '{[key in View]?: Pagination}',
 					detail: 'If `step` is not defined, `size` is used as the step size when navigating.',
 				},
 			},
@@ -217,7 +219,7 @@ const meta: Meta<ClndrOptions> = {
 			},
 		},
 		startOn: {
-			description: 'Set up the start point which the calendar should initially be rendered from. The value provided will be mapped to the setup of the calendar, i.e. if setting up the calendar using `month` pagination (which is also set by default), the calendar will start on, for example, October 1992 no matter if `startOn` is `new Date(\'1992-10\')` or new Date(\'1992-10-15\')`. `undefined` will use today\'s date.',
+			description: 'Set up the start point which the calendar should initially be rendered from. The value provided will be mapped to the setup of the calendar, i.e. if setting up the calendar using `month` pagination (which is also set by default), the calendar will start on, for example, October 1992 no matter if `startOn` is `new Date(\'1992-10\')` or `new Date(\'1992-10-15\')`. `undefined` will use today\'s date.',
 			control: 'date',
 			table: {
 				defaultValue: {
@@ -235,7 +237,7 @@ const meta: Meta<ClndrOptions> = {
 					summary: '{item: \'item\', empty: \'empty\', nextButton: \'clndr-next-button\', todayButton: \'clndr-today-button\', previousButton: \'clndr-previous-button\', nextYearButton: \'clndr-next-year-button\', previousYearButton: \'clndr-previous-year-button\', switchWeekButton: \'clndr-switch-week-button\', switchMonthButton: \'clndr-switch-month-button\', switchYearButton: \'clndr-switch-year-button\', switchDecadeButton: \'clndr-switch-decade-button\'}',
 				},
 				type: {
-					summary: '{item?: string, empty?: string, nextButton?: string, todayButton?: string, previousButton?: string, nextYearButton?: string, previousYearButton?: string, switchWeekButton?: string, switchMonthButton?: string, switchYearButton?: string, switchDecadeButton?: string}',
+					summary: '{[key in TargetOption]: string}',
 				},
 			},
 		},
@@ -308,6 +310,25 @@ const meta: Meta<ClndrOptions> = {
 				</tbody>
 			</table>`, data),
 		adjacentItemsChangePage: false,
+		dateParameter: {
+			date: 'date',
+			start: 'start',
+			end: 'end',
+		},
+		defaultView: 'month',
+		events: [
+			{
+				title: 'Multi-Day Event',
+				start: new Date().toISOString().slice(0, 8) + '10',
+				end: new Date().toISOString().slice(0, 8) + '14',
+			}, {
+				title: 'Another Multi-Day Event',
+				start: new Date().toISOString().slice(0, 8) + '21',
+				end: new Date().toISOString().slice(0, 8) + '23',
+			},
+		],
+		forceSixRows: false,
+		ignoreInactiveDaysInSelection: false,
 		on: {
 			afterRender: async (...args) => {
 				action('afterRender')(...args);
@@ -322,33 +343,9 @@ const meta: Meta<ClndrOptions> = {
 				action('switchView')(...args);
 			},
 		},
-		dateParameter: {
-			date: 'date',
-			start: 'start',
-			end: 'end',
-		},
-		events: [
-			{
-				title: 'Multi-Day Event',
-				start: new Date().toISOString().slice(0, 8) + '10',
-				end: new Date().toISOString().slice(0, 8) + '14',
-			}, {
-				title: 'Another Multi-Day Event',
-				start: new Date().toISOString().slice(0, 8) + '21',
-				end: new Date().toISOString().slice(0, 8) + '23',
-			},
-		],
-		forceSixRows: false,
-		ignoreInactiveDaysInSelection: false,
+		trackSelectedDate: false,
 		useTouchEvents: false,
 		weekStartsOn: 0,
-	},
-	parameters: {
-		docs: {
-			description: {
-				component: 'Source code and usage instructions: https://github.com/Snater/CLNDR2/',
-			},
-		},
 	},
 	tags: ['autodocs'],
 };
@@ -535,8 +532,6 @@ export const MiniCalendarWithClickEvent: Story = {
 					return;
 				}
 
-				eventsContainer.classList.remove('hidden');
-
 				let html = '';
 
 				events.forEach(event => {
@@ -546,9 +541,11 @@ export const MiniCalendarWithClickEvent: Story = {
 							<div class="event-body">${event.description}</div>
 						</div>
 					`;
-				})
+				});
 
 				eventList.innerHTML = html;
+
+				eventsContainer.classList.remove('hidden');
 			},
 		},
 		trackSelectedDate: true,

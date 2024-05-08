@@ -13,7 +13,7 @@ import {
 	subYears,
 } from 'date-fns';
 import {Adapter} from './Adapter';
-import type {Adjacent, InternalClndrEvent, Interval, PageDates, View} from './types';
+import type {Adjacent, InternalClndrEvent, Interval, PageDates, View} from '../types';
 
 export type TargetOption = 'switchDecadeButton'
 

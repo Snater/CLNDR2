@@ -3,9 +3,11 @@
 [![NPM version][npm-version-image]][npm-url] [![Test status][github-action-image]][github-action-url] [![Coverage Status][test-coverage-image]][test-coverage-url]
 
 CLNDR2 is a straightforward framework-agnostic front-end calendar widget operating on HTML templates powered by the template rendering engine of your choice.<br />
-It is the unofficial successor to awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you intend to migrate from CLNDR to CLNDR2, check out the [migration notes](#key-differences-to-clndr).
+It is inspired by awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you intend to migrate from CLNDR to CLNDR2, check out the [migration notes](#key-differences-to-clndr).
 
-**👉 Demos and additional documentation: https://clndr2.snater.com**
+> 📄 **Documentation: https://clndr2.snater.com/docs**
+>
+> 📅 **Demos: https://clndr2.snater.com/demos**
 
 ---
 
@@ -16,15 +18,13 @@ It is the unofficial successor to awesome [CLNDR](https://github.com/kylestetz/C
   - [Configuration using CSS Classes](#configuration-using-css-classes)
   - [Template Rendering Engine](#template-rendering-engine)
 - [Calendar Events](#calendar-events)
-- [All Options](#all-options)
-- [Data provided to the Template](#data-provided-to-the-template)
-  - [All Parameters](#all-parameters)
-  - [The "items" Array](#the-items-array)
-- [Custom CSS Classes](#custom-css-classes)
-- [Constraints & Date Pickers](#constraints--date-pickers)
+- [Interaction Events](#interaction-events)
 - [Switching the View](#switching-the-view)
 - [Asynchronously loading Calendar Events](#asynchronously-loading-calendar-events)
-- [Public API](#public-api)
+  - [Load new Events before Rendering](#load-new-events-before-rendering)
+  - [Load new Events after Rendering](#load-new-events-after-rendering)
+  - [Caching Strategies](#caching-strategies)
+- [Constraints & Date Pickers](#constraints--date-pickers)
 - [Internationalization](#internationalization)
 - [Key Differences to CLNDR](#key-differences-to-clndr)
   - [Migrate from CLNDR to CLNDR2](#migrate-from-clndr-to-clndr2)
@@ -74,13 +74,13 @@ npm i clndr2
 
 ## Templating
 
-Here's a typical CLNDR2 template for EJS, Underscore and lodash. It's got a controls section and a grid section.
+Here's a simple CLNDR2 month template for EJS, Underscore and lodash. It's got a controls section for navigating, and a grid section rendering the days of the month.
 
 ```html
 <div class="clndr-controls">
-  <div class="clndr-previous-button">&lsaquo;</div>
+  <div class="clndr-previous-button" role="button">&lsaquo;</div>
   <div class="month"><%= format(interval.start, 'MMMM') %></div>
-  <div class="clndr-next-button">&rsaquo;</div>
+  <div class="clndr-next-button" role="button">&rsaquo;</div>
 </div>
 <div class="clndr-grid">
   <div class="days-of-the-week">
@@ -98,11 +98,13 @@ Here's a typical CLNDR2 template for EJS, Underscore and lodash. It's got a cont
 
 ### Configuration using CSS Classes
 
-Applying `day.classes`, the class on a day is set to, for example, `'calendar-day-2024-01-18'`. This class is used to determine the date when a user clicks on it. Thus, click events will only work if `items.classes` is included in your day element's `class` attribute as seen above.
+Applying `day.classes` in the example, the calendar item will receive multiple CSS classes that are used by the calendar to determine the status of the calendar item as well as any action to be triggered when clicking on the item; That is, for example, whether the calendar item is supposed to be selected or whether the view is supposed to switch. Thus, click events will only work if `item.classes` (`day.classes` as used in the example) is included in your item element's `class` attribute as seen above.
+
+Most of these classes may be customized per the `classes` option to avoid potential class naming conflicts with your CSS.
 
 ### Template Rendering Engine
 
-[CLNDR had been tested successfully with multiple template engines](https://github.com/kylestetz/CLNDR?tab=readme-ov-file#template-rendering-engine). Since there was no change to the templating interface, any template engine working with CLNDR should work with CLNDR2 just the same.
+Apart from [EJS](https://ejs.co/)/[Underscore](https://underscorejs.org/)/[lodash](https://lodash.com/), CLNDR2 is supposed to work with any templating engine like [handlebars](http://handlebarsjs.com/), [mustache](https://github.com/janl/mustache.js/), [Knockout](https://knockoutjs.com/), etc.
 
 The basic concept is to provide a `render` function:
 
@@ -114,9 +116,7 @@ new Clndr(container, {
 });
 ```
 
-The `render` function must return the HTML result of the rendering operation.
-
-CLNDR has been tested successfully with [doT.js](http://olado.github.io/doT/), [Hogan.js](http://twitter.github.io/hogan.js/), [Handlebars.js](http://handlebarsjs.com/), [Mustache.js](https://github.com/janl/mustache.js/), and [Knockout.js](https://github.com/karl-sjogren/clndr-knockout), so CLNDR2 is supposed to support these template engines as well. Please get in touch if you have success with other languages for them to be documented here.
+The `render` function is passed [a set of parameters](http://clndr2.snater.com/docs/types/types.ClndrTemplateData.html), and it must return the HTML result of the rendering operation.
 
 ## Calendar Events
 
@@ -152,410 +152,86 @@ new Clndr(document.getElementById('calendar'), {
 });
 ```
 
-Generally, the event objects may consist of random properties, yet the calendar needs to find a date, or a start date and an end date in the object. By default, the parameters the calendar recognizes are `date`, `start` and `end`. The name of these parameters may be customized using the `dateParameter` option.
+Generally, the event objects may consist of random properties, yet the calendar needs to find a date, or a start date and an end date in the object. By default, the parameters the calendar recognizes are `date`, `start` and `end`. The names of these parameters may be customized using the `dateParameter` option.
 
-The event objects provided to the calendar are passed in their entirety to the template, filtered by the calendar objects currently rendered. For example, a day calendar item will be populated only with the events that take place on that day. Multi-day events are passed to every single day within their interval.
+Just like being passed to the `events` options, the event objects provided to the calendar are passed in their entirety to the template, filtered according to the calendar objects currently rendered. For example, a day calendar item will be populated only with the events that take place on that day. Multi-day events are passed to every single day within their interval.
 
-## All Options
+## Interaction Events
 
-See the [Storybook demos](https://clndr2.snater.com) for additional documentation of the options and default values.
-
-Example configuration:
+Per the `on` option, [event callbacks](http://clndr2.snater.com/docs/types/types.InteractionEvents.html) may be provided for handling click, navigation or rendering events. An example use case would be displaying the events of the current day in a separate container when the corresponding day is clicked on:
 
 ```typescript
-new Clndr(container, {
-
-  // The function rendering your template. See below for the data that is being
-  // passed to the template rendering function. This may also be an object with
-  // the keys referring to the views to enable if switching between views is to
-  // enabled, see "Switching the View" section.
-  render: data => ejs.render(template, data),
-
-  // Whether clicking the item of the preceding or following page navigates to
-  // that page. Currently, only relevant for the `month` view where days of
-  // adjacent months may be rendered on the page of the current month according
-  // to the `showAdjacent` option.
-  adjacentItemsChangePage: false,
-
-  // Custom classes to avoid styling issues. pass in only the classnames that you wish to override.
-  // These are the defaults:
-  classes: {
-    past: "past",
-    today: "today",
-    event: "event",
-    selected: "selected",
-    inactive: "inactive",
-    lastMonth: "last-month",
-    nextMonth: "next-month",
-    adjacent: "adjacent",
-  },
-
-  // Handlers for interaction events. The keyword 'this' is set to the
-  // calendar instance in all callbacks.
-  on: {
-    // A callback triggered when the calendar is done rendering.
-    afterRender: function(this: Clndr, parameters: {
-      // The calendar's root element.
-      element: HTMLElement
-
-      // The interval that is about to be rendered.
-      interval: {start: Date, end: Date},
-      
-      // The view rendered.
-      view: 'decade' | 'year' | 'month' | 'week' | 'day',
-    }) {/*...*/},
-
-    // A callback triggered when the calendar is about to render.
-    beforeRender: async function(this: Clndr, parameters: {
-      // The calendar's root element.
-      element: HTMLElement
-
-      // The interval that is about to be rendered.
-      interval: {start: Date, end: Date},
-      
-      // The view rendered.
-      view: 'decade' | 'year' | 'month' | 'week' | 'day',
-    }) {/*...*/},
-
-    // Triggered whenever a calendar box is clicked.
-    click: function(parameters: {
-      // The date clicked on; not necessarily provided, since it might be an
-      // empty "filler" element that was clicked on.
-      date?: Date,
-
-      // The origin view of the event.
-      view: 'decade' | 'year' | 'month' | 'week' | 'day'
-
-      // The events on the date being clicked as provided by `options.events`.
-      events: ClndrEvent[],
-
-      // Whether the clicked triggered changing the selected date, if the
-      // `trackSelectedDate` option is activated.
-      selectedDateChanged: boolean,
-
-      // Whether the calendar item clicked is or contains today.
-      isToday: boolean,
-
-      // The element clicked on.
-      element: HTMLElement,
-    }) {/*...*/},
-
-    // Triggered whenever navigating the calendar, which is any operation other
-    // than directly clicking a calendar box, i.e. clicking the "back" and
-    // "forward" buttons, clicking the "today" button etc. 
-    navigate: function(parameters: {
-      // Date objects describing the lower and upper end of the new page's
-      // interval.
-      interval?: {start: Date, end: Date},
-
-      // Whether the new page is before the one previously rendered (i.e.
-      // navigating backward).
-      isBefore: boolean,
-
-      // Whether the new page is after the one previously rendered (i.e.
-      // navigating forward).
-      isAfter: boolean,
-
-      // Whether month was changed (includes navigating to the same month in
-      // another year).
-      monthChanged: boolean,
-
-      // Wether the year was changed.
-      yearChanged: boolean,
-
-      // The HTML element targeted by the click; `undefined` when navigating
-      // programmatically.
-      element?: HTMLElement,
-    }) {/*...*/},
-
-    // Callback triggered once the calendar has been initialized and rendered.
-    ready: async function(this: Clndr, parameters: {
-      // The calendar's root element.
-      element: HTMLElement
-
-      // The interval that has been rendered initially.
-      interval: {start: Date, end: Date},
-      
-      // The view that hass been rendered initially.
-      view: 'decade' | 'year' | 'month' | 'week' | 'day',
-    }) {/*...*/},
-
-    // Callback triggered whenever the view is switched. The callback is
-    // triggered before rendering, hence any updated to the calendar events
-    // done here, will be considered when rendering the new view. 
-    switchView: async function(this: Clndr, parameters: {
-      // The view that is switched to.
-      view: 'decade' | 'year' | 'month' | 'week' | 'day',
-    }) {/*...*/},
-  },
-
-  // Prevent the user from navigating the calendar outside of a certain date
-  // range (e.g. when configuring a date picker) by specifying either the
-  // start, end, or both. It's possible to change these dynamically after
-  // initialization, see API functions below.
-  constraints: {
-    start: '2017-12-22',
-    end: '2018-01-09',
-  },
-
-  // If you're supplying an events array, `dateParameter` configures which
-  // key(s) to look for dates in the events provided per the `events` option.
-  // You may provide only parts of this object, if you are interested in
-  // exclusively configuring single-day or multi-day events only.
-  dateParameter: {
-    // `date` configures the key to look for the date on single-day events.
-    date: 'date',
-    start: 'start',
-    end: 'end',
-  },
-
-  // An array of day abbreviation labels used in the calendar header. If you provided a date-fns
-  // locale per the `locale` option, it will be guessed for you.
-  daysOfTheWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
-
-  // The view that should be rendered initially; Only relevant when configuring
-  // multiple views to allow switching between views.
-  defaultView: 'month',
-
-  // An array of event objects
-  events: [
-    {
-      title: 'This is an event',
-      date: '2000-08-20'
-    },
-    /*...*/
-  ],
-
-  // Any other data variables you want access to in your template. Use this option if you would like
-  // to pass in date-fns functions to your template.
-  extras: {},
-
-  // Always make the calendar six rows tall (42 days) so that every month has a consistent height.
-  forceSixRows: false,
-
-  // Optional callback function that formats the day in the header. Default is as specified below
-  // using date-fns' `format`. The function is passed a Date object representing the day, as well as
-  // a date-fns locale, if provided per the `locale` option.
-  formatWeekdayHeader: (day, locale) => {
-    return format(day, 'cccccc', {locale}).charAt(0);
-  },
-
-  // Whether `inactive` dates (dates considered outside the boundaries defined
-  // by the `constraints` option) should be selectable, if the
-  // `trackSelectedDate` option is activated.
-  ignoreInactiveDaysInSelection: false,
-
-  // Customize the calendar's pagination. That is, if the calendar should, for
-  // example, render more than one month, or a certain amount of days at once.
-  // Pagination may be configured individual to each view when using multiple
-  // views, see "Switching the View" section.
-  pagination: {
-    // Keys may be either `day`, `week`, `month`, `year`, or `decade` to
-    // configure multiple calendar views that may be switched between.
-    month: {
-
-      // Adjust to render more than one element (in this case month) at the
-      // same time.
-      size: 1,
-  
-      // The amount of elements (in this case months) that will be navigated
-      // forward/backward when paging the calendar.
-      // If not set, `size` will be used for paginating.
-      step: 1
-    },
-  },
-  
-  // A date-fns locale to use when formatting date strings (the month name passed to the template,
-  // the day abbreveiations in the calendar header).
-  locale: undefined,
-
-  // A date that should be selected (that is its element is supposed to receive the
-  // `classes.selected` class) at the time the calendar is initialized.
-  selectedDate: null,
-
-  // Whether to show the items of pages adjacent to the current page.
-  // Currently, only relevant for the `month` view where it allows rendering
-  // days of months adjacent to the current month for achieving an fully
-  // populated grid of days.
-  showAdjacent: true,
-
-  // Determines the point in time that should be within the view rendered
-  // initially. May be either a Date object, a string or number to be passed to
-  // the `Date` constructor. If not provided, today's date is used.
-  startOn: '1992-10',
-
-  // The target classnames that the calendar will look for to bind events.
-  // These are the defaults:
-  targets: {
-    item: 'item',
-    empty: 'empty',
-    nextButton: 'clndr-next-button',
-    todayButton: 'clndr-today-button',
-    previousButton: 'clndr-previous-button',
-    nextYearButton: 'clndr-next-year-button',
-    previousYearButton: 'clndr-previous-year-button',
-    switchWeekButton: 'clndr-switch-week-button',
-    switchMonthButton: 'clndr-switch-month-button',
-    switchYearButton: 'clndr-switch-year-button',
-    switchDecadeButton: 'clndr-switch-decade-button',
-  },
-
-  // Whether the last clicked day should be tracked, that is applying the `classes.selected` class
-  // to the day that was clicked last. If trackSelectedDate is true, "selected" class will always be
-  // applied only to the most recently clicked date; otherwise selectedDate will not change.
-  trackSelectedDate: false,
-
-  // Use the "touchstart" event instead of "click" for binding the relevant `on` handlers.
-  useTouchEvents: false,
-  
-  // Start the week off on Sunday (0), Monday (1), etc. Sunday is the default.
-  weekOffset: 0,
-});
-```
-
-## Data provided to the Template
-
-While the properties of the data being passed to the template will always be defined, the population of some of the data properties depends on whether custom pagination is configured (using the `pagination` option).
-
-### All Parameters
-
-```typescript
-// Start and end of the current page's interval.
-interval: {start: Date, end: Date}
-
-// When the calendar is configured to display multiple pages at a time per a
-// view's `pagination` option, this will contain a Date object for each page
-// referring to the start of each page's interval. For rendering the items of
-// each page, the `pages` can be looped over and the corresponding items be
-// rendered like this:
-// ```
-// pages.forEach((page, pageIndex) => {
-//   ... items[pageIndex].forEach(item => ...) ...
-// )}
-// ```
-pages: Date[]
-
-// The `items` array, documented in more detail below; when the calendar is
-// configured to display multiple pages at a time per a view's `pagination`
-// options, `items` will be a multi-dimensional array, one array of
-// `ClndrItem` objects per page.
-items: ClndrItem[] | ClndrItem[][]
-
-// The events of the current page as well as the events of the previous and
-// next page. `events.currentPage` is a multi-dimensional array if the
-// pagination size of the current view is greater than 1.
-// `events.previousPage` and `events.nextPage` may be used to get the events of
-// adjacent pages if the `showAdjacent` option is turned on. Currently, that
-// option is relevant for the `month` view only.
-events: {
-  currentPage: ClndrEvent[] | ClndrEvent[][]
-  previousPage: ClndrEvent[]
-  nextPage: ClndrEvent[]
-}
-
-// An array of day-of-the-week abbreviations, shifted as configured by the
-// `weekOffset` parameter, i.e. `['S', 'M', 'T', etc...]`.
-daysOfTheWeek: string[]
-
-// A proxy for date-fns' `format` function being equiped with the locale
-// provided to the `locale` option.
-format: (date: Date, formatStr: string, options: FormatOptions) => string
-
-// Anything passed per the `extras` options when creating the calendar.
-extras: unknown | null
-```
-
-### The "items" Array
-
-The `items` array contains most of the data needed to render the calendar. Its structure looks like this:
-
-```typescript
-type ClndrItem = {
-  interval?: {start: Date, end: Date}
-  day?: number
-  date?: Date
-  events?: ClndrEvent[]
-  classes: string
-  properties?: {isToday: boolean, isInactive: boolean, isAdjacent: boolean}
-}
-```
-
-- `interval`: Start and end date of the day.
-- `day`: The day of the month.
-- `date`: A `Date` object representing the day.
-- `events`: The events assigned to this day with all data provided from when the events had been passed to the calendar instance.
-- `classes`: CSS classes to be applied to the day's HTML element indicating its status and whether there are events on this day.
-- `properties`: Status indicators for the day.
-
-## Custom CSS Classes
-
-The CSS classes that get added to a `day` object can be customized to avoid styling conflicts. The `classes` option accepts `now`, `event`, `past`, `previous`, `next`, `adjacent`, and `inactive`. Pass in only the classnames you wish to override and the rest will be set to their defaults.
-
-In this example a `my-` prefix is added to all classes:
-
-```typescript
-new Clndr(container, {
-  render: ...,
-  classes: {
-    past: 'my-past',
-    now: 'my-now',
-    event: 'my-event',
-    inactive: 'my-inactive',
-    previous: 'my-previous',
-    next: 'my-next',
-    adjacent: 'my-adjacent',
-  }
-});
-```
-
-To configure the `item`, `empty`, as well as `next`/`previous`/`today` etc. button classes, the `targets` option can be used.
-
-## Constraints & Date Pickers
-
-For creating a datepicker or to prevent users from *nexting* all the way to 2034 in the calendar,
-the `constraints` options can be set with `start`, `end`, or both specified:
-
-```typescript
-new Clndr(container, {
-  render: ...,
-  constraints: {
-    start: '1992-10-15',
-    end: '2024-10-15',
-  }
-});
-```
-
-This causes the calendar's next and previous buttons to only work within this date range. When they become disabled they will have the class `inactive` applied to them, which can be used to make them appear disabled.
-
-The days in the grid that are outside the range will also have the `inactive` class applied. Therefore, the click callbacks provided to relevant `on` callbacks should check whether a day has the class `inactive` applied:
-
-```typescript
-new Clndr(container, {
-  render: ...,
-  constraints: {
-    start: '1992-10-15',
-    end: '2024-10-15',
-  },
+const container = document.createElement('div');
+
+// DOM structure with a container for the calendar, as well as for a list of
+// events.
+container.innerHTML = `
+  <div class="clndr"></div>
+  <div class="events hidden">
+    <div class="events-header">Events</div>
+    <div class="events-list"></div>
+  </div>
+`;
+
+new Clndr(container.querySelector('.clndr') as HTMLElement, {
+  /*...*/
   on: {
     click: target => {
-      if (!target.element.classList.contains('inactive')) {
-        console.log('You picked a valid date!');
-      } else {
-        console.log('That date is outside of the range.');
+      if (!target.date) {
+        // Ignore the user clicking on an empty placeholder.
+        return;
       }
-    }
-  }
+
+      const eventsContainer = document.querySelector('.events');
+      const eventList = eventsContainer?.querySelector('.events-list');
+
+      if (!eventsContainer || !eventList) {
+        // The HTML structure is not properly set up, you might want to do some
+        // error handling here.
+        return;
+      }
+
+      // The events assigned to the day clicked.
+      const events = target.events;
+
+      if (events.length === 0) {
+        // Hide and empty the list of events when there are no events on this
+        // day.
+        eventsContainer.classList.add('hidden');
+        eventList.innerHTML = '';
+        return;
+      }
+
+      // Create some HTML with the event data and fill the event list.
+      let html = '';
+
+      events.forEach(event => {
+        html += `
+          <div class="event">
+            <div class="event-title">${event.title}</div>
+            <div class="event-body">${event.description}</div>
+          </div>
+        `;
+      });
+
+       eventList.innerHTML = html;
+
+      // Show the list of events in case there are events on the day clicked.
+      eventsContainer.classList.remove('hidden');
+    },
+  },
+  /*...*/
 });
 ```
 
 ## Switching the View
 
-CLNDR2 is capable of switching between different views for easing navigation. The currently available views are `day`, `week`, `month`, `year` and `decade`. (Additional views will be added in the future.) In order to activate the capability to switch between views, instead of a single `render` function, a `render` function needs to be provided for each view that should be possible to be switched to:
+CLNDR2 is capable of switching between different views for a better navigation experience. The currently available views are `day`, `week`, `month`, `year` and `decade`. (Additional views will be added in the future.) In order to activate the capability to switch between views, instead of a single `render` function, a `render` function needs to be provided for each view that should be possible to be switched to:
 
 ```typescript
 const clndr = new Clndr(container, {render: {
-  year: data => {...},
-  month: data => {...},
+  year: data => {/*...*/},
+  month: data => {/*...*/},
 }});
 ```
 
@@ -564,10 +240,13 @@ Additionally, you may also customize the pagination for each view:
 ```typescript
 const clndr = new Clndr(container, {
   render: {
-    year: data => {...},
-    month: data => {...},
+    year: data => {/*...*/},
+    month: data => {/*...*/},
   },
   pagination: {
+    // This will display two months at the same time, while there will still be
+    // displayed only one year at a time when on the year view. (One is the
+    // default page size.)
     month: {size: 2},
   },
 });
@@ -578,8 +257,8 @@ Use the `defaultView` option to customize the initial view (if a pagination is p
 ```typescript
 const clndr = new Clndr(container, {
   render: {
-    year: data => {...},
-    month: data => {...},
+    year: data => {/*...*/},
+    month: data => {/*...*/},
   },
   defaultView: 'year',
   pagination: {
@@ -596,7 +275,9 @@ There is no need to configure `defaultView` when either
 
 ## Asynchronously loading Calendar Events
 
-The `beforeRender` and `afterRender` callbacks may be used to asynchronously load events and add them to the calendar.
+The `beforeRender` and `afterRender` [callbacks](http://clndr2.snater.com/docs/types/types.InteractionEvents.html) may be used to asynchronously load events and add them to the calendar.
+
+### Load new Events before Rendering
 
 For `beforeRender`, the callback may be implemented like in the following simple example:
 
@@ -635,6 +316,8 @@ new Clndr(container, {
 });
 ```
 
+### Load new Events after Rendering
+
 Updating the calendar events on `afterRender` has to be done slightly different:
 
 ```typescript
@@ -646,7 +329,7 @@ async function afterRender(
 
   // Since rendering has already been performed, it needs to be retriggered;
   // yet only in case the calendar events were requested for the interval
-  // currently rendered. Otherwise, there might be a race conditions when doing
+  // currently rendered. Otherwise, there might be race conditions when doing
   // async operations like fetching data from a server. Therefore, doing this
   // check prevents unneccesary re-renderings.
   if (interval.start === this.getInterval().start) {
@@ -662,94 +345,74 @@ new Clndr(container, {
 });
 ```
 
+### Caching Strategies
+
 Caching like in the examples will only work for a calendar setup featuring just one view. When configuring multiple views, more sophisticated caching is necessary. The most simple cache would be to assign an `id` property to each calendar event and check if the event with that `id` was already added to the calendar. However, that would be one of the least performant options, particularly when dealing with a large number of events, because the operation fetching events would still need to be triggered on all navigation, as well as the whole cached array of events would need to be compared to the (potentially duplicate) fetched events.
 
-An improvement would be to cache the events on "view" level, i.e. per `month`, `year` etc. The events would be fetched in either `beforeRender` or `afterRender`. A callback triggered on `switchView` would exchange the events rendered in the calendar calling `setEvents()`. An example of this concept can be found in the [Storybook demos](https://clndr2.snater.com).
+An improvement would be to cache the events on "view" level, i.e. per `month`, `year` etc. The events would be fetched in either `beforeRender` or `afterRender`. A callback triggered on `switchView` would exchange the events rendered in the calendar calling `setEvents()`. An example of this concept can be found in the [Storybook demos](https://clndr2.snater.com/demos).
 
-## Public API
+## Constraints & Date Pickers
 
-It's possible to programmatically update the calendar after initialization. Navigating and updating the calendar will trigger relevant event handlers provided per the `on` option.
+For creating a datepicker or to prevent users from *nexting* all the way to 2034 in the calendar, the `constraints` options can be set with `start`, `end`, or both specified:
 
 ```typescript
-const clndr = new Clndr(container, {render: {...}});
+new Clndr(container, {
+  render: data => {/*...*/},
+  constraints: {
+    start: '1992-10-15',
+    end: '2024-10-15',
+  }
+});
+```
 
-// Gets the currently rendered view.
-const view: 'decade' | 'year' | 'month' | 'week' | 'day' = clndr.getView();
+This causes the calendar's next and previous buttons to only work within this date range. When they become disabled they will have the class `inactive` applied to them, which can be used to make them appear disabled.
 
-// Gets the interval currently rendered.
-const interval: {start: Date, end: Date} = clndr.getInterval();
+The items in the grid that are outside the current page's range, e.g. days of an adjacent month, will also have the `inactive` class applied to them. Therefore, the click callbacks provided to relevant `on` callbacks should check whether an item has the class `inactive` applied:
 
-// Gets the date currently selected, if the `trackSelectedDate` option is
-// activated.
-const selectedDate: Date = clndr.getSelectedDate();
+```typescript
+new Clndr(container, {
+  render: data => {/*...*/},
+  constraints: {
+    start: '1992-10-15',
+    end: '2024-10-15',
+  },
+  on: {
+    click: target => {
+      if (target.element.classList.contains('inactive')) {
+        console.log('You picked a valid date!');
+        return;
+      }
 
-// Switch the view ensuring the provided date is on the page. If no date is
-// provided, the start of the current page's interval is used.
-await clndr.switchView('year', '2024');
-
-// Navigate to the next page.
-await clndr.next();
-
-// Navigate to the previous page.
-await clndr.previous();
-
-// Sets a specific date ensuring that date is on the page.
-await clndr.setDate('2024-01-18');
-
-// Set the month using a number from 0-11.
-await clndr.setMonth(0);
-
-// Navigate to the next year.
-await clndr.nextYear();
-
-// Navigate to the previous year.
-await clndr.previousYear();
-
-// Set the year.
-await clndr.setYear(1992);
-
-// Navigate to today.
-await clndr.today();
-
-// Overwrite the extras. Note that this does NOT trigger re-rendering the calendar.
-clndr.setExtras(newExtras);
-
-// Change the events. Note that this does NOT trigger re-rendering the calendar.
-clndr.setEvents(newEventsArray);
-
-// Add events. Note that this does NOT trigger re-rendering the calendar.
-clndr.addEvents(additionalEventsArray);
-
-// Remove events. All events for which the provided function returns true will be removed from the
-// calendar. Note that this odes NOT trigger re-rendering the calendar.
-clndr.removeEvents(event => event.id === idToRemove);
-
-// Trigger re-rendering the calendar.
-clndr.render();
+      console.log('That date is outside of the range.');
+      /*...*/
+    }
+  }
+});
 ```
 
 ## Internationalization
 
 CLNDR2 has support for internationalization insofar as date-fns supports it. A date-fns locale may be passed to a calendar instance using the `locale` option. This will have the following effects:
 - If neither `daysOfTheWeek`, nor `formatWeekdayHeader` option is provided, the weekday abbreviations for the calendar header row will be guessed using the date-fns locale.
-- The `month` passed to the template is the localized month name.
 - The `format` function passed to the template is a proxy for the date-fns `format` function, injected with the `locale ` by default.
 
 For applying additional internationalization, the `extras` option can be used to pass in required functionality. 
 
 ## Key Differences to CLNDR
 
+- The source code was completely recoded with a new, modular architecture and is now written in TypeScript rather than JavaScript.
 - Instead of a jQuery plugin, CLNDR2 provides a `Clndr` class per an ES module.
 - The dependency on jQuery is removed.
 - The moment dependency is replaced by date-fns.
 - There is no soft dependency on Underscore anymore, the `template` option as well as the default template was removed. You just have to provide your own `render` function.
-- The source code was overhauled and converted to Typescript.
-- There are now [Storybook demos](https://clndr2.snater.com).
+- CLNDR2 supports asynchronously updating the calendar events.
+- CLNDR2 supports multiple views that may be switched between.
+- There are now [Storybook demos](https://clndr2.snater.com/demos) and there is [source code documentation](https://clndr2.snater.com/docs).
 - The source code is automatically tested with a 100% code coverage.
 
 ### Migrate from CLNDR to CLNDR2
 
-First of all, along with installing CLNDR2, you will also have to install [date-fns](https://date-fns.org/).
+First of all, along with installing CLNDR2, you will also have to install [date-fns](https://date-fns.org/), which is supposed to be installed automatically as peer dependency.
 
 Using CLNDR, in your code you have most likely done something like this:
 
@@ -772,8 +435,9 @@ const clndr = new Clndr(document.getElementById('calendar'), {
 
 ### Considerations when Migrating
 
+- While version 1.x of CLNDR2 was very close to CLNDR in terms of the public API (options, public methods), version 2.x has not only turned internals upside down, but also the public interface. In fact, version 2.x does not have much in common with the original CLNDR as it has been recoded bottom up. Therefore, you might want to consult the [migration notes of CLNDR2 version 1.x to 2.x](https://github.com/Snater/CLNDR2/releases/tag/v2.0.0).
 - The `template` option was removed to be even less opinionated about your template engine. Therefore, you now *have to* use the `render` option for hooking up your template engine of choice.
-- In contrast to moment, date-fns is less opinionated about localisation. The consequence is that when setting a locale on date-fns, this does not automatically configure the day a week starts with. Therefore, you have to use the `weekOffset` option if you would like to have the week start with a day other than Sunday.
+- In contrast to moment, date-fns is less opinionated about localisation. The consequence is that when setting a locale on date-fns, this does not automatically configure the day a week starts with. Therefore, you have to use the `weekStartsOn` option if you would like to have the week start with a day other than Sunday.
 - In CLNDR, the moment object was passed into the template along all template data. In CLNDR2, The only date specific function passed to the template is `format`, which is a proxy to [date-fns' `format` function](https://date-fns.org/docs/format) with the locale defaulting to the locale provided per the new `locale` CLNDR2 option. No other date functions are passed to the template. If you want to use date functions in your template, i.e. for date calculations, provide those using the `extras` option.
 - date-fns operates on standard `Date` objects. Passing moment objects to CLNDR2 will not work.
 - If you want CLNDR2 to localize the day heading and the month name passed to the template, provide a date-fns locale per the new `locale` option.
