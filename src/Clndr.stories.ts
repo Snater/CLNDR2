@@ -1,4 +1,4 @@
-import './clndr.stories.less';
+import './Clndr.stories.less';
 import {Meta, StoryObj} from '@storybook/html';
 import {addDays, addMonths, format} from 'date-fns';
 import {de, enUS, es, fr} from 'date-fns/locale';
