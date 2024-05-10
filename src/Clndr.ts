@@ -494,6 +494,8 @@ class Clndr {
 
 	private aggregateTemplateData() {
 		const data: ClndrTemplateData = {
+			date: this.interval.start,
+			interval: this.interval,
 			pages: [],
 			items: [],
 			events: {
@@ -503,7 +505,6 @@ class Clndr {
 			},
 			extras: this.options.extras,
 			daysOfTheWeek: this.daysOfTheWeek,
-			interval: this.interval,
 			format: (date: Date | string | number, formatStr: string, options: FormatOptions = {}) => {
 				return format(date, formatStr, {locale: this.options.locale || undefined, ...options});
 			},

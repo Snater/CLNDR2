@@ -6,7 +6,7 @@ import {screen} from '@testing-library/dom';
 describe('MONTH view', () => {
 
 	const oneMonthTemplate = `
-		<div><%= format(interval.start, 'MMMM yyyy') %></div>
+		<div><%= format(date, 'MMMM yyyy') %></div>
 		<div class="clndr-previous-button">previous</div>
 		<div class="clndr-next-button">next</div>
 		<div class="clndr-today-button">Current month</div>

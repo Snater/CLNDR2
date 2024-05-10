@@ -273,7 +273,7 @@ describe('Navigation', () => {
 			<div class="clndr-previous-button">previous</div>
 			<div class="clndr-next-button">next</div>
 			<div class="clndr-next-year-button">next year</div>
-			<div><%= format(interval.start, 'MMMM yyyy') %></div>
+			<div><%= format(date, 'MMMM yyyy') %></div>
 		`;
 
 		clndr = new Clndr(container, {
@@ -731,7 +731,7 @@ describe('Multiple views', () => {
 			<div class="clndr-switch-month-button">Switch to month view</div>
 		`),
 		month: provideRender(`
-			<div class="month"><%= format(interval.start, 'MMMM yyyy') %></div>
+			<div class="month"><%= format(date, 'MMMM yyyy') %></div>
 			<% items.forEach(day => { %>
 					<div class="<%= day.classes %>"><%= format(day.date, 'd') %></div>
 				<% }) %>
@@ -890,7 +890,7 @@ describe('Multiple views', () => {
 		clndr = new Clndr(container, {
 			render: {
 				month: provideRender(`
-					<div><%= format(interval.start, 'MMMM') %></div>
+					<div><%= format(date, 'MMMM') %></div>
 					<div>
 						<% items.forEach(item => { %>
 							<div class="<%= item.classes %>"><%= item.day %></div>
@@ -899,7 +899,7 @@ describe('Multiple views', () => {
 					<div class="clndr-switch-year-button">Switch to year view</div>
 				`),
 				year: provideRender(`
-					<div><%= format(interval.start, 'yyyy') %></div>
+					<div><%= format(date, 'yyyy') %></div>
 					<div>
 						<% items.forEach((item, itemIndex) => { %>
 							<div class="<%= item.classes %>"><%= format(item.date, 'MMMM yyyy') %></div>
@@ -931,7 +931,7 @@ describe('Multiple views', () => {
 		clndr = new Clndr(container, {
 			render: {
 				month: provideRender(`
-					<div><%= format(interval.start, 'MMMM yyyy') %></div>
+					<div><%= format(date, 'MMMM yyyy') %></div>
 					<div class="clndr-switch-year-button">Switch to year view</div>
 				`),
 				year: undefined,
@@ -947,7 +947,7 @@ describe('Multiple views', () => {
 		clndr = new Clndr(container, {
 			render: {
 				month: provideRender(`
-					<div><%= format(interval.start, 'MMMM yyyy') %></div>
+					<div><%= format(date, 'MMMM yyyy') %></div>
 					<div>
 						<% items.forEach(item => { %>
 							<div class="switch <%= item.classes %>"><%= item.day %></div>
@@ -1045,7 +1045,7 @@ describe('Handling errors', () => {
 	test('Unable to detect target date when switching view due to CSS id class unexpectedly missing', async () => {
 		clndr = new Clndr(container, {
 			render: {
-				month: provideRender('<div><%= format(interval.start, "MMMM yyyy") %></div>'),
+				month: provideRender('<div><%= format(date, "MMMM yyyy") %></div>'),
 				year: provideRender(`
 					<div>
 						<div>YEAR</div>

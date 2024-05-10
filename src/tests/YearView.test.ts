@@ -6,7 +6,7 @@ import {screen} from '@testing-library/dom';
 describe('YEAR view', () => {
 
 	const oneYearTemplate = `
-		<div><%= interval.start.getFullYear() %></div>
+		<div><%= date.getFullYear() %></div>
 		<div class="clndr-previous-button">previous</div>
 		<div class="clndr-next-button">next</div>
 		<div class="clndr-today-button">Current year</div>

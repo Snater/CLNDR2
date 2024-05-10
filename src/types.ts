@@ -401,6 +401,10 @@ export type ItemStatus = 'past'
  */
 export type ClndrTemplateData = {
 	/**
+	 * Date indicating the current page for convenience; This is exactly the same as `interval.start`.
+	 */
+	date: Date
+	/**
 	 * Start and end of the current page's interval.
 	 */
 	interval: Interval

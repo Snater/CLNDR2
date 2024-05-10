@@ -283,7 +283,7 @@ const meta: Meta<ClndrOptions> = {
 				<div class="clndr-control-button">
 					<span class="clndr-previous-button" role="button">previous</span>
 				</div>
-				<div class="month"><%= format(interval.start, 'MMMM') %> <%= interval.start.getFullYear() %></div>
+				<div class="month"><%= format(date, 'MMMM') %> <%= date.getFullYear() %></div>
 				<div class="clndr-control-button">
 					<span class="clndr-next-button" role="button">next</span>
 				</div>
@@ -412,7 +412,7 @@ export const FullCalendar: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lt;</div>
-				<div class="current-month"><%= format(interval.start, 'MMMM') %> <%= interval.start.getFullYear() %></div>
+				<div class="current-month"><%= format(date, 'MMMM') %> <%= date.getFullYear() %></div>
 				<div class="clndr-next-button" role="button">&gt;</div>
 			</div>
 			<div class="clndr-content">
@@ -473,7 +473,7 @@ export const MiniCalendarWithClickEvent: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lsaquo;</div>
-				<div class="month"><%= format(interval.start, 'MMMM') %></div>
+				<div class="month"><%= format(date, 'MMMM') %></div>
 				<div class="clndr-next-button" role="button">&rsaquo;</div>
 			</div>
 			<div class="clndr-grid">
@@ -640,7 +640,7 @@ export const Year: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lsaquo;</div>
-				<div class="year"><%= interval.start.getFullYear() %></div>
+				<div class="year"><%= date.getFullYear() %></div>
 				<div class="clndr-next-button" role="button">&rsaquo;</div>
 			</div>
 			<div class="clndr-grid">
@@ -694,7 +694,7 @@ export const SwitchBetweenViews: Story = {
 				<div class="year-template">
 					<div class="clndr-controls">
 						<div class="clndr-previous-button" role="button">&lsaquo;</div>
-						<div class="title"><%= interval.start.getFullYear() %></div>
+						<div class="title"><%= date.getFullYear() %></div>
 						<div class="clndr-next-button" role="button">&rsaquo;</div>
 					</div>
 					<div class="clndr-grid">
@@ -710,7 +710,7 @@ export const SwitchBetweenViews: Story = {
 				<div class="month-template">
 					<div class="clndr-controls">
 						<div class="clndr-previous-button" role="button">&lsaquo;</div>
-						<div class="title"><%= format(interval.start, 'MMMM yyyy') %></div>
+						<div class="title"><%= format(date, 'MMMM yyyy') %></div>
 						<div class="clndr-next-button" role="button">&rsaquo;</div>
 					</div>
 					<div class="clndr-grid">
@@ -732,7 +732,7 @@ export const SwitchBetweenViews: Story = {
 				<div class="week-template">
 					<div class="clndr-controls">
 						<div class="clndr-previous-button" role="button">&lsaquo;</div>
-						<div class="title">Week <%= format(interval.start, 'w') %> in <%= format(interval.start, 'yyyy') %></div>
+						<div class="title">Week <%= format(date, 'w') %> in <%= format(date, 'yyyy') %></div>
 						<div class="clndr-next-button" role="button">&rsaquo;</div>
 					</div>
 					<div class="clndr-grid">
@@ -757,7 +757,7 @@ export const SwitchBetweenViews: Story = {
 				<div class="day-template">
 					<div class="clndr-controls">
 						<div class="clndr-previous-button" role="button">&lsaquo;</div>
-						<div class="title"><%= format(interval.start, 'PPP') %></div>
+						<div class="title"><%= format(date, 'PPP') %></div>
 						<div class="clndr-next-button" role="button">&rsaquo;</div>
 					</div>
 					<div class="clndr-grid">
@@ -817,7 +817,7 @@ export const AsyncBeforeRenderCalendar: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lsaquo;</div>
-				<div class="month"><%= format(interval.start, 'MMMM') %></div>
+				<div class="month"><%= format(date, 'MMMM') %></div>
 				<div class="clndr-next-button" role="button">&rsaquo;</div>
 			</div>
 			<div class="clndr-grid">
@@ -892,7 +892,7 @@ export const AsyncAfterRenderCalendar: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lsaquo;</div>
-				<div class="month"><%= format(interval.start, 'MMMM') %></div>
+				<div class="month"><%= format(date, 'MMMM') %></div>
 				<div class="clndr-next-button" role="button">&rsaquo;</div>
 			</div>
 			<div class="clndr-grid">
@@ -954,7 +954,7 @@ export const AsyncSwitchBetweenViews: Story = {
 				<div class="year-template">
 					<div class="clndr-controls">
 						<div class="clndr-previous-button" role="button">&lsaquo;</div>
-						<div class="title"><%= interval.start.getFullYear() %></div>
+						<div class="title"><%= date.getFullYear() %></div>
 						<div class="clndr-next-button" role="button">&rsaquo;</div>
 					</div>
 					<div class="clndr-grid">
@@ -970,7 +970,7 @@ export const AsyncSwitchBetweenViews: Story = {
 				<div class="month-template">
 					<div class="clndr-controls">
 						<div class="clndr-previous-button" role="button">&lsaquo;</div>
-						<div class="title"><%= format(interval.start, 'MMMM yyyy') %></div>
+						<div class="title"><%= format(date, 'MMMM yyyy') %></div>
 						<div class="clndr-next-button" role="button">&rsaquo;</div>
 					</div>
 					<div class="clndr-grid">

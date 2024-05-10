@@ -6,7 +6,7 @@ import {screen} from '@testing-library/dom';
 describe('WEEK view', () => {
 
 	const oneWeekTemplate = `
-		<div>Week <%= format(interval.start, 'w') %> in <%= format(interval.start, 'yyyy') %></div>
+		<div>Week <%= format(date, 'w') %> in <%= format(date, 'yyyy') %></div>
 		<div class="clndr-previous-button">previous</div>
 		<div class="clndr-next-button">next</div>
 		<div class="clndr-today-button">Current week</div>
