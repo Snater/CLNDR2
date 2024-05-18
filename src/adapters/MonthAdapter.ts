@@ -19,6 +19,22 @@ import {
 import DayBasedAdapter from './DayBasedAdapter';
 import type {Adjacent, Day, InternalClndrEvent, Interval, PageDates, View} from '../types';
 
+export type MonthAdapterOptions = {
+	/**
+	 * Always make the calendar six rows tall (42 days) so that every month has a consistent height.
+	 */
+	forceSixRows: boolean
+	/**
+	 * Whether to show the items of pages adjacent to the current page in order to achieve a fully
+	 * populated grid of days.
+	 */
+	showAdjacent: boolean
+	/**
+	 * Start the week on Sunday (0), Monday (1), etc. Sunday is the default.
+	 */
+	weekStartsOn: Day
+}
+
 export type TargetOption = 'switchMonthButton'
 
 export default class MonthAdapter extends DayBasedAdapter {
@@ -110,8 +126,11 @@ export default class MonthAdapter extends DayBasedAdapter {
 		return [eventsPreviousMonth, eventsNextMonth];
 	}
 
-	aggregatePageItems(interval: Interval, weekStartsOn: Day): PageDates {
-		const daysOfPreviousMonth = this.aggregateDaysOfPreviousMonth(interval.start, weekStartsOn);
+	aggregatePageItems(interval: Interval): PageDates {
+		const daysOfPreviousMonth = this.aggregateDaysOfPreviousMonth(
+			interval.start,
+			this.options.weekStartsOn
+		);
 		const daysOfCurrentMonth = this.aggregateDaysOfCurrentPage(interval);
 
 		return [
@@ -119,7 +138,7 @@ export default class MonthAdapter extends DayBasedAdapter {
 			daysOfCurrentMonth,
 			this.aggregateDaysOfNextMonth(
 				interval.end,
-				weekStartsOn,
+				this.options.weekStartsOn,
 				daysOfPreviousMonth.length + daysOfCurrentMonth.length
 			),
 		]

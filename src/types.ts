@@ -1,5 +1,5 @@
 import {FormatOptions, Locale} from 'date-fns';
-import type {DecadeTargetOption, MonthTargetOption, YearTargetOption} from './adapters';
+import type {AdapterOptions, DecadeTargetOption, MonthTargetOption, YearTargetOption} from './adapters';
 
 /**
  * The function rendering your template.
@@ -99,10 +99,6 @@ export type DefaultOptions = {
 	 */
 	extras?: unknown
 	/**
-	 * Always make the calendar six rows tall (42 days) so that every month has a consistent height.
-	 */
-	forceSixRows: boolean
-	/**
 	 * Callback function that formats the day in the header. Default is as specified in the example
 	 * using date-fns' `format`. The function is passed a Date object representing the day, as well as
 	 * a date-fns locale, if provided per the `locale` option.
@@ -201,11 +197,7 @@ export type DefaultOptions = {
 	 * Use the "touchstart" event instead of "click" for binding the relevant `on` handlers.
 	 */
 	useTouchEvents: boolean
-	/**
-	 * Start the week on Sunday (0), Monday (1), etc. Sunday is the default.
-	 */
-	weekStartsOn: Day
-}
+} & Omit<AdapterOptions, 'pageSize'>
 
 /**
  * See the {@link DefaultOptions} for the documentation of the individual parameters. You might also
@@ -417,7 +409,7 @@ export type ClndrTemplateData = {
 	 * ```
 	 * pages.forEach((page, pageIndex) => {
 	 *   \/*...*\/ items[pageIndex].forEach(item => \/*...*\/) \/*...*\/
-	 * )}
+	 * })
 	 * ```
 	 */
 	pages: Date[]

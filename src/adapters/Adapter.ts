@@ -1,18 +1,19 @@
 import type {
 	Adjacent,
-	Day,
 	InternalClndrEvent,
 	Interval,
 	PageDates,
 	View,
 } from '../types';
+import type {MonthAdapterOptions} from './MonthAdapter';
+import type {WeekAdapterOptions} from './WeekAdapter';
 
 export type AdapterOptions = {
-	forceSixRows: boolean
+	/**
+	 * Number of pages to be rendered at once.
+	 */
 	pageSize: number
-	showAdjacent: boolean
-	weekStartsOn: Day
-}
+} & MonthAdapterOptions & WeekAdapterOptions
 
 export abstract class Adapter {
 
@@ -39,7 +40,7 @@ export abstract class Adapter {
 		events: InternalClndrEvent[]
 	): [InternalClndrEvent[], InternalClndrEvent[]]
 
-	abstract aggregatePageItems(interval: Interval, weekOffset?: number): PageDates
+	abstract aggregatePageItems(interval: Interval): PageDates
 
 	abstract endOfPage(date: Date): Date
 	protected abstract addPages(date: Date, count: number): Date

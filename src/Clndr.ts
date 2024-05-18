@@ -18,14 +18,7 @@ import {
 	subYears,
 	startOfDay,
 } from 'date-fns';
-import {
-	Adapter,
-	DayAdapter,
-	DecadeAdapter,
-	MonthAdapter,
-	WeekAdapter,
-	YearAdapter,
-} from './adapters';
+import adapters, {Adapter} from './adapters';
 import type {
 	ClndrEvent,
 	ClndrItem,
@@ -45,22 +38,8 @@ import type {
 	TargetOption,
 	View,
 } from './types';
-import type {AdapterOptions} from './adapters';
 
 const orderedViews: View[] = ['day', 'week', 'month', 'year', 'decade'] as const;
-
-const adapters: Record<View,
-	(new (options: AdapterOptions) => Adapter) & {
-		eventListener?: (element: HTMLElement, callback: (view: View) => void) => void,
-		targets?: Record<string, string>
-	}
-> = {
-	decade: DecadeAdapter,
-	year: YearAdapter,
-	month: MonthAdapter,
-	week: WeekAdapter,
-	day: DayAdapter,
-} as const;
 
 const defaults: DefaultOptions = {
 	adjacentItemsChangePage: false,
@@ -317,7 +296,7 @@ class Clndr {
 		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
 	) {
 
-		const dates = this.adapter.aggregatePageItems(interval, this.options.weekStartsOn);
+		const dates = this.adapter.aggregatePageItems(interval);
 
 		// This array will contain the data of the entire grid (including blank spaces)
 		return [

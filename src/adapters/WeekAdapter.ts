@@ -14,7 +14,14 @@ import {
 	subWeeks,
 } from 'date-fns';
 import DayBasedAdapter from './DayBasedAdapter';
-import type {Adjacent, InternalClndrEvent, Interval, PageDates, View} from '../types';
+import type {Adjacent, Day, InternalClndrEvent, Interval, PageDates, View} from '../types';
+
+export type WeekAdapterOptions = {
+	/**
+	 * Start the week on Sunday (0), Monday (1), etc. Sunday is the default.
+	 */
+	weekStartsOn: Day
+}
 
 export type TargetOption = 'switchWeekButton'
 
