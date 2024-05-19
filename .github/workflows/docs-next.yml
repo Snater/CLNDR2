@@ -20,5 +20,5 @@ jobs:
         username: ${{secrets.FTP_USERNAME}}
         password: ${{secrets.FTP_PASSWORD}}
         local-dir: ./docs/
-        server-dir: ./next/doc/
+        server-dir: ./next/docs/
         dangerous-clean-slate: true
