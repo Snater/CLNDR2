@@ -893,7 +893,7 @@ describe('Multiple views', () => {
 					<div><%= format(date, 'MMMM') %></div>
 					<div>
 						<% items.forEach(item => { %>
-							<div class="<%= item.classes %>"><%= item.day %></div>
+							<div class="<%= item.classes %>"><%= item.date.getDate() %></div>
 						<% }) %>
 					</div>
 					<div class="clndr-switch-year-button">Switch to year view</div>
@@ -950,7 +950,7 @@ describe('Multiple views', () => {
 					<div><%= format(date, 'MMMM yyyy') %></div>
 					<div>
 						<% items.forEach(item => { %>
-							<div class="switch <%= item.classes %>"><%= item.day %></div>
+							<div class="switch <%= item.classes %>"><%= item.date.getDate() %></div>
 						<% }) %>
 					</div>
 				`),

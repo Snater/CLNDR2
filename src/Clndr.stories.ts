@@ -272,8 +272,12 @@ const meta: Meta<ClndrOptions> = {
 			},
 			description: 'Adjust the weekday that a week starts with, i.e. set to 1 to start a week with Monday.',
 			table: {
-				defaultValue: 0,
-				type: 'number',
+				defaultValue: {
+					summary: '0',
+				},
+				type: {
+					summary: 'number',
+				},
 			},
 		},
 	},
@@ -302,7 +306,7 @@ const meta: Meta<ClndrOptions> = {
 							<% for (let col = 0; col < 7; col++) { %>
 								<% const index = col + row * 7; %>
 								<td class="<%= items[index].classes %>">
-									<div class="day-contents"><%= items[index].day %></div>
+									<div class="day-contents"><%= items[index].date.getDate() %></div>
 								</td>
 							<% } %>
 						</tr>
@@ -424,7 +428,7 @@ export const FullCalendar: Story = {
 					</div>
 					<div class="days">
 						<% items.forEach(day => { %>
-							<div class="<%= day.classes %>" id="<%= day.id %>"><span class="day-number"><%= day.day %></span></div>
+							<div class="<%= day.classes %>" id="<%= day.id %>"><span class="day-number"><%= day.date.getDate() %></span></div>
 						<% }) %>
 					</div>
 				</div>
@@ -482,7 +486,7 @@ export const MiniCalendarWithClickEvent: Story = {
 				</div>
 				<div class="days">
 					<% items.forEach(day => { %>
-						<div class="<%= day.classes %>" role="button"><%= day.day %></div>
+						<div class="<%= day.classes %>" role="button"><%= day.date.getDate() %></div>
 					<% }) %>
 				</div>
 			</div>
@@ -583,7 +587,7 @@ export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 				</div>
 				<div class="days">
 					<% items.flat().forEach(day => { %>
-						<div class="<%= day.classes %>"><%= day.day %></div>
+						<div class="<%= day.classes %>"><%= day.date.getDate() %></div>
 					<% }) %>
 				</div>
 			</div>
@@ -617,7 +621,7 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 						</div>
 						<div class="days">
 							<% items[pageIndex].forEach(day => { %>
-									<div class="<%= day.classes %>"><%= day.day %></div>
+									<div class="<%= day.classes %>"><%= day.date.getDate() %></div>
 							<% }) %>
 						</div>
 					</div>
@@ -719,7 +723,7 @@ export const SwitchBetweenViews: Story = {
 						</div>
 						<div class="days grid-template">
 							<% items.forEach(day => { %>
-								<div class="<%= day.classes %>" role="button"><%= day.day %></div>
+								<div class="<%= day.classes %>" role="button"><%= day.date.getDate() %></div>
 							<% }) %>
 						</div>
 					</div>
@@ -827,7 +831,7 @@ export const AsyncBeforeRenderCalendar: Story = {
 				</div>
 				<div class="days">
 					<% items.forEach(day => { %>
-						<div class="<%= day.classes %>" role="button"><%= day.day %></div>
+						<div class="<%= day.classes %>" role="button"><%= day.date.getDate() %></div>
 					<% }) %>
 				</div>
 			</div>
@@ -902,7 +906,7 @@ export const AsyncAfterRenderCalendar: Story = {
 				</div>
 				<div class="days">
 					<% items.forEach(day => { %>
-						<div class="<%= day.classes %>" role="button"><%= day.day %></div>
+						<div class="<%= day.classes %>" role="button"><%= day.date.getDate() %></div>
 					<% }) %>
 				</div>
 			</div>
@@ -980,7 +984,7 @@ export const AsyncSwitchBetweenViews: Story = {
 						</div>
 						<div class="days grid-template">
 							<% items.forEach(day => { %>
-								<div class="<%= day.classes %>" role="button"><%= day.day %></div>
+								<div class="<%= day.classes %>" role="button"><%= day.date.getDate() %></div>
 							<% }) %>
 						</div>
 					</div>

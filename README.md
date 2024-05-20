@@ -89,7 +89,7 @@ Here's a simple CLNDR2 month template for EJS, Underscore and lodash. It's got a
   <% }) %>
     <div class="days">
     <% items.forEach(day => { %>
-      <div class="<%= day.classes %>"><%= day.day %></div>
+      <div class="<%= day.classes %>"><%= day.date.getDate() %></div>
     <% }) %>
     </div>
   </div>

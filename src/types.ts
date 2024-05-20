@@ -463,10 +463,6 @@ export type ClndrItem = {
 	 */
 	date?: Date
 	/**
-	 * The day of the month, only available on the month view.
-	 */
-	day?: number
-	/**
 	 * The calendar events assigned to this item.
 	 */
 	events?: ClndrEvent[]

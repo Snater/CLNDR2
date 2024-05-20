@@ -17,7 +17,7 @@ globalThis.defaultTemplate = `
 	</div>
 	<div>
 		<% items.forEach(day => { %>
-			<div class="<%= day.classes %>"><%= day.day %></div>
+			<div class="<%= day.classes %>"><%= day.date?.getDate() %></div>
 		<% }) %>
 	</div>
 	<div class="clndr-today-button">Today</div>`;

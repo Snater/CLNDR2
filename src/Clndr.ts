@@ -6,7 +6,6 @@ import {
 	areIntervalsOverlapping,
 	endOfDay,
 	format,
-	getDate,
 	isAfter,
 	isBefore,
 	isSameDay,
@@ -421,7 +420,6 @@ class Clndr {
 		return this.compileClndrItem({
 			interval: itemInterval,
 			date,
-			day: getDate(date),
 			events: eventsOfCurrentItem.map(event => event.originalEvent),
 			properties: properties,
 			classes: [...classes, this.adapter.getIdForItem(itemInterval.start)].join(' '),

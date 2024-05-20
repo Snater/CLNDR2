@@ -11,7 +11,7 @@ describe('MONTH view', () => {
 		<div class="clndr-next-button">next</div>
 		<div class="clndr-today-button">Current month</div>
 		<% items.forEach(day => { %>
-			<div class="<%= day.classes %>"><%= format(day.date, 'd') %></div>
+			<div class="<%= day.classes %>"><%= day.date.getDate() %></div>
 		<% }) %>
 	`;
 
@@ -20,7 +20,7 @@ describe('MONTH view', () => {
 			<% pages.forEach((month, pageIndex) => { %>
 				<div><%= format(month, 'MMMM yyyy') %></div>
 				<% items[pageIndex].forEach(day => { %>
-					<div class="<%= day.classes %>"><%= format(day.date, 'd') %></div>
+					<div class="<%= day.classes %>"><%= day.date.getDate() %></div>
 				<% }) %>
 			<% }) %>
 		</div>
