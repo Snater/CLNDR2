@@ -5,6 +5,7 @@ import {de, enUS, es, fr} from 'date-fns/locale';
 import Clndr from './Clndr';
 import {action} from '@storybook/addon-actions';
 import ejs from 'ejs';
+import {fn} from '@storybook/test';
 
 import type {ClndrEvent, ClndrOptions, Interval, View} from './types';
 
@@ -334,24 +335,17 @@ const meta: Meta<ClndrOptions> = {
 		forceSixRows: false,
 		ignoreInactiveDaysInSelection: false,
 		on: {
-			afterRender: async (...args) => {
-				action('afterRender')(...args);
-			},
-			beforeRender: async (...args) => {
-				action('beforeRender')(...args);
-			},
-			click: action('click'),
-			navigate: action('navigate'),
-			ready: action('ready'),
-			switchView: async (...args) => {
-				action('switchView')(...args);
-			},
+			afterRender: fn(),
+			beforeRender: fn(),
+			click: fn(),
+			navigate: fn(),
+			ready: fn(),
+			switchView: fn(),
 		},
 		trackSelectedDate: false,
 		useTouchEvents: false,
 		weekStartsOn: 0,
 	},
-	tags: ['autodocs'],
 };
 
 export default meta;
@@ -514,9 +508,7 @@ export const MiniCalendarWithClickEvent: Story = {
 		],
 		on: {
 			...meta.args?.on,
-			click: target => {
-				action('click')(target);
-
+			click: fn(target => {
 				if (!target.date) {
 					return;
 				}
@@ -550,7 +542,7 @@ export const MiniCalendarWithClickEvent: Story = {
 				eventList.innerHTML = html;
 
 				eventsContainer.classList.remove('hidden');
-			},
+			}),
 		},
 		trackSelectedDate: true,
 	},
@@ -870,7 +862,7 @@ export const AsyncBeforeRenderCalendar: Story = {
 			this: Clndr,
 			{element, interval, view}: {element: HTMLElement, interval: Interval, view: View}
 		) {
-			action('beforeRender')({element, interval, view});
+			action('beforeRender')([{element, interval, view}]);
 
 			if (cache.includes(format(interval.start, 'yyyy-MM'))) {
 				return;
@@ -925,7 +917,7 @@ export const AsyncAfterRenderCalendar: Story = {
 			this: Clndr,
 			{element, interval, view}: {element: HTMLElement, interval: Interval, view: View}
 		) {
-			action('afterRender')({element, interval, view});
+			action('afterRender')([{element, interval, view}]);
 
 			if (cache.includes(format(interval.start, 'yyyy-MM'))) {
 				return;
@@ -1006,7 +998,7 @@ export const AsyncSwitchBetweenViews: Story = {
 			this: Clndr,
 			{element, interval, view}: {element: HTMLElement, interval: Interval, view: View}
 		) {
-			action('afterRender')({element, interval, view});
+			action('afterRender')([{element, interval, view}]);
 
 			if (view !== 'month' && view !== 'year') {
 				return;
@@ -1036,6 +1028,8 @@ export const AsyncSwitchBetweenViews: Story = {
 		}
 
 		async function switchView(this: Clndr, {view} : {view: View}) {
+			action('switchView')([{view}]);
+
 			if (view !== 'month' && view !== 'year') {
 				return;
 			}
