@@ -26,6 +26,7 @@ It is inspired by awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you in
   - [Caching Strategies](#caching-strategies)
 - [Constraints & Date Pickers](#constraints--date-pickers)
 - [Internationalization](#internationalization)
+- [Using with React](#using-with-react)
 - [Key Differences to CLNDR](#key-differences-to-clndr)
   - [Migrate from CLNDR to CLNDR2](#migrate-from-clndr-to-clndr2)
   - [Considerations when Migrating](#considerations-when-migrating)
@@ -397,6 +398,58 @@ CLNDR2 has support for internationalization insofar as date-fns supports it. A d
 - The `format` function passed to the template is a proxy for the date-fns `format` function, injected with the `locale ` by default.
 
 For applying additional internationalization, the `extras` option can be used to pass in required functionality. 
+
+## Using with React
+
+For using the calendar with [React](https://react.dev/), an adapter component can be created like in the following example.
+
+```tsx
+import {Component, createRef} from 'react';
+import {default as ClndrClass} from 'clndr2';
+import type {ClndrOptions} from 'clndr2';
+
+export default class Clndr extends Component<ClndrOptions, object> {
+  private elementRef = createRef<HTMLDivElement>();
+  public clndr?: ClndrClass;
+
+  render() {
+    return (
+      <div ref={this.elementRef}/>
+    );
+  }
+
+  componentDidMount() {
+    if (this.elementRef.current) {
+      this.clndr = new ClndrClass(this.elementRef.current, this.props);
+    }
+  }
+
+  componentDidUpdate() {
+    if (this.elementRef.current) {
+      this.clndr = new ClndrClass(this.elementRef.current, this.props);
+    }
+  }
+}
+```
+
+Using the adapter, the calendar options can be passed as props to the `Clndr` component. The native `Clndr` object may be accessed by passing a `Ref` instance for using the public API functions.
+
+```tsx
+function MyComponent() {
+  const clndrRef = React.createRef<Clndr>();
+
+  const forward = useCallback(() => {
+    clndrRef.current?.clndr?.next();
+  }, [clndrRef]);
+
+  return (
+    <>
+      <button onClick={forward}>Forward</button>
+      <Clndr ref={clndrRef} render={data => {/*...*/}}/>
+    </>
+  );
+}
+```
 
 ## Key Differences to CLNDR
 
