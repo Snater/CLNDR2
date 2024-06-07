@@ -1,9 +1,9 @@
-# CLNDR2
+M# CLNDR2
 
 [![NPM version][npm-version-image]][npm-url] [![Test status][github-action-image]][github-action-url] [![Coverage Status][test-coverage-image]][test-coverage-url]
 
 CLNDR2 is a straightforward framework-agnostic front-end calendar widget operating on HTML templates powered by the template rendering engine of your choice.<br />
-It is inspired by awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you intend to migrate from CLNDR to CLNDR2, check out the [migration notes](#key-differences-to-clndr).
+It was inspired by awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you intend to migrate from CLNDR to CLNDR2, check out the [migration notes](#key-differences-to-clndr).
 
 > 📄 **Documentation: https://clndr2.snater.com/docs**
 >
@@ -75,12 +75,12 @@ npm i clndr2
 
 ## Templating
 
-Here's a simple CLNDR2 month template for EJS, Underscore and lodash. It's got a controls section for navigating, and a grid section rendering the days of the month.
+Here is a simple CLNDR2 month template for EJS, Underscore and lodash. It has got a controls section for navigating, and a grid section rendering the days of the month.
 
 ```html
 <div class="clndr-controls">
   <div class="clndr-previous-button" role="button">&lsaquo;</div>
-  <div class="month"><%= format(interval.start, 'MMMM') %></div>
+  <div class="month"><%= format(date, 'MMMM') %></div>
   <div class="clndr-next-button" role="button">&rsaquo;</div>
 </div>
 <div class="clndr-grid">
@@ -227,7 +227,7 @@ new Clndr(container.querySelector('.clndr') as HTMLElement, {
 
 ## Switching the View
 
-CLNDR2 is capable of switching between different views for a better navigation experience. The currently available views are `day`, `week`, `month`, `year` and `decade`. (Additional views will be added in the future.) In order to activate the capability to switch between views, instead of a single `render` function, a `render` function needs to be provided for each view that should be possible to be switched to:
+CLNDR2 is capable of switching between different views for a better navigation experience. The available views are `day`, `week`, `month`, `year` and `decade`. In order to activate the capability to switch between views, instead of a single `render` function, a `render` function needs to be provided for each view that should be possible to be switched to:
 
 ```typescript
 const clndr = new Clndr(container, {render: {
@@ -354,7 +354,7 @@ An improvement would be to cache the events on "view" level, i.e. per `month`, `
 
 ## Constraints & Date Pickers
 
-For creating a datepicker or to prevent users from *nexting* all the way to 2034 in the calendar, the `constraints` options can be set with `start`, `end`, or both specified:
+For creating a datepicker, or specifically to prevent users from navigating out of a specific interval, the `constraints` options can be set with `start`, `end`, or both specified:
 
 ```typescript
 new Clndr(container, {
@@ -366,7 +366,7 @@ new Clndr(container, {
 });
 ```
 
-This causes the calendar's next and previous buttons to only work within this date range. When they become disabled they will have the class `inactive` applied to them, which can be used to make them appear disabled.
+This causes the calendar's next and previous buttons to work only within this date range. When they become disabled they will have the class `inactive` applied to them, which can be used to make them visually appear disabled.
 
 The items in the grid that are outside the current page's range, e.g. days of an adjacent month, will also have the `inactive` class applied to them. Therefore, the click callbacks provided to relevant `on` callbacks should check whether an item has the class `inactive` applied:
 
