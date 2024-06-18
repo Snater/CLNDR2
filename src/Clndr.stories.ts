@@ -613,7 +613,7 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 						</div>
 						<div class="days">
 							<% items[pageIndex].forEach(day => { %>
-									<div class="<%= day.classes %>"><%= day.date.getDate() %></div>
+								<div class="<%= day.classes %>"><%= day.date.getDate() %></div>
 							<% }) %>
 						</div>
 					</div>
