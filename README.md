@@ -19,6 +19,7 @@ It was inspired by awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you i
   - [Template Rendering Engine](#template-rendering-engine)
 - [Calendar Events](#calendar-events)
 - [Interaction Events](#interaction-events)
+- [Configuring Pagination](#configuring-pagination)
 - [Switching the View](#switching-the-view)
 - [Asynchronously loading Calendar Events](#asynchronously-loading-calendar-events)
   - [Load new Events before Rendering](#load-new-events-before-rendering)
@@ -222,6 +223,58 @@ new Clndr(container.querySelector('.clndr') as HTMLElement, {
     },
   },
   /*...*/
+});
+```
+
+## Configuring Pagination
+
+CLNDR2 can be configured to render multiple pages at once. Even more, it may be configured how many steps the calendar should navigate when navigating backward or forward.
+
+```typescript
+const clndr = new Clndr(container, {
+  render: {/*...*/},
+  pagination: {
+    month: {
+      // Render two months at the same time.
+      size: 2,
+      // Configure navigation to navigate by two months.
+      step: 2,
+    },
+  },
+});
+```
+
+When rendering multiple pages simultaneously, the `render` functions `pages` parameter contains a `Date` object per page to be rendered. Also, the `items` parameter will be a two-dimensional array mapping to the index of the dates in the `pages` array. Therefore, the `render` function will need to consider this, for example:
+
+```typescript
+const clndr = new Clndr(container, {
+  render: data => ejs.render(`
+    <div class="clndr-controls top">
+      <div class="clndr-previous-button" role="button">&lsaquo;</div>
+      <div class="clndr-next-button" role="button">&rsaquo;</div>
+    </div>
+    <% pages.forEach((month, pageIndex) => { %>
+      <div class="cal">
+        <div class="month"><%= format(month, 'MMMM') %></div>
+        <div class="clndr-grid">
+          <div class="days-of-the-week">
+            <% daysOfTheWeek.forEach(day => { %>
+              <div class="header-day"><%= day %></div>
+            <% }) %>
+          </div>
+          <div class="days">
+            <% items[pageIndex].forEach(day => { %>
+              <div class="<%= day.classes %>"><%= day.date.getDate() %></div>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+    <div class="clndr-today-button" role="button">Today</div>
+  `, data),
+  pagination: {
+    month: {size: 2, step: 2},
+  },
 });
 ```
 
