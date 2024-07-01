@@ -1,12 +1,18 @@
-import './clndr.stories.less';
+import './Clndr.stories.less';
 import {Meta, StoryObj} from '@storybook/html';
+import {addDays, addMonths, format} from 'date-fns';
 import {de, enUS, es, fr} from 'date-fns/locale';
-import Clndr from './Clndr.js';
+import Clndr from './Clndr';
 import {action} from '@storybook/addon-actions';
 import ejs from 'ejs';
+import {fn} from '@storybook/test';
 
-import type {ClndrOptions} from './types';
+import type {ClndrEvent, ClndrOptions, Interval, View} from './types';
 
+/**
+ * Documentation: https://clndr2.snater.com/docs<br/>
+ * Source code: https://github.com/Snater/CLNDR2/
+ */
 const meta: Meta<ClndrOptions> = {
 	title: 'CLNDR2',
 	argTypes: {
@@ -17,11 +23,13 @@ const meta: Meta<ClndrOptions> = {
 				defaultValue: {
 					summary: 'undefined',
 				},
-				type: '(data: ClndrTemplateData) => string',
+				type: {
+					summary: 'RenderFn | {[key in View]?: RenderFn}',
+				},
 			},
 		},
-		adjacentDaysChangeMonth: {
-			description: 'Whether clicking the day of the preceding or following month navigates to that month.',
+		adjacentItemsChangePage: {
+			description: 'Whether clicking the item of the preceding or following page navigates to that page. Currently, this option is only relevant for the `month` view where days of the previous and following month may be rendered on the same page of the current month according to the `showAdjacent` option.',
 			table: {
 				defaultValue: {
 					summary: 'false',
@@ -36,21 +44,10 @@ const meta: Meta<ClndrOptions> = {
 			description: 'Custom CSS class names to apply to the calendar elements to be used for styling.',
 			table: {
 				defaultValue: {
-					summary: '{past: \'past\', today: \'today\', event: \'event\', inactive: \'inactive\', selected: \'selected\', lastMonth: \'last-month\', nextMonth: \'next-month\', adjacentMonth: \'adjacent-month\'}',
+					summary: '{past: \'past\', now: \'now\', event: \'event\', inactive: \'inactive\', selected: \'selected\', previous: \'previous\', next: \'next\', adjacent: \'adjacent\', switch: \'switch\'}',
 				},
 				type: {
-					summary: '{past?: string, today?: string, event?: string, inactive?: string, selected?: string, lastMonth?: string, nextMonth?: string, adjacentMonth?: string}',
-				},
-			},
-		},
-		clickEvents: {
-			description: 'Callbacks to be triggered when clicking particular elements.',
-			table: {
-				defaultValue: {
-					summary: 'undefined',
-				},
-				type: {
-					summary: '{click?: (target: ClndrTarget) => void, today?: (month: Date) => void, nextYear?: (month: Date) => void, nextMonth?: (month: Date) => void, nextInterval?: (intervalStart: Date, intervalEnd: Date) => void, previousYear?: (month: Date) => void, onYearChange?: (month: Date) => void, previousMonth?: (month: Date) => void, onMonthChange?: (month: Date) => void, previousInterval?: (intervalStart: Date, intervalEnd: Date) => void, onIntervalChange?: (intervalStart: Date, intervalEnd: Date) => void}',
+					summary: '{[key in ItemStatus]: string}',
 				},
 			},
 		},
@@ -62,19 +59,18 @@ const meta: Meta<ClndrOptions> = {
 					summary: 'undefined',
 				},
 				type: {
-					summary: '{startDate: Date | string, endDate: Date | string}',
+					summary: 'Interval',
 				},
 			},
 		},
 		dateParameter: {
-			description: 'The key of the date in an event object when setting up the calendar for *single-day* events, i.e. setting this option to `\'dateParam\'`, the events array should be `{dateParam: Date | string, ...}[]`.',
-			control: 'text',
+			description: 'The key(s) used to extract dates from the `events` array. `date` is used to extract dates of single-day events, while `start` and `end` are used to extract the dates for multi-day events.',
 			table: {
 				defaultValue: {
-					summary: '\'date\'',
+					summary: '{date: \'date\', start: \'start\', end: \'end\'},',
 				},
 				type: {
-					summary: 'string',
+					summary: 'DateParameterDefinition',
 				},
 			},
 		},
@@ -87,25 +83,25 @@ const meta: Meta<ClndrOptions> = {
 					detail: 'By default, the labels are acquired from date-fns using the `locale`, if provided.',
 				},
 				type: {
-					summary: '[string, string, string, string, string, string, string]',
-					detail: 'An array of seven strings, one per day of the week.',
+					summary: 'DaysOfTheWeek',
 				},
 			},
 		},
-		doneRendering: {
-			description: 'A callback triggered each time the calendar is (re-)rendered.',
-			control: false,
+		defaultView: {
+			description: 'The view the calendar should render initially. Particularly relevant when configuring multiple views for allowing to switch between views. When just configuring one view per `pagination` option, this will automatically point to that view.',
+			control: 'select',
+			options: ['day', 'week', 'month', 'year', 'decade'],
 			table: {
 				defaultValue: {
-					summary: 'undefined',
+					summary: 'month',
 				},
 				type: {
-					summary: '() => void',
+					summary: 'View',
 				},
 			},
 		},
 		events: {
-			description: 'Array of event objects. When setting up the calendar for using single-day events, each event object should contain a "date" field (the name can be customized per `dateParameter`). When setting up the calendar for multi-day events, start and end date have to be provided per keys set per multiDayEvents option.',
+			description: 'Array of event objects. When setting up the calendar for using single-day events, each event object should contain a "date" field (the name can be customized per `dateParameter`). When setting up the calendar for multi-day events, start and end date have to be provided per keys set per `dateParameter` option.',
 			table: {
 				defaultValue: {
 					summary: '[]',
@@ -161,17 +157,6 @@ const meta: Meta<ClndrOptions> = {
 				},
 			},
 		},
-		lengthOfTime: {
-			description: 'Specify a custom interval the calendar should display, i.e. more than one month or two weeks. You can also define the pagination step.',
-			table: {
-				defaultValue: {
-					summary: '{interval: 1}',
-				},
-				type: {
-					summary: '{days?: number, interval: number, months?: number, startDate?: Date | string}',
-				},
-			},
-		},
 		locale: {
 			control: 'select',
 			options: ['enUS', 'de', 'es', 'fr'],
@@ -187,27 +172,27 @@ const meta: Meta<ClndrOptions> = {
 				},
 			},
 		},
-		multiDayEvents: {
-			description: 'Set up the calender for *multi-day* events. The values specify the keys used in the `events` array, i.e. setting `{startDate: \'start\', endDate: \'end\'}`, the events array should be `{start: Date | string, end: Date | string, ...}[]`. Use the `singleDay` field to also enable single-day events in a multi-day calendar.',
-			control: 'object',
+		on: {
+			description: 'Callbacks to be triggered on particular event, e.g. when clicking calendar elements.',
 			table: {
 				defaultValue: {
-					summary: 'undefined',
+					summary: '{}',
 				},
 				type: {
-					summary: 'Partial<{startDate: string, endDate: string} & {singleDay: string}',
+					summary: 'InteractionEvents',
 				},
 			},
-		},
-		ready: {
 			control: false,
-			description: 'Callback triggered after the calendar has finished initialization and rendered for the first time.',
+		},
+		pagination: {
+			description: 'Specify custom pagination, i.e. display more than one month or a custom amount of days, like two weeks. You can also define the pagination step.',
 			table: {
 				defaultValue: {
-					summary: 'undefined',
+					summary: '{month:, {size: 1}',
 				},
 				type: {
-					summary: '() => void',
+					summary: '{[key in View]?: Pagination}',
+					detail: 'If `step` is not defined, `size` is used as the step size when navigating.',
 				},
 			},
 		},
@@ -219,11 +204,11 @@ const meta: Meta<ClndrOptions> = {
 					summary: 'undefined',
 				},
 				type: {
-					summary: 'Date | string',
+					summary: 'Date',
 				},
 			},
 		},
-		showAdjacentMonths: {
+		showAdjacent: {
 			description: 'Whether days of the preceding and following month should be displayed.',
 			table: {
 				defaultValue: {
@@ -234,31 +219,32 @@ const meta: Meta<ClndrOptions> = {
 				},
 			},
 		},
-		startWithMonth: {
-			description: 'Set up the calendar to initially display a particular month.',
+		startOn: {
+			description: 'Set up the start point which the calendar should initially be rendered from. The value provided will be mapped to the setup of the calendar, i.e. if setting up the calendar using `month` pagination (which is also set by default), the calendar will start on, for example, October 1992 no matter if `startOn` is `new Date(\'1992-10\')` or `new Date(\'1992-10-15\')`. `undefined` will use today\'s date.',
 			control: 'date',
 			table: {
 				defaultValue: {
 					summary: 'undefined',
 				},
 				type: {
-					summary: 'Date | string',
+					summary: 'Date | string | number | undefined',
 				},
 			},
 		},
 		targets: {
-			description: 'Override the CSS class names applied to the calendar elements for binding the `clickEvents` to.',
+			description: 'Override the CSS class names applied to the calendar elements for binding the `on` event handlers to.',
 			table: {
 				defaultValue: {
-					summary: '{day: \'day\', empty: \'empty\', nextButton: \'clndr-next-button\', todayButton: \'clndr-today-button\', previousButton: \'clndr-previous-button\', nextYearButton: \'clndr-next-year-button\', previousYearButton: \'clndr-previous-year-button\'}',
+					summary: '{item: \'item\', empty: \'empty\', nextButton: \'clndr-next-button\', todayButton: \'clndr-today-button\', previousButton: \'clndr-previous-button\', nextYearButton: \'clndr-next-year-button\', previousYearButton: \'clndr-previous-year-button\', switchWeekButton: \'clndr-switch-week-button\', switchMonthButton: \'clndr-switch-month-button\', switchYearButton: \'clndr-switch-year-button\', switchDecadeButton: \'clndr-switch-decade-button\'}',
 				},
 				type: {
-					summary: '{day?: string, empty?: string, nextButton?: string, todayButton?: string, previousButton?: string, nextYearButton?: string, previousYearButton?: string}',
+					summary: '{[key in TargetOption]: string}',
 				},
 			},
 		},
 		trackSelectedDate: {
 			description: 'Whether the last clicked day should be tracked, that is applying the `classes.selected` CSS class to the day that was clicked last. Otherwise, `classes.selected` will remain on what is set per `selectedDate` option.',
+			control: 'boolean',
 			table: {
 				defaultValue: {
 					summary: 'false',
@@ -269,7 +255,7 @@ const meta: Meta<ClndrOptions> = {
 			},
 		},
 		useTouchEvents: {
-			description: 'Whether to use `touchstart` instead of `click` for triggering the `clickEvents` handlers.',
+			description: 'Whether to use `touchstart` instead of `click` for triggering relevant `on` handlers.',
 			table: {
 				defaultValue: {
 					summary: 'false',
@@ -279,7 +265,7 @@ const meta: Meta<ClndrOptions> = {
 				},
 			},
 		},
-		weekOffset: {
+		weekStartsOn: {
 			control: {
 				type: 'range',
 				min: 0,
@@ -287,8 +273,12 @@ const meta: Meta<ClndrOptions> = {
 			},
 			description: 'Adjust the weekday that a week starts with, i.e. set to 1 to start a week with Monday.',
 			table: {
-				defaultValue: 0,
-				type: 'number',
+				defaultValue: {
+					summary: '0',
+				},
+				type: {
+					summary: 'number',
+				},
 			},
 		},
 	},
@@ -298,7 +288,7 @@ const meta: Meta<ClndrOptions> = {
 				<div class="clndr-control-button">
 					<span class="clndr-previous-button" role="button">previous</span>
 				</div>
-				<div class="month"><%= month %> <%= year %></div>
+				<div class="month"><%= format(date, 'MMMM') %> <%= date.getFullYear() %></div>
 				<div class="clndr-control-button">
 					<span class="clndr-next-button" role="button">next</span>
 				</div>
@@ -306,65 +296,56 @@ const meta: Meta<ClndrOptions> = {
 			<table class="clndr-table">
 				<thead>
 					<tr class="header-days">
-						<% for(var i = 0; i < daysOfTheWeek.length; i++) { %>
-							<td class="header-day"><%= daysOfTheWeek[i] %></td>
-						<% } %>
+						<% daysOfTheWeek.forEach(dayOfTheWeek => { %>
+							<td class="header-day"><%= dayOfTheWeek %></td>
+						<% }) %>
 					</tr>
 				</thead>
 				<tbody>
-					<% for(var i = 0; i < numberOfRows; i++){ %>
+					<% for (let row = 0; row < Math.ceil(items.length / 7); row++) { %>
 						<tr>
-							<% for(var j = 0; j < 7; j++){ %>
-								<% var d = j + i * 7; %>
-								<td class="<%= days[d].classes %>">
-									<div class="day-contents"><%= days[d].day %></div>
+							<% for (let col = 0; col < 7; col++) { %>
+								<% const index = col + row * 7; %>
+								<td class="<%= items[index].classes %>">
+									<div class="day-contents"><%= items[index].date.getDate() %></div>
 								</td>
 							<% } %>
 						</tr>
 					<% } %>
 				</tbody>
 			</table>`, data),
-		adjacentDaysChangeMonth: false,
-		clickEvents: {
-			click: action('click'),
-			today: action('today'),
-			nextMonth: action('nextMonth'),
-			previousMonth: action('previousMonth'),
-			onMonthChange: action('onMonthChange'),
-			nextYear: action('nextYear'),
-			previousYear: action('previousYear'),
-			onYearChange: action('onYearChange'),
-			nextInterval: action('nextInterval'),
-			previousInterval: action('previousInterval'),
-			onIntervalChange: action('onIntervalChange'),
+		adjacentItemsChangePage: false,
+		dateParameter: {
+			date: 'date',
+			start: 'start',
+			end: 'end',
 		},
-		dateParameter: 'date',
-		doneRendering: action('doneRendering'),
+		defaultView: 'month',
 		events: [
 			{
 				title: 'Multi-Day Event',
-				endDate: new Date().toISOString().slice(0, 8) + '14',
-				startDate: new Date().toISOString().slice(0, 8) + '10',
+				start: new Date().toISOString().slice(0, 8) + '10',
+				end: new Date().toISOString().slice(0, 8) + '14',
 			}, {
-				endDate: new Date().toISOString().slice(0, 8) + '23',
-				startDate: new Date().toISOString().slice(0, 8) + '21',
 				title: 'Another Multi-Day Event',
+				start: new Date().toISOString().slice(0, 8) + '21',
+				end: new Date().toISOString().slice(0, 8) + '23',
 			},
 		],
 		forceSixRows: false,
 		ignoreInactiveDaysInSelection: false,
-		ready: action('ready'),
-		useTouchEvents: false,
-		weekOffset: 0,
-	},
-	parameters: {
-		docs: {
-			description: {
-				component: 'Source code and usage instructions: https://github.com/Snater/CLNDR2/',
-			},
+		on: {
+			afterRender: fn(),
+			beforeRender: fn(),
+			click: fn(),
+			navigate: fn(),
+			ready: fn(),
+			switchView: fn(),
 		},
+		trackSelectedDate: false,
+		useTouchEvents: false,
+		weekStartsOn: 0,
 	},
-	tags: ['autodocs'],
 };
 
 export default meta;
@@ -376,15 +357,34 @@ function getDateOfCurrentMonth(day: number) {
 		.slice(0, 10);
 }
 
+function simulateFetchingEvents(interval: Interval, view: View = 'month'): Promise<ClndrEvent[]> {
+	return new Promise(resolve => {
+		const add = view === 'month' ? addDays : addMonths;
+
+		// Use some random time to provoke race conditions.
+		setTimeout(() => {
+			resolve([
+				{
+					title: 'Event 1',
+					date: view === 'month'
+						? new Date(interval.start)
+						: new Date(interval.start).setMonth(Math.floor(Math.random() * 11 + 1)),
+				}, {
+					title: 'Event 2',
+					date: add(interval.start, interval.start.getMonth() + 4),
+				}, {
+					title: 'Event 3',
+					date: add(interval.start, view === 'month' ? 25 : 9),
+				},
+			]);
+		}, Math.floor(Math.random() * 3 + 1) * 500);
+	});
+}
+
 export const Default: Story = {
 	args: {
-		adjacentDaysChangeMonth: false,
-		multiDayEvents: {
-			singleDay: 'date',
-			endDate: 'endDate',
-			startDate: 'startDate',
-		},
-		showAdjacentMonths: true,
+		adjacentItemsChangePage: false,
+		showAdjacent: true,
 	},
 	render: args => {
 		const container = document.createElement('div');
@@ -394,10 +394,10 @@ export const Default: Story = {
 
 		document.addEventListener('keydown', event => {
 			if (event.key === 'ArrowLeft') {
-				clndr.back();
+				clndr.previous();
 			}
 			if (event.key === 'ArrowRight') {
-				clndr.forward();
+				clndr.next();
 			}
 		});
 
@@ -410,7 +410,7 @@ export const FullCalendar: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lt;</div>
-				<div class="current-month"><%= month %> <%= year %></div>
+				<div class="current-month"><%= format(date, 'MMMM') %> <%= date.getFullYear() %></div>
 				<div class="clndr-next-button" role="button">&gt;</div>
 			</div>
 			<div class="clndr-content">
@@ -418,42 +418,44 @@ export const FullCalendar: Story = {
 					<div class="days-of-the-week">
 						<% daysOfTheWeek.forEach(day => { %>
 							<div class="header-day"><%= day %></div>
-						<% }); %>
+						<% }) %>
 					</div>
 					<div class="days">
-						<% days.forEach(day => { %>
-							<div class="<%= day.classes %>" id="<%= day.id %>"><span class="day-number"><%= day.day %></span></div>
-						<% }); %>
+						<% items.forEach(day => { %>
+							<div class="<%= day.classes %>" id="<%= day.id %>"><span class="day-number"><%= day.date.getDate() %></span></div>
+						<% }) %>
 					</div>
 				</div>
 				<div class="event-listing">
 					<div class="event-listing-title">EVENTS THIS MONTH</div>
-					<% eventsThisMonth.forEach(event => { %>
+					<% events.currentPage.forEach(event => { %>
 						<div class="event-item">
 							<div class="event-item-name"><%= event.title %></div>
 							<div class="event-item-location"><%= event.location %></div>
 						</div>
-					<% }); %>
+					<% }) %>
 				</div>
 			</div>
 		`, data),
-		events: [{
-			date: getDateOfCurrentMonth(12),
-			title: 'Football Match',
-			location: 'Stadium',
-		}, {
-			date: getDateOfCurrentMonth(16),
-			title: 'Walk In The Park',
-			location: 'Nick Straker Park',
-		}, {
-			date: getDateOfCurrentMonth(22),
-			title: 'Trip To A Remote Island',
-			location: 'In The Middle Of Nowhere',
-		}, {
-			date: getDateOfCurrentMonth(7),
-			title: 'Boogie Night',
-			location: 'Seahorse Club',
-		}],
+		events: [
+			{
+				date: getDateOfCurrentMonth(12),
+				title: 'Football Match',
+				location: 'Stadium',
+			}, {
+				date: getDateOfCurrentMonth(16),
+				title: 'Walk In The Park',
+				location: 'Nick Straker Park',
+			}, {
+				date: getDateOfCurrentMonth(22),
+				title: 'Trip To A Remote Island',
+				location: 'In The Middle Of Nowhere',
+			}, {
+				date: getDateOfCurrentMonth(7),
+				title: 'Boogie Night',
+				location: 'Seahorse Club',
+			},
+		],
 		forceSixRows: true,
 	},
 	render: args => {
@@ -469,24 +471,44 @@ export const MiniCalendarWithClickEvent: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lsaquo;</div>
-				<div class="month"><%= month %></div>
+				<div class="month"><%= format(date, 'MMMM') %></div>
 				<div class="clndr-next-button" role="button">&rsaquo;</div>
 			</div>
 			<div class="clndr-grid">
 				<div class="days-of-the-week">
-					<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }); %>
+					<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }) %>
 				</div>
 				<div class="days">
-					<% days.forEach(day => { %>
-						<div class="<%= day.classes %>" role="button"><%= day.day %></div>
-					<% }); %>
+					<% items.forEach(day => { %>
+						<div class="<%= day.classes %>" role="button"><%= day.date.getDate() %></div>
+					<% }) %>
 				</div>
 			</div>
 		`, data),
-		clickEvents: {
-			click: target => {
-				action('click')(target);
-
+		events: [
+			{
+				title: 'Boogie Night',
+				description: 'Bring your vinyls.',
+				date: getDateOfCurrentMonth(12),
+			}, {
+				title: 'Walk In The Park',
+				description: 'A step in the dark!',
+				date: getDateOfCurrentMonth(16),
+			}, {
+				title: 'Trip To A Remote Island',
+				description: 'Don\'t forget to take three things.',
+				start: getDateOfCurrentMonth(22),
+				end: getDateOfCurrentMonth(28),
+			}, {
+				title: 'Prepare for exam',
+				description: 'Make sure to buy enough food.',
+				start: getDateOfCurrentMonth(11),
+				end: getDateOfCurrentMonth(13),
+			},
+		],
+		on: {
+			...meta.args?.on,
+			click: fn(target => {
 				if (!target.date) {
 					return;
 				}
@@ -506,8 +528,6 @@ export const MiniCalendarWithClickEvent: Story = {
 					return;
 				}
 
-				eventsContainer.classList.remove('hidden');
-
 				let html = '';
 
 				events.forEach(event => {
@@ -517,44 +537,12 @@ export const MiniCalendarWithClickEvent: Story = {
 							<div class="event-body">${event.description}</div>
 						</div>
 					`;
-				})
+				});
 
 				eventList.innerHTML = html;
-			},
-			today: action('today'),
-			nextMonth: action('nextMonth'),
-			previousMonth: action('previousMonth'),
-			onMonthChange: action('onMonthChange'),
-			nextYear: action('nextYear'),
-			previousYear: action('previousYear'),
-			onYearChange: action('onYearChange'),
-			nextInterval: action('nextInterval'),
-			previousInterval: action('previousInterval'),
-			onIntervalChange: action('onIntervalChange'),
-		},
-		events: [{
-			date: getDateOfCurrentMonth(12),
-			title: 'Boogie Night',
-			description: 'Bring your vinyls.',
-		}, {
-			date: getDateOfCurrentMonth(16),
-			title: 'Walk In The Park',
-			description: 'A step in the dark!',
-		}, {
-			start: getDateOfCurrentMonth(22),
-			end: getDateOfCurrentMonth(28),
-			title: 'Trip To A Remote Island',
-			description: 'Don\'t forget to take three things.',
-		}, {
-			start: getDateOfCurrentMonth(11),
-			end: getDateOfCurrentMonth(13),
-			title: 'Prepare for exam',
-			description: 'Make sure to buy enough food.',
-		}],
-		multiDayEvents: {
-			startDate: 'start',
-			endDate: 'end',
-			singleDay: 'date',
+
+				eventsContainer.classList.remove('hidden');
+			}),
 		},
 		trackSelectedDate: true,
 	},
@@ -580,32 +568,24 @@ export const TwoWeeksIntervalWithOneWeekPagination: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lsaquo;</div>
-				<div class="month"><%= days[0].day %>/<%= days[0].date.getMonth() + 1 %> - <%= days[days.length - 1].day %>/<%= days[days.length - 1].date.getMonth() + 1 %></div>
+				<div class="month"><%= format(pages[0], 'd/L') %> - <%= format(pages[pages.length - 1], 'd/L') %></div>
 				<div class="clndr-next-button" role="button">&rsaquo;</div>
 			</div>
 			<div class="clndr-grid">
 				<div class="days-of-the-week">
 					<% daysOfTheWeek.forEach(day => { %>
 						<div class="header-day"><%= day %></div>
-					<% }); %>
+					<% }) %>
 				</div>
 				<div class="days">
-					<% days.forEach(day => { %>
-						<div class="<%= day.classes %>"><%= day.day %></div>
-					<% }); %>
+					<% items.flat().forEach(day => { %>
+						<div class="<%= day.classes %>"><%= day.date.getDate() %></div>
+					<% }) %>
 				</div>
 			</div>
 			<div class="clndr-today-button" role="button">Today</div>
 		`, data),
-		lengthOfTime: {
-			days: 14,
-			interval: 7,
-		},
-		multiDayEvents: {
-			singleDay: 'date',
-			endDate: 'endDate',
-			startDate: 'startDate',
-		},
+		pagination: {week: {size: 2, step: 1}},
 	},
 	render: args => {
 		const container = document.createElement('div');
@@ -622,38 +602,445 @@ export const TwoMonthsWithOneMonthPagination: Story = {
 				<div class="clndr-previous-button" role="button">&lsaquo;</div>
 				<div class="clndr-next-button" role="button">&rsaquo;</div>
 			</div>
-			<% months.forEach(cal => { %>
+			<% pages.forEach((month, pageIndex) => { %>
 				<div class="cal">
-					<div class="month"><%= format(cal.month, 'MMMM') %></div>
+					<div class="month"><%= format(month, 'MMMM') %></div>
 					<div class="clndr-grid">
 						<div class="days-of-the-week">
 							<% daysOfTheWeek.forEach(day => { %>
 								<div class="header-day"><%= day %></div>
-							<% }); %>
+							<% }) %>
 						</div>
 						<div class="days">
-							<% cal.days.forEach(day => { %>
-									<div class="<%= day.classes %>"><%= day.day %></div>
-							<% }); %>
+							<% items[pageIndex].forEach(day => { %>
+								<div class="<%= day.classes %>"><%= day.date.getDate() %></div>
+							<% }) %>
 						</div>
 					</div>
 				</div>
 			<% }); %>
 			<div class="clndr-today-button" role="button">Today</div>
 		`, data),
-		lengthOfTime: {
-			months: 2,
-			interval: 1,
-		},
-		multiDayEvents: {
-			endDate: 'endDate',
-			startDate: 'startDate',
-		},
+		pagination: {month: {size: 2, step: 1}},
 	},
 	render: args => {
 		const container = document.createElement('div');
 		container.classList.add('cal3');
 		new Clndr(container, args);
+		return container;
+	},
+};
+
+export const Year: Story = {
+	args: {
+		render: data => ejs.render(`
+			<div class="clndr-controls">
+				<div class="clndr-previous-button" role="button">&lsaquo;</div>
+				<div class="year"><%= date.getFullYear() %></div>
+				<div class="clndr-next-button" role="button">&rsaquo;</div>
+			</div>
+			<div class="clndr-grid">
+				<% items.forEach(month => { %>
+					<div class="<%= month.classes %>" role="button"><%= format(month.date, 'MMMM') %></div>
+				<% }); %>
+			</div>
+			<div class="clndr-today-button" role="button">Current year</div>
+		`, data),
+		events: [
+			{
+				title: 'Multi-Day Event',
+				start: new Date().getFullYear() + '-01-20',
+				end: new Date().getFullYear() + '-01-21',
+			}, {
+				title: 'Another Multi-Day Event',
+				start: new Date().getFullYear() + '-06-20',
+				end: new Date().getFullYear() + '-07-03',
+			},
+		],
+		defaultView: 'year',
+		pagination: {year: {size: 1, step: 1}},
+	},
+	render: args => {
+		const container = document.createElement('div');
+		container.classList.add('cal-year');
+		new Clndr(container, args);
+		return container;
+	},
+};
+
+export const SwitchBetweenViews: Story = {
+	args: {
+		render: {
+			decade: data => ejs.render(`
+				<div class="decade-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title"><%= items[0].date.getFullYear() %> to <%= items[9].date.getFullYear() %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<% items.forEach(year => { %>
+							<div class="<%= year.classes %>" role="button"><%= format(year.date, 'yyyy') %></div>
+						<% }) %>
+					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to current decade</div>
+				</div>
+			`, data),
+			year: data => ejs.render(`
+				<div class="year-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title"><%= date.getFullYear() %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<% items.forEach(month => { %>
+							<div class="<%= month.classes %>" role="button"><%= format(month.date, 'MMM') %></div>
+						<% }) %>
+					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to current year</div>
+					<div class="clndr-switch-decade-button footer-button" role="button">Switch to decade view</div>
+				</div>
+			`, data),
+			month: data => ejs.render(`
+				<div class="month-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title"><%= format(date, 'MMMM yyyy') %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<div class="days-of-the-week grid-template">
+							<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }) %>
+						</div>
+						<div class="days grid-template">
+							<% items.forEach(day => { %>
+								<div class="<%= day.classes %>" role="button"><%= day.date.getDate() %></div>
+							<% }) %>
+						</div>
+					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to current month</div>
+					<div class="clndr-switch-year-button footer-button" role="button">Switch to year view</div>
+					<div class="clndr-switch-decade-button footer-button" role="button">Switch to decade view</div>
+				</div>
+			`, data),
+			week: data => ejs.render(`
+				<div class="week-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title">Week <%= format(date, 'w') %> in <%= format(date, 'yyyy') %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<div class="week">
+							<div class="days-of-the-week grid-template">
+								<% items.forEach(day => { %><div class="header-day"><%= format(day.date, 'EEEE') %></div><% }) %>
+							</div>
+							<div class="days grid-template">
+								<% items.forEach(day => { %>
+									<div class="<%= day.classes %>" role="button"><%= format(day.date, 'LLLL do') %></div>
+								<% }) %>
+							</div>
+						</div>
+					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to current week</div>
+					<div class="clndr-switch-month-button footer-button" role="button">Switch to month view</div>
+					<div class="clndr-switch-year-button footer-button" role="button">Switch to year view</div>
+					<div class="clndr-switch-decade-button footer-button" role="button">Switch to decade view</div>
+				</div>
+			`, data),
+			day: data => ejs.render(`
+				<div class="day-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title"><%= format(date, 'PPP') %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<div class="header">Events</div>
+						<% if (events.currentPage.length === 0) { %>
+							<div class="empty">No events today.</div>
+						<% } else { %>
+							<% events.currentPage.forEach(event => { %>
+								<div class="event"><%= event.title %></div>
+							<% }) %>
+						<% } %>
+						</div>
+					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to today</div>
+					<div class="clndr-switch-week-button footer-button" role="button">Switch to week view</div>
+					<div class="clndr-switch-month-button footer-button" role="button">Switch to month view</div>
+					<div class="clndr-switch-year-button footer-button" role="button">Switch to year view</div>
+					<div class="clndr-switch-decade-button footer-button" role="button">Switch to decade view</div>
+				</div>
+			`, data),
+		},
+		events: [
+			{
+				title: 'Multi-Day Event',
+				start: new Date().getFullYear() + '-01-20',
+				end: new Date().getFullYear() + '-01-21',
+			}, {
+				title: 'Another Multi-Day Event',
+				start: new Date().getFullYear() + '-02-26',
+				end: new Date().getFullYear() + '-03-05',
+			}, {
+				title: 'And another Multi-Day Event',
+				start: new Date().getFullYear() + '-06-20',
+				end: new Date().getFullYear() + '-07-03',
+			}, {
+				title: 'A looong Multi-Day Event',
+				start: new Date().getFullYear() + '-09-01',
+				end: new Date().getFullYear() + '-10-03',
+			}, {
+				title: 'Event in another year',
+				start: new Date().getFullYear() + 2 + '-06-01',
+				end: new Date().getFullYear() + 3 + '-05-31',
+			},
+		],
+		forceSixRows: true,
+	},
+	render: args => {
+		const container = document.createElement('div');
+		container.classList.add('cal-month-year');
+		new Clndr(container, args);
+		return container;
+	},
+};
+
+export const AsyncBeforeRenderCalendar: Story = {
+	args: {
+		render: data => ejs.render(`
+			<div class="clndr-controls">
+				<div class="clndr-previous-button" role="button">&lsaquo;</div>
+				<div class="month"><%= format(date, 'MMMM') %></div>
+				<div class="clndr-next-button" role="button">&rsaquo;</div>
+			</div>
+			<div class="clndr-grid">
+				<div class="loading">loading</div>
+				<div class="days-of-the-week">
+					<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }) %>
+				</div>
+				<div class="days">
+					<% items.forEach(day => { %>
+						<div class="<%= day.classes %>" role="button"><%= day.date.getDate() %></div>
+					<% }) %>
+				</div>
+			</div>
+		`, data),
+		events: [],
+		trackSelectedDate: true,
+	},
+	render: args => {
+		const container = document.createElement('div');
+		container.classList.add('mini-clndr');
+		container.classList.add('async-clndr');
+
+		const cache: string[] = [];
+
+		function createEventsForInterval(interval: Interval): Promise<ClndrEvent[]> {
+			return new Promise(resolve => {
+				// Use some random time to provoke race conditions.
+				setTimeout(() => {
+					resolve([
+						{
+							title: 'Event 1',
+							date: new Date(interval.start),
+						}, {
+							title: 'Event 2',
+							date: addDays(interval.start, interval.start.getMonth() + 4),
+						}, {
+							title: 'Event 3',
+							date: addDays(interval.start, 25),
+						},
+					]);
+				}, Math.floor(Math.random() * 3 + 1) * 500);
+			});
+		}
+
+		async function beforeRender(
+			this: Clndr,
+			{element, interval, view}: {element: HTMLElement, interval: Interval, view: View}
+		) {
+			action('beforeRender')([{element, interval, view}]);
+
+			if (cache.includes(format(interval.start, 'yyyy-MM'))) {
+				return;
+			}
+
+			element.querySelector('.clndr .loading')?.classList.add('show');
+
+			const additionalEvents = await createEventsForInterval(interval);
+			cache.push(format(interval.start, 'yyyy-MM'));
+
+			element.querySelector('.clndr .loading')?.classList.remove('show');
+
+			this.addEvents(additionalEvents);
+		}
+
+		new Clndr(container, {...args, on: {...args.on, beforeRender}});
+		return container;
+	},
+};
+
+export const AsyncAfterRenderCalendar: Story = {
+	args: {
+		render: data => ejs.render(`
+			<div class="clndr-controls">
+				<div class="clndr-previous-button" role="button">&lsaquo;</div>
+				<div class="month"><%= format(date, 'MMMM') %></div>
+				<div class="clndr-next-button" role="button">&rsaquo;</div>
+			</div>
+			<div class="clndr-grid">
+				<div class="loading">loading</div>
+				<div class="days-of-the-week">
+					<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }) %>
+				</div>
+				<div class="days">
+					<% items.forEach(day => { %>
+						<div class="<%= day.classes %>" role="button"><%= day.date.getDate() %></div>
+					<% }) %>
+				</div>
+			</div>
+		`, data),
+		events: [],
+		trackSelectedDate: true,
+	},
+	render: args => {
+		const container = document.createElement('div');
+		container.classList.add('mini-clndr');
+		container.classList.add('async-clndr');
+
+		const cache: string[] = [];
+
+		async function afterRender(
+			this: Clndr,
+			{element, interval, view}: {element: HTMLElement, interval: Interval, view: View}
+		) {
+			action('afterRender')([{element, interval, view}]);
+
+			if (cache.includes(format(interval.start, 'yyyy-MM'))) {
+				return;
+			}
+
+			element.querySelector('.clndr .loading')?.classList.add('show');
+
+			const additionalEvents = await simulateFetchingEvents(interval);
+			cache.push(format(interval.start, 'yyyy-MM'));
+
+			this.addEvents(additionalEvents);
+
+			// Re-render only if the interval events were requested for is the interval currently
+			// rendered.
+			if (interval.start === this.getInterval().start) {
+				element.querySelector('.clndr .loading')?.classList.remove('show');
+				await this.render();
+			}
+		}
+
+		new Clndr(container, {...args, on: {...args.on, afterRender}});
+		return container;
+	},
+};
+
+export const AsyncSwitchBetweenViews: Story = {
+	args: {
+		render: {
+			year: data => ejs.render(`
+				<div class="year-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title"><%= date.getFullYear() %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<div class="loading">loading</div>
+						<% items.forEach(month => { %>
+							<div class="<%= month.classes %>" role="button"><%= format(month.date, 'MMM') %></div>
+						<% }) %>
+					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to current year</div>
+				</div>
+			`, data),
+			month: data => ejs.render(`
+				<div class="month-template">
+					<div class="clndr-controls">
+						<div class="clndr-previous-button" role="button">&lsaquo;</div>
+						<div class="title"><%= format(date, 'MMMM yyyy') %></div>
+						<div class="clndr-next-button" role="button">&rsaquo;</div>
+					</div>
+					<div class="clndr-grid">
+						<div class="loading">loading</div>
+						<div class="days-of-the-week grid-template">
+							<% daysOfTheWeek.forEach(day => { %><div class="header-day"><%= day %></div><% }) %>
+						</div>
+						<div class="days grid-template">
+							<% items.forEach(day => { %>
+								<div class="<%= day.classes %>" role="button"><%= day.date.getDate() %></div>
+							<% }) %>
+						</div>
+					</div>
+					<div class="clndr-today-button footer-button" role="button">Go to current month</div>
+					<div class="clndr-switch-year-button footer-button" role="button">Switch to year view</div>
+				</div>
+			`, data),
+		},
+		events: [],
+		forceSixRows: true,
+	},
+	render: args => {
+		const cache: Record<'month' | 'year', Record<string, ClndrEvent[]>> = {
+			month: {},
+			year: {},
+		};
+
+		async function afterRender(
+			this: Clndr,
+			{element, interval, view}: {element: HTMLElement, interval: Interval, view: View}
+		) {
+			action('afterRender')([{element, interval, view}]);
+
+			if (view !== 'month' && view !== 'year') {
+				return;
+			}
+
+			const cacheId = format(interval.start, view === 'month' ? 'yyyy-MM' : 'yyyy');
+			const cacheForThisInterval = cache[view][cacheId];
+
+			if (cacheForThisInterval) {
+				return;
+			}
+
+			element.querySelector('.clndr .loading')?.classList.add('show');
+
+			const additionalEvents = await simulateFetchingEvents(interval, view);
+			cache[view][cacheId] = additionalEvents;
+
+			this.addEvents(additionalEvents);
+
+			// Re-render only if the interval events were requested for is the interval currently
+			// rendered and if the view is
+			const currentInterval = this.getInterval();
+			if (interval.start === currentInterval.start && interval.end === currentInterval.end) {
+				element.querySelector('.clndr .loading')?.classList.remove('show');
+				await this.render();
+			}
+		}
+
+		async function switchView(this: Clndr, {view} : {view: View}) {
+			action('switchView')([{view}]);
+
+			if (view !== 'month' && view !== 'year') {
+				return;
+			}
+
+			this.setEvents(Object.values(cache[view]).flat());
+		}
+
+		const container = document.createElement('div');
+		container.classList.add('cal-month-year');
+		container.classList.add('async-clndr');
+		new Clndr(container, {...args, on: {...args.on, afterRender, switchView}});
 		return container;
 	},
 };

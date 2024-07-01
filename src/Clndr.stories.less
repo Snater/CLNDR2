@@ -77,7 +77,7 @@
 					vertical-align: top;
 				}
 
-				.day {
+				.item {
 					border: 1px solid @violet;
 					height: inherit;
 					width: 100%;
@@ -86,7 +86,7 @@
 						background: @grey;
 					}
 
-					&.today {
+					&.now {
 						background: @yellow;
 
 						&:hover {
@@ -127,7 +127,7 @@
 				}
 
 				.empty,
-				.adjacent-month {
+				.adjacent {
 					width: 100%;
 					height: inherit;
 					background: @grey;
@@ -203,7 +203,7 @@
 					grid-template-columns: repeat(7, 1fr);
 					width: 100%;
 
-					.day,
+					.item,
 					.empty {
 						height: 66px;
 						padding: 24px 0;
@@ -232,14 +232,14 @@
 							}
 						}
 
-						&.adjacent-month {
+						&.adjacent {
 							.day-number {
 								opacity: 0.3;
 							}
 						}
 					}
 
-					.today {
+					.now {
 						background-color: white;
 						background-image: none;
 					}
@@ -343,7 +343,7 @@
 				display: grid;
 				grid-template: repeat(2, 1fr) / repeat(7, 1fr);
 
-				.day {
+				.item {
 					align-items: center;
 					display: flex;
 					height: @box-size;
@@ -354,7 +354,7 @@
 						background-color: @green;
 					}
 
-					&.today {
+					&.now {
 						background-color: @yellow;
 					}
 
@@ -461,7 +461,7 @@
 				display: grid;
 				grid-template: repeat(2, 1fr) / repeat(7, 1fr);
 
-				.day {
+				.item {
 					align-items: center;
 					display: flex;
 					height: @box-size;
@@ -472,7 +472,7 @@
 						background-color: @green;
 					}
 
-					&.today {
+					&.now {
 						background-color: @yellow;
 					}
 
@@ -573,7 +573,7 @@
 					justify-content: center;
 				}
 
-				.day {
+				.item {
 					height: @box-size;
 					width: @box-size;
 
@@ -581,7 +581,7 @@
 						background-color: @green;
 					}
 
-					&.today {
+					&.now {
 						background-color: @yellow;
 					}
 
@@ -595,7 +595,7 @@
 				}
 
 				.empty,
-				.adjacent-month {
+				.adjacent {
 					background: @grey;
 					height: @box-size;
 					width: @box-size;
@@ -616,14 +616,285 @@
 	}
 }
 
-.clndr-next-button,
-.clndr-previous-button,
-.clndr-next-year-button,
-.clndr-previous-year-button {
+.cal-year {
+	max-width: 354px;
+	margin: 0 auto;
+
+	font-family: 'Droid Sans Mono', monospace;
+
+	[role="button"] {
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.clndr {
+		.clndr-controls {
+			align-items: baseline;
+			display: flex;
+			justify-content: space-between;
+			width: 100%;
+
+			[role="button"] {
+				padding: 3px;
+
+				&:hover {
+					background-color: @grey;
+				}
+			}
+		}
+
+		.clndr-grid {
+			display: grid;
+			grid-auto-flow: column;
+			grid-template-rows: repeat(6, 1fr);
+			border: 1px solid @violet;
+
+			.item {
+				align-items: center;
+				display: flex;
+				justify-content: center;
+				padding: 8px;
+
+				&:hover {
+					background-color: @grey;
+				}
+
+				&.event {
+					background-color: @green;
+
+					&:hover {
+						background-color: darken(@green, 10%);
+					}
+				}
+
+				&.now {
+					background-color: @yellow;
+				}
+
+				&.selected {
+					background-color: @red;
+
+					&:hover {
+						background: darken(@red, 10%);
+					}
+				}
+			}
+		}
+
+		.clndr-today-button {
+			cursor: pointer;
+			display: flex;
+			justify-content: center;
+			padding: 8px;
+
+			&:hover {
+				background-color: @grey;
+			}
+		}
+	}
+}
+
+.cal-month-year {
+	cursor: default;
+	font-family: Helvetica, 'Segoe UI', Arial, sans-serif;
+	width: 256px;
+	margin: 0 auto;
 	user-select: none;
 
-	&.inactive {
-		opacity: 0.5;
-		cursor: default;
+	[role="button"] {
+		cursor: pointer;
+
+		&:hover {
+			background-color: @grey;
+		}
+	}
+
+	.clndr {
+		.clndr-controls {
+			align-items: baseline;
+			display: flex;
+			justify-content: space-between;
+			width: 100%;
+			margin-bottom: 8px;
+
+			[role="button"] {
+				padding: 3px 8px;
+			}
+
+			.title {
+				font-weight: bold;
+			}
+		}
+
+		.clndr-grid {
+			border: 1px solid @violet;
+			display: flex;
+			flex-direction: column;
+			height: 180px;
+			text-align: center;
+
+			.item {
+				height: 100%;
+
+				&.event {
+					background-color: @green;
+
+					&[role="button"]:hover {
+						background-color: darken(@green, 10%);
+					}
+				}
+
+				&.now {
+					background-color: @yellow;
+
+					&[role="button"]:hover {
+						background-color: darken(@yellow, 10%);
+					}
+				}
+			}
+		}
+
+		.footer-button {
+			justify-content: center;
+			display: flex;
+			margin-top: 8px;
+			padding: 3px 8px;
+		}
+
+		.day-template {
+			.header {
+				background-color: @violet;
+				color: @white;
+				padding: 8px 0;
+			}
+
+			.empty {
+				align-items: center;
+				display: flex;
+				height: 100%;
+				justify-content: center;
+			}
+
+			.event {
+				padding: 8px 0;
+			}
+		}
+
+		.week-template {
+			.clndr-grid {
+				.week {
+					display: grid;
+					grid-template-columns: auto 1fr;
+					height: 100%;
+
+					.grid-template {
+						display: grid;
+
+						> * {
+							align-items: center;
+							display: flex;
+							padding: 0 8px;
+						}
+					}
+
+					.days-of-the-week {
+						background: @violet;
+						color: @white;
+					}
+
+					.days {
+						.item {
+							height: auto;
+							justify-content: center;
+						}
+					}
+				}
+			}
+		}
+
+		.month-template {
+			.clndr-grid {
+				.grid-template {
+					display: grid;
+					grid-template-columns: repeat(7, 1fr);
+					width: 100%;
+				}
+
+				.days-of-the-week {
+					.header-day {
+						align-items: center;
+						background: @violet;
+						color: @white;
+						display: flex;
+						justify-content: center;
+						padding: 4px 0;
+					}
+				}
+
+				.days {
+					height: 100%;
+
+					> * {
+						align-items: center;
+						display: flex;
+						justify-content: center;
+					}
+
+					.adjacent {
+						background: @grey;
+					}
+				}
+			}
+		}
+
+		.year-template {
+			.clndr-grid {
+				display: grid;
+				grid-auto-flow: column;
+				grid-template-rows: repeat(6, 1fr);
+
+				.item {
+					align-content: center;
+					display: flex;
+					justify-content: center;
+					flex-wrap: wrap;
+				}
+			}
+		}
+
+		.decade-template {
+			.clndr-grid {
+				display: grid;
+				grid-auto-flow: column;
+				grid-template-rows: repeat(5, 1fr);
+
+				.item {
+					align-content: center;
+					display: flex;
+					justify-content: center;
+					flex-wrap: wrap;
+				}
+			}
+		}
+	}
+}
+
+.async-clndr {
+	.clndr-grid {
+		position: relative;
+	}
+
+	.loading {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(@white, 0.8);
+		display: none;
+		align-items: center;
+		justify-content: center;
+
+		&.show {
+			display: flex;
+		}
 	}
 }

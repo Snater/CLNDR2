@@ -1,111 +1,122 @@
 import {
 	FormatOptions,
 	Locale,
-	addDays,
 	addMonths,
-	addWeeks,
 	addYears,
+	areIntervalsOverlapping,
 	endOfDay,
-	endOfMonth,
-	endOfWeek,
 	format,
-	getDate,
-	getDay,
-	getMonth,
-	getYear,
 	isAfter,
 	isBefore,
 	isSameDay,
 	isSameMonth,
+	isSameYear,
+	isWithinInterval,
 	setDay,
-	setMonth,
-	setYear,
-	startOfDay,
-	startOfMonth,
-	startOfWeek,
-	subDays,
 	subMonths,
-	subWeeks,
 	subYears,
+	startOfDay,
 } from 'date-fns';
-
+import adapters, {Adapter} from './adapters';
 import type {
 	ClndrEvent,
-	ClndrEventOrigin,
-	ClndrNavigationOptions,
+	ClndrItem,
+	ClndrItemEventParameters,
+	ClndrItemProperties,
 	ClndrOptions,
-	ClndrTarget,
 	ClndrTemplateData,
 	Constraints,
 	Day,
-	DayProperties,
 	DaysOfTheWeek,
+	DefaultOptions,
 	InternalClndrEvent,
-	InternalOptions,
 	Interval,
-	LengthOfTime,
 	NavigationConstraint,
 	NavigationConstraints,
+	Pagination,
 	TargetOption,
-	WeekOffset,
+	View,
 } from './types';
 
-const defaults: InternalOptions = {
-	render: () => {
-		throw new Error('Missing render function');
-	},
-	adjacentDaysChangeMonth: false,
+const orderedViews: View[] = ['day', 'week', 'month', 'year', 'decade'] as const;
+
+const defaults: DefaultOptions = {
+	adjacentItemsChangePage: false,
 	classes: {
 		past: 'past',
-		today: 'today',
+		now: 'now',
 		event: 'event',
 		inactive: 'inactive',
 		selected: 'selected',
-		lastMonth: 'last-month',
-		nextMonth: 'next-month',
-		adjacentMonth: 'adjacent-month',
+		previous: 'previous',
+		next: 'next',
+		adjacent: 'adjacent',
+		switch: 'switch',
 	},
-	clickEvents: {},
-	dateParameter: 'date',
+	on: {},
+	dateParameter: {
+		date: 'date',
+		start: 'start',
+		end: 'end',
+	},
+	defaultView: 'month',
 	events: [],
 	forceSixRows: false,
 	ignoreInactiveDaysInSelection: false,
-	lengthOfTime: {interval: 1},
-	showAdjacentMonths: true,
+	pagination: {month: {size: 1}},
+	showAdjacent: true,
 	targets: {
-		day: 'day',
+		item: 'item',
 		empty: 'empty',
 		nextButton: 'clndr-next-button',
 		todayButton: 'clndr-today-button',
 		previousButton: 'clndr-previous-button',
 		nextYearButton: 'clndr-next-year-button',
 		previousYearButton: 'clndr-previous-year-button',
-	},
+		...Object.values(adapters).map(adapterConstructor => {
+			return adapterConstructor.targets;
+		}).reduce<Record<string, string>>(
+			(accu, value) => {
+				if (value !== undefined) {
+					Object.keys(value).forEach(key => accu[key] = value[key]);
+				}
+				return accu;
+			},
+			{}
+		),
+	} as {[key in TargetOption]: string},
 	trackSelectedDate: false,
 	useTouchEvents: false,
-	weekOffset: 0,
+	weekStartsOn: 0,
 };
 
 class Clndr {
 
-	static isObject(item: unknown) {
+	private static isObject(item: unknown) {
 		return item && typeof item === 'object' && !Array.isArray(item);
 	}
 
-	static mergeDeep<T extends {[key: string]: unknown}, S extends {[key: string]: unknown} = T>(
+	private static mergeDeep<
+		T extends {[key: string]: unknown},
+		S extends {[key: string]: unknown} = T,
+		R = T
+	>(
 		target: T,
 		...sources: [T, S] | [T]
-	): T {
+	): R {
 		const source = sources.shift();
 
 		if (!source) {
-			return target;
+			return target as unknown as R;
 		}
 
 		const targetObject = target as {[k: string]: unknown};
 
 		for (const key in source) {
-			if (Array.isArray(source[key])) {
+			if (key === 'pagination') {
+				// Do not merge pagination to not unintentionally enable view switching functionality
+				targetObject[key] = source[key];
+			} else if (Array.isArray(source[key])) {
 				targetObject[key] = (source[key] as unknown[]).map(element => {
 					return Clndr.isObject(element)
 						? Clndr.mergeDeep({}, element as {[k: string]: unknown})
@@ -114,12 +125,12 @@ class Clndr {
 			} else if (source[key] instanceof Date) {
 				targetObject[key] = new Date(source[key] as Date);
 			} else if (Clndr.isObject(source[key])) {
-				if (!targetObject[key]) {
+				if (!Clndr.isObject(targetObject[key])) {
 					Object.assign(targetObject, {[key]: {}});
 				}
 				Clndr.mergeDeep(
-					targetObject[key] as {[k: string]: unknown},
-					source[key] as {[k: string]: unknown}
+					targetObject[key] as { [k: string]: unknown },
+					source[key] as { [k: string]: unknown }
 				);
 			} else {
 				Object.assign(target, {[key]: source[key]});
@@ -129,41 +140,58 @@ class Clndr {
 		return Clndr.mergeDeep(target, ...sources);
 	}
 
-	static mergeOptions<T extends {[key: string]: unknown}, S extends {[key: string]: unknown} = T>(
+	private static mergeOptions<
+		T extends {[key: string]: unknown},
+		S extends {[key: string]: unknown} = T,
+		R = T
+	>(
 		target: T,
 		source: S
-	) {
-		return Clndr.mergeDeep<T, S>({} as T, target, source);
+	): R {
+		return Clndr.mergeDeep<T, S, R>({} as T, target, source);
 	}
 
 	private readonly element: HTMLElement;
+	private readonly availableViews: View[];
+	private adapter: Adapter;
 	/**
 	 * Boolean values used to log whether any constraints are met
 	 */
 	private readonly constraints: NavigationConstraints;
 	private readonly daysOfTheWeek: DaysOfTheWeek;
-	private readonly interval: Interval;
-	private options: InternalOptions;
+	private interval: Interval;
+	private options: Omit<DefaultOptions, 'render'> & Pick<ClndrOptions, 'render'>
 	private calendarContainer: HTMLElement;
-	private eventsLastMonth: InternalClndrEvent[];
-	private eventsNextMonth: InternalClndrEvent[];
-	private eventsThisInterval: InternalClndrEvent[];
 	private events: InternalClndrEvent[];
+	private selectedDate?: Date;
 
 	constructor(element: HTMLElement, options: ClndrOptions) {
 		this.element = element;
-		this.eventsLastMonth = [];
-		this.eventsNextMonth = [];
-		this.eventsThisInterval = [];
 
-		this.options = Clndr.mergeOptions<InternalOptions, ClndrOptions>(defaults, options);
+		this.options = Clndr.mergeOptions<DefaultOptions, ClndrOptions,
+			Omit<DefaultOptions, 'render'> & Pick<ClndrOptions, 'render'>
+		>(defaults, options);
 
-		if (this.options.weekOffset > 6 || this.options.weekOffset < 0) {
-			console.warn(
-				`An invalid offset ${this.options.weekOffset} was provided (must be 0 - 6); using 0 instead`
-			);
-			this.options.weekOffset = 0;
-		}
+		this.availableViews = typeof this.options.render === 'function'
+			? Object.keys(this.options.pagination) as View[]
+			: orderedViews.filter(view => Object.keys(this.options.render).includes(view));
+
+		const defaultView = this.options.defaultView !== defaults.defaultView
+			? this.options.defaultView
+			: this.options.pagination[this.options.defaultView]
+				? this.options.defaultView
+				// Pick the smallest view configured when pagination is not configured for the default
+				// view.
+				: orderedViews.filter(view => this.options.pagination[view] !== undefined)[0];
+
+		this.adapter = new adapters[defaultView]({
+			forceSixRows: this.options.forceSixRows,
+			// There will always be at least one view's pagination be configured as there is a default
+			// value. Therefore, `defaultView` will be a valid view having pagination configured.
+			pageSize: (this.options.pagination[defaultView] as Pagination)?.size ?? 1,
+			showAdjacent: this.options.showAdjacent,
+			weekStartsOn: this.options.weekStartsOn,
+		});
 
 		this.constraints = {
 			next: true,
@@ -173,49 +201,30 @@ class Clndr {
 			previousYear: true,
 		};
 
-		// Store the events internally with a Day object attached to them. The Day object eases
-		// date comparisons while looping over the event dates
-		this.events = [
-			...this.addMultiDayDateObjectsToEvents(this.options.events),
-			...this.addDateObjectToEvents(this.options.events),
-		];
+		// Store the events internally with a Day object attached to them. The Day object eases date
+		// comparisons while looping over the event dates
+		this.events = this.parseToInternalEvents(this.options.events);
 
-		// Annihilate any chance for bugs by overwriting conflicting options
-		if (this.options.lengthOfTime.months) {
-			this.options.lengthOfTime.days = undefined;
-		}
-
-		// To support arbitrary lengths of time, the current range is stored in addition to the current
-		// month
-		this.interval = this.initInterval(
-			this.options.lengthOfTime,
-			this.options.startWithMonth,
-			this.options.weekOffset
+		// For supporting arbitrary lengths of time, the current range is stored
+		this.interval = this.adapter.initInterval(
+			this.options.startOn !== undefined ? new Date(this.options.startOn) : undefined
 		);
-
-		if (this.options.startWithMonth) {
-			this.interval.month = startOfMonth(new Date(this.options.startWithMonth));
-			this.interval.start = new Date(this.interval.month);
-			this.interval.end = this.options.lengthOfTime.days
-				? endOfDay(addDays(this.interval.month, this.options.lengthOfTime.days - 1))
-				: endOfMonth(this.interval.month);
-		}
 
 		// If there are constraints, make sure the interval is within them
 		if (this.options.constraints) {
-			this.interval = this.initConstraints(
-				this.options.constraints,
-				this.options.lengthOfTime,
-				this.interval
-			);
+			this.interval = this.initConstraints(this.options.constraints, this.interval);
+		}
+
+		if (this.options.selectedDate) {
+			this.selectedDate = new Date(this.options.selectedDate);
 		}
 
 		this.daysOfTheWeek = this.options.daysOfTheWeek
 			? this.options.daysOfTheWeek
 			: this.initDaysOfTheWeek(this.options.formatWeekdayHeader, this.options.locale);
 
-		if (this.options.weekOffset) {
-			this.daysOfTheWeek = this.shiftWeekdayLabels(this.daysOfTheWeek, this.options.weekOffset);
+		if (this.options.weekStartsOn) {
+			this.daysOfTheWeek = this.shiftWeekdayLabels(this.daysOfTheWeek, this.options.weekStartsOn);
 		}
 
 		this.element.innerHTML = '<div class="clndr"></div>';
@@ -226,159 +235,29 @@ class Clndr {
 			this.handleEvent.bind(this)
 		);
 
-		this.render();
-
-		this.options.ready?.apply(this, []);
+		this.render().then(() => {
+			this.options.on.ready?.apply(
+				this,
+				[{element: this.element, interval: this.interval, view: this.adapter.getView()}]
+			);
+		});
 	}
 
-	private initInterval(
-		lengthOfTime: LengthOfTime,
-		startWithMonth: Date | string | undefined,
-		weekOffset: WeekOffset
-	): Interval {
+	private initConstraints(constraints: Constraints, interval: Interval) {
+		let adjustedInterval: Interval = {start: interval.start, end: interval.end};
 
-		if (lengthOfTime.months) {
-			const start = startOfMonth(
-				new Date(lengthOfTime.startDate || startWithMonth || Date.now())
-			);
-
-			// Subtract a day so that we are at the end of the interval. We always want intervalEnd to be
-			// inclusive.
-			const end = subDays(addMonths(start, lengthOfTime.months), 1);
-
-			return {start, end, month: new Date(start)};
-		}
-
-		if (lengthOfTime.days) {
-			const start = startOfDay(lengthOfTime.startDate
-				? new Date(lengthOfTime.startDate)
-				: setDay(new Date(), weekOffset)
-			);
-
-			const end = endOfDay(addDays(start, lengthOfTime.days - 1));
-
-			return {start, end, month: new Date(start)};
-		}
-
-		// No length of time specified, so we're going to default into using the current month as the
-		// time period.
-		const month = startOfMonth(new Date());
-
-		return {
-			month,
-			start: new Date(month),
-			end: endOfMonth(month),
-		};
-	}
-
-	private initConstraints(
-		constraints: Constraints,
-		lengthOfTime: LengthOfTime,
-		interval: Interval
-	) {
-		let adjustedInterval: Interval = {
-			month: interval.month,
-			start: interval.start,
-			end: interval.end,
-		};
-
-		if (constraints.startDate) {
-			adjustedInterval = this.initStartConstraint(
-				new Date(constraints.startDate),
-				lengthOfTime,
+		if (constraints.start) {
+			adjustedInterval = this.adapter.initStartConstraint(
+				new Date(constraints.start),
 				adjustedInterval
 			);
 		}
 
-		if (constraints.endDate) {
-			adjustedInterval = this.initEndConstraint(
-				new Date(constraints.endDate),
-				lengthOfTime,
+		if (constraints.end) {
+			adjustedInterval = this.adapter.initEndConstraint(
+				new Date(constraints.end),
 				adjustedInterval
 			);
-		}
-
-		return adjustedInterval;
-	}
-
-	private initStartConstraint(
-		constraintStart: Date,
-		lengthOfTime: LengthOfTime,
-		interval: Interval
-	) {
-		const adjustedInterval: Interval = {
-			month: interval.month,
-			start: interval.start,
-			end: interval.end,
-		};
-
-		if (lengthOfTime.days) {
-			if (isBefore(adjustedInterval.start, subWeeks(constraintStart, 1))) {
-				adjustedInterval.start = startOfWeek(constraintStart);
-			}
-
-			adjustedInterval.end = endOfDay(addDays(adjustedInterval.start, lengthOfTime.days - 1));
-			adjustedInterval.month = new Date(adjustedInterval.start);
-		} else {
-			if (isBefore(adjustedInterval.start, subMonths(constraintStart, 1))) {
-				adjustedInterval.start = setYear(
-					setMonth(adjustedInterval.start, getMonth(constraintStart)),
-					getYear(constraintStart)
-				);
-				adjustedInterval.month = setYear(
-					setMonth(adjustedInterval.month, getMonth(constraintStart)),
-					getYear(constraintStart)
-				);
-			}
-
-			if (isBefore(adjustedInterval.end, subMonths(constraintStart, 1))) {
-				adjustedInterval.end = setYear(
-					setMonth(adjustedInterval.end, getMonth(constraintStart)),
-					getYear(constraintStart)
-				);
-			}
-		}
-
-		return adjustedInterval;
-	}
-
-	private initEndConstraint(
-		constraintEnd: Date,
-		lengthOfTime: LengthOfTime,
-		interval: Interval
-	) {
-		const adjustedInterval: Interval = {
-			month: interval.month,
-			start: interval.start,
-			end: interval.end,
-		};
-
-		if (lengthOfTime.days) {
-			if (isAfter(adjustedInterval.start, addWeeks(constraintEnd, 1))) {
-				adjustedInterval.start = startOfDay(
-					subDays(endOfWeek(constraintEnd), lengthOfTime.days - 1)
-				);
-				adjustedInterval.end = endOfWeek(constraintEnd);
-				adjustedInterval.month = new Date(adjustedInterval.start);
-			}
-		} else {
-			if (isAfter(adjustedInterval.end, addMonths(constraintEnd, 1))) {
-				adjustedInterval.end = setYear(
-					setMonth(adjustedInterval.end, getMonth(constraintEnd)),
-					getYear(constraintEnd)
-				);
-				adjustedInterval.month = setYear(
-					setMonth(adjustedInterval.month, getMonth(constraintEnd)),
-					getYear(constraintEnd)
-				);
-			}
-
-			if (isAfter(adjustedInterval.start, addMonths(constraintEnd, 1))) {
-				adjustedInterval.start = setYear(
-					setMonth(adjustedInterval.start, getMonth(constraintEnd)),
-					getYear(constraintEnd)
-				);
-			}
 		}
 
 		return adjustedInterval;
@@ -401,7 +280,7 @@ class Clndr {
 		return daysOfTheWeek as DaysOfTheWeek;
 	}
 
-	private shiftWeekdayLabels(daysOfTheWeek: DaysOfTheWeek, offset: WeekOffset) {
+	private shiftWeekdayLabels(daysOfTheWeek: DaysOfTheWeek, offset: Day) {
 		const adjustedDaysOfTheWeek: DaysOfTheWeek = [...daysOfTheWeek];
 
 		for (let i = 0; i < offset; i++) {
@@ -411,333 +290,230 @@ class Clndr {
 		return adjustedDaysOfTheWeek;
 	}
 
-	private createDaysObject(startDate: Date, endDate: Date) {
+	private createPageItems(
+		interval: Interval,
+		events: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
+	) {
 
-		const currentIntervalStart = new Date(startDate);
+		const dates = this.adapter.aggregatePageItems(interval);
 
 		// This array will contain the data of the entire grid (including blank spaces)
-		let days: Day[] = [];
-		let dateIterator;
-
-		this.parseEvents(startDate, endDate);
-
-		// If greater than 0, the last days of the previous month have to be filled in to account for
-		// the empty boxes in the grid, also taking the weekOffset into account.
-		let remainingDaysOfPreviousMonth = getDay(startDate) - this.options.weekOffset;
-
-		// The weekOffset points to a day in the previous month
-		if (remainingDaysOfPreviousMonth < 0) {
-			remainingDaysOfPreviousMonth += 7;
-		}
-
-		if (!this.options.lengthOfTime.days && remainingDaysOfPreviousMonth > 0) {
-			days = [
-				...days,
-				...this.aggregateDaysOfPreviousMonth(
-					startDate,
-					remainingDaysOfPreviousMonth,
-					currentIntervalStart
-				),
-			];
-		}
-
-		// Add the days of the current interval
-		dateIterator = new Date(startDate);
-
-		while (isBefore(dateIterator, endDate) || isSameDay(dateIterator, endDate)) {
-			days.push(this.createDayObject(dateIterator, this.eventsThisInterval, currentIntervalStart));
-			dateIterator = addDays(dateIterator, 1);
-		}
-
-		// If there are any trailing blank boxes, fill those in with the next month's first days
-		const remainingDaysOfNextMonth = 7 - days.length % 7;
-
-		if (!this.options.lengthOfTime.days && remainingDaysOfNextMonth < 7) {
-			days = [
-				...days,
-				...this.aggregateDaysOfNextMonth(
-					dateIterator,
-					remainingDaysOfNextMonth,
-					currentIntervalStart
-				),
-			];
-			dateIterator = addDays(dateIterator, remainingDaysOfNextMonth + 1);
-		}
-
-		// Add another row if needed when forcing six rows (42 is 6 rows of 7 days)
-		const remainingDaysForSixRows = 42 - days.length;
-
-		if (this.options.forceSixRows && remainingDaysForSixRows > 0) {
-			days = [
-				...days,
-				...this.aggregateDaysOfNextMonth(
-					dateIterator,
-					remainingDaysForSixRows,
-					currentIntervalStart
-				),
-			];
-		}
-
-		return days;
+		return [
+			...dates[0].map(date => {
+				if (this.options.showAdjacent) {
+					return this.createPageItem(date, events[0], interval)
+				} else {
+					return this.compileClndrItem({
+						classes: [this.options.targets.empty, this.options.classes.previous].join(' '),
+					})
+				}
+			}),
+			...dates[1].map(date => {
+				return this.createPageItem(date, events[1], interval)
+			}),
+			...dates[2].map(date => {
+				if (this.options.showAdjacent) {
+					return this.createPageItem(date, events[2], interval)
+				} else {
+					return this.compileClndrItem({
+						classes: [this.options.targets.empty, this.options.classes.next].join(' '),
+					})
+				}
+			}),
+		];
 	}
 
 	/**
-	 * Filters the events list to events that are happening last month, this month an next month
-	 * (within the current grid view).
+	 * Filters the events list to events that are happening on the previous page, the current page and
+	 * the next page, so if the adjacent option is on, the events will also be available in the
+	 * template.
 	 */
-	private parseEvents(startDate: Date, endDate: Date) {
-		// Filter the events list (if it exists) to events that are happening last month, this month and
-		// next month (within the current grid view).
-		this.eventsLastMonth = [];
-		this.eventsNextMonth = [];
-		this.eventsThisInterval = [];
+	private parseEvents(interval: Interval) {
+		const parsedEvents: [InternalClndrEvent[], InternalClndrEvent[], InternalClndrEvent[]]
+			= [[], [], []];
 
-		if (!this.events.length) {
-			return;
-		}
-
-		this.eventsThisInterval = this.events.filter(event => {
-			const afterEnd = isAfter(event._clndrStartDateObject, endDate);
-			const beforeStart = isBefore(event._clndrEndDateObject, startDate);
+		parsedEvents[1] = this.events.filter(event => {
+			const afterEnd = isAfter(event.clndrInterval.start, interval.end);
+			const beforeStart = isBefore(event.clndrInterval.end, interval.start);
 
 			return !(beforeStart || afterEnd);
 		});
 
-		if (!this.options.showAdjacentMonths) {
-			return;
-		}
+		const [previousPageEvents, nextPageEvents]
+			= this.adapter.aggregateAdjacentPageEvents(interval, this.events);
 
-		const startOfLastMonth = startOfMonth(subMonths(startDate, 1));
-		const endOfLastMonth = endOfMonth(startOfLastMonth);
-		const startOfNextMonth = startOfMonth(addMonths(endDate, 1));
-		const endOfNextMonth = endOfMonth(startOfNextMonth);
+		parsedEvents[0] = previousPageEvents;
+		parsedEvents[2] = nextPageEvents;
 
-		this.eventsLastMonth = this.events.filter(event => {
-			const beforeStart = isBefore(event._clndrEndDateObject, startOfLastMonth);
-			const afterEnd = isAfter(event._clndrStartDateObject, endOfLastMonth);
-
-			return !(beforeStart || afterEnd);
-		});
-
-		this.eventsNextMonth = this.events.filter(event => {
-			const beforeStart = isBefore(event._clndrEndDateObject, startOfNextMonth);
-			const afterEnd = isAfter(event._clndrStartDateObject, endOfNextMonth);
-
-			return !(beforeStart || afterEnd);
-		});
+		return parsedEvents;
 	}
 
-	private aggregateDaysOfPreviousMonth(
-		startDate: Date,
-		count: number,
-		currentIntervalStart: Date
-	) {
-		const days: Day[] = [];
-
-		for (let i = 1; i <= count; i++) {
-			if (this.options.showAdjacentMonths) {
-				const day = subDays(new Date(getYear(startDate), getMonth(startDate), i), count);
-				days.push(this.createDayObject(day, this.eventsLastMonth, currentIntervalStart));
-			} else {
-				days.push(
-					this.calendarDay({
-						classes: [this.options.targets.empty, this.options.classes.lastMonth].join(' '),
-					})
-				);
-			}
-		}
-
-		return days;
-	}
-
-	private aggregateDaysOfNextMonth(startDate: Date, count: number, currentIntervalStart: Date) {
-		const days: Day[] = [];
-
-		for (let i = 0; i < count; i++) {
-			if (this.options.showAdjacentMonths) {
-				days.push(
-					this.createDayObject(addDays(startDate, i), this.eventsNextMonth, currentIntervalStart)
-				);
-			} else {
-				days.push(
-					this.calendarDay({
-						classes: [this.options.targets.empty, this.options.classes.nextMonth].join(' '),
-					}));
-			}
-		}
-
-		return days;
-	}
-
-	private createDayObject(
-		day: Date,
-		monthEvents: InternalClndrEvent[],
-		currentIntervalStart: Date
-	) {
+	private createPageItem(date: Date, events: InternalClndrEvent[], interval: Interval) {
 		const now = new Date();
-		const dayEnd = endOfDay(day);
-		const classes = [this.options.targets.day];
-		const properties: DayProperties = {
-			isToday: false,
+		const classes = [this.options.targets.item];
+		const properties: ClndrItemProperties = {
+			isNow: false,
 			isInactive: false,
-			isAdjacentMonth: false,
+			isAdjacent: false,
 		};
 
-		const eventsToday = monthEvents.filter(event => {
-			const start = event._clndrStartDateObject;
-			const end = event._clndrEndDateObject;
+		const itemInterval = this.adapter.getIntervalForDate(date);
 
-			return !isAfter(start, dayEnd) && !isAfter(day, end);
-		});
-
-		if (isSameDay(now, day)) {
-			classes.push(this.options.classes.today);
-			properties.isToday = true;
+		if (isWithinInterval(now, itemInterval)) {
+			classes.push(this.options.classes.now);
+			properties.isNow = true;
 		}
 
-		if (isBefore(day, now)) {
+		if (isBefore(itemInterval.end, now)) {
 			classes.push(this.options.classes.past);
 		}
 
-		if (eventsToday.length) {
+		const eventsOfCurrentItem = events.filter(event => {
+			const start = event.clndrInterval.start;
+			const end = event.clndrInterval.end;
+
+			return !isAfter(start, itemInterval.end) && !isAfter(itemInterval.start, end);
+		});
+
+		if (eventsOfCurrentItem.length) {
 			classes.push(this.options.classes.event);
 		}
 
-		if (!this.options.lengthOfTime.days) {
-			if (getMonth(currentIntervalStart) > getMonth(day)) {
-				classes.push(this.options.classes.adjacentMonth);
-				properties.isAdjacentMonth = true;
+		const adjacent = this.adapter.isAdjacent(itemInterval, interval);
 
-				getYear(currentIntervalStart) === getYear(day)
-					? classes.push(this.options.classes.lastMonth)
-					: classes.push(this.options.classes.nextMonth);
-			} else if (getMonth(currentIntervalStart) < getMonth(day)) {
-				classes.push(this.options.classes.adjacentMonth);
-				properties.isAdjacentMonth = true;
+		if (adjacent) {
+			classes.push(this.options.classes.adjacent);
+			properties.isAdjacent = true;
+		}
 
-				getYear(currentIntervalStart) === getYear(day)
-					? classes.push(this.options.classes.nextMonth)
-					: classes.push(this.options.classes.lastMonth);
-			}
+		if (adjacent === 'before') {
+			classes.push(this.options.classes.previous);
+		} else if (adjacent === 'after') {
+			classes.push(this.options.classes.next);
 		}
 
 		// If there are constraints, the inactive class needs to be added to the days outside of them
 		if (this.options.constraints) {
-			const endDate = this.options.constraints.endDate
-				&& new Date(this.options.constraints.endDate);
-			const startDate = this.options.constraints.startDate
-				&& new Date(this.options.constraints.startDate);
+			const constraintStart = this.options.constraints.start;
+			const constraintEnd = this.options.constraints.end;
 
-			if (startDate && isBefore(day, startDate)) {
+			if (constraintStart !== undefined && isBefore(itemInterval.end, constraintStart)) {
 				classes.push(this.options.classes.inactive);
 				properties.isInactive = true;
 			}
 
-			if (endDate && isAfter(day, endDate)) {
+			if (constraintEnd !== undefined && isAfter(itemInterval.start, constraintEnd)) {
 				classes.push(this.options.classes.inactive);
 				properties.isInactive = true;
 			}
 		}
 
-		if (this.options.selectedDate && isSameDay(day, new Date(this.options.selectedDate))) {
+		if(!properties.isInactive) {
+			const adjacentView = this.getAdjacentView(this.adapter.getView());
+			adjacentView && classes.push(this.options.classes.switch);
+		}
+
+		if (this.selectedDate && isWithinInterval(this.selectedDate, itemInterval)) {
 			classes.push(this.options.classes.selected);
 		}
 
-		classes.push(`calendar-day-${format(day, 'yyyy-MM-dd')}`);
-		// Day of week
-		classes.push(`calendar-dow-${getDay(day)}`);
-
-		return this.calendarDay({
-			date: day,
-			day: getDate(day),
-			events: eventsToday.map(event => event.originalEvent),
+		return this.compileClndrItem({
+			interval: itemInterval,
+			date,
+			events: eventsOfCurrentItem.map(event => event.originalEvent),
 			properties: properties,
-			classes: classes.join(' '),
+			classes: [...classes, this.adapter.getIdForItem(itemInterval.start)].join(' '),
 		});
 	}
 
-	private render() {
+	private getAdjacentView(view: View): View | undefined {
+		const index = this.availableViews.indexOf(view);
+		const adjacentIndex = index - 1;
+		return this.availableViews[adjacentIndex];
+	}
+
+	/**
+	 * Trigger re-rendering the calendar.
+	 */
+	async render() {
+		if (this.options.on.beforeRender) {
+			await this.options.on.beforeRender.apply(
+				this,
+				[{element: this.element, interval: this.interval, view: this.adapter.getView()}]
+			);
+		}
+
+		const renderFn = typeof this.options.render === 'function'
+			? this.options.render
+			: this.options.render[this.adapter.getView()];
+
+		if (!renderFn) {
+			console.warn(`No render function defined for ${this.adapter.getView()} view`);
+			return;
+		}
+
 		this.calendarContainer.innerHTML = '';
 
-		this.calendarContainer.innerHTML = this.options.render.apply(
+		this.calendarContainer.innerHTML = renderFn.apply(
 			this,
 			[this.aggregateTemplateData()]
 		);
 
 		this.applyInactiveClasses();
 
-		if (this.options.doneRendering) {
-			this.options.doneRendering.apply(this, []);
+		if (this.options.on.afterRender) {
+			await this.options.on.afterRender.apply(
+				this,
+				[{element: this.element, interval: this.interval, view: this.adapter.getView()}]
+			);
 		}
 	}
 
 	private aggregateTemplateData() {
 		const data: ClndrTemplateData = {
-			days: [],
-			months: [],
-			year: null,
-			month: null,
-			eventsThisMonth: [],
-			eventsLastMonth: [],
-			eventsNextMonth: [],
+			date: this.interval.start,
+			interval: this.interval,
+			pages: [],
+			items: [],
+			events: {
+				currentPage: [],
+				previousPage: [],
+				nextPage: [],
+			},
 			extras: this.options.extras,
 			daysOfTheWeek: this.daysOfTheWeek,
-			numberOfRows: 0,
-			intervalStart: null,
-			intervalEnd: null,
-			eventsThisInterval: [],
-			format: (date: Date, formatStr: string, options: FormatOptions = {}) => {
+			format: (date: Date | string | number, formatStr: string, options: FormatOptions = {}) => {
 				return format(date, formatStr, {locale: this.options.locale || undefined, ...options});
 			},
 		};
 
-		if (this.options.lengthOfTime.days) {
-			data.days = this.createDaysObject(this.interval.start, this.interval.end);
-			data.intervalEnd = this.interval.end;
-			data.numberOfRows = Math.ceil(data.days.length / 7);
-			data.intervalStart = this.interval.start;
-			data.eventsThisInterval = this.eventsThisInterval.map(event => event.originalEvent);
-		} else if (this.options.lengthOfTime.months) {
-			const eventsThisInterval: ClndrEvent[][] = [];
+		const parsedEvents = this.parseEvents(this.interval);
 
-			for (let i = 0; i < this.options.lengthOfTime.months; i++) {
-				const currentIntervalStart = addMonths(this.interval.start, i);
-				const currentIntervalEnd = endOfMonth(currentIntervalStart);
-				const days = this.createDaysObject(currentIntervalStart, currentIntervalEnd);
+		data.items = [] as ClndrItem[][];
+		data.events.currentPage = [] as ClndrEvent[][];
+		const pageIntervals = this.adapter.getPageIntervals(data.interval.start);
 
-				// Save events processed for each month into a master array of events for this interval
-				eventsThisInterval.push(this.eventsThisInterval.map(event => event.originalEvent));
-				data.months.push({
-					days: days,
-					month: currentIntervalStart,
-				});
-			}
+		for (const pageInterval of pageIntervals) {
+			data.pages.push(pageInterval.start);
 
-			data.eventsThisInterval = eventsThisInterval;
+			data.items.push(this.createPageItems(pageInterval, parsedEvents));
 
-			// Get the total number of rows across all months
-			data.months.forEach(month => {
-				data.numberOfRows += Math.ceil(month.days.length / 7);
-			});
-
-			data.intervalEnd = this.interval.end;
-			data.intervalStart = this.interval.start;
-			data.eventsLastMonth = this.eventsLastMonth.map(event => event.originalEvent);
-			data.eventsNextMonth = this.eventsNextMonth.map(event => event.originalEvent);
-		} else {
-			// Get an array of days and blank spaces
-			data.days = this.createDaysObject(
-				startOfMonth(this.interval.month),
-				endOfMonth(this.interval.month)
+			data.events.currentPage.push(
+				parsedEvents[1]
+					.filter(event => areIntervalsOverlapping(event.clndrInterval, pageInterval))
+					.map(event => event.originalEvent)
 			);
-
-			data.year = getYear(this.interval.month);
-			data.month = format(this.interval.month, 'MMMM', {locale: this.options.locale || undefined});
-			data.eventsLastMonth = this.eventsLastMonth.map(event => event.originalEvent);
-			data.eventsNextMonth = this.eventsNextMonth.map(event => event.originalEvent);
-			data.numberOfRows = Math.ceil(data.days.length / 7);
-			data.eventsThisMonth = this.eventsThisInterval.map(event => event.originalEvent);
 		}
+
+		data.events.previousPage = parsedEvents[0].map(event => event.originalEvent);
+		data.events.nextPage = parsedEvents[2].map(event => event.originalEvent);
+
+		if ((this.options.pagination[this.adapter.getView()]?.size ?? 1) > 1) {
+			return data;
+		}
+
+		data.events.currentPage = data.events.currentPage[0];
+		data.items = data.items[0];
 
 		return data;
 	}
@@ -752,7 +528,7 @@ class Clndr {
 
 		// Remove all "inactive" class assignments to start with a clean state
 		for (const target in this.options.targets) {
-			if (target !== 'day') {
+			if (target !== 'item') {
 				this.element
 					.querySelectorAll('.' + this.options.targets[target as TargetOption])
 					.forEach(element => element.classList.remove(this.options.classes.inactive));
@@ -764,16 +540,16 @@ class Clndr {
 			this.constraints[navigationConstraint as NavigationConstraint] = true;
 		}
 
-		const start = this.options.constraints.startDate
-			? new Date(this.options.constraints.startDate)
+		const start = this.options.constraints.start
+			? new Date(this.options.constraints.start)
 			: null;
-		const end = this.options.constraints.endDate
-			? new Date(this.options.constraints.endDate)
+		const end = this.options.constraints.end
+			? this.adapter.endOfPage(new Date(this.options.constraints.end))
 			: null;
 
 		// Month control
 		// Room to go back?
-		if (start && (isAfter(start, this.interval.start) || isSameDay(start, this.interval.start))) {
+		if (start && (!isBefore(start, this.interval.start))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.previousButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -781,7 +557,7 @@ class Clndr {
 		}
 
 		// Room to go forward?
-		if (end && (isBefore(end, this.interval.end) || isSameDay(end, this.interval.end))) {
+		if (end && (!isAfter(end, this.interval.end))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.nextButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -790,7 +566,7 @@ class Clndr {
 
 		// Year control
 		// Room to go back?
-		if (start && isAfter(start, subYears(this.interval.start, 1))) {
+		if (start && isAfter(startOfDay(start), startOfDay(subYears(this.interval.start, 1)))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.previousYearButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -798,7 +574,7 @@ class Clndr {
 		}
 
 		// Room to for forward?
-		if (end && isBefore(end, addYears(this.interval.end, 1))) {
+		if (end && isBefore(startOfDay(end), startOfDay(addYears(this.interval.end, 1)))) {
 			this.element
 				.querySelectorAll('.' + this.options.targets.nextYearButton)
 				.forEach(element => element.classList.add(this.options.classes.inactive));
@@ -808,7 +584,8 @@ class Clndr {
 		// Today
 		// Constraints could be updated programmatically. Therefore, this check cannot be just run on
 		// initialization.
-		if (start && isAfter(start, addMonths(new Date(), 1))
+		if (
+			start && isAfter(start, addMonths(new Date(), 1))
 			|| end && isBefore(end, subMonths(new Date(), 1))
 		) {
 			this.element
@@ -823,67 +600,86 @@ class Clndr {
 	 */
 	private handleEvent(event: Event) {
 		const targets = this.options.targets;
-		const eventTarget = event.target as HTMLElement;
+		const element = event.target as HTMLElement;
 
-		this.handleDayEvent(event);
-		this.handleEmptyEvent(event);
+		this.handleItemClick(event);
+		this.handleEmptyClick(event);
 
-		if (eventTarget.closest('.' + targets.todayButton)) {
-			this.today({withCallbacks: true});
+		if (element.closest('.' + targets.todayButton)) {
+			this.todayInternal(element);
 		}
 
-		if (eventTarget.closest('.' + targets.nextButton)) {
-			this.forward({withCallbacks: true});
+		if (element.closest('.' + targets.nextButton)) {
+			this.nextInternal(element);
 		}
 
-		if (eventTarget.closest('.' + targets.previousButton)) {
-			this.back({withCallbacks: true});
+		if (element.closest('.' + targets.previousButton)) {
+			this.previousInternal(element);
 		}
 
-		if (eventTarget.closest('.' + targets.nextYearButton)) {
-			this.nextYear({withCallbacks: true});
+		if (element.closest('.' + targets.nextYearButton)) {
+			this.nextYearInternal(element);
 		}
 
-		if (eventTarget.closest('.' + targets.previousYearButton)) {
-			this.previousYear({withCallbacks: true});
+		if (element.closest('.' + targets.previousYearButton)) {
+			this.previousYearInternal(element);
 		}
+
+		Object.values(adapters).forEach(adapterConstructor => {
+			if (adapterConstructor.eventListener) {
+				adapterConstructor.eventListener.apply(this, [element, this.switchViewInternal.bind(this)]);
+			}
+		});
 	}
 
 	/**
-	 * Handles click event on day boxes.
+	 * Handles a click event on an item.
 	 */
-	private handleDayEvent(event: Event) {
+	private handleItemClick(event: Event) {
 		const eventTarget = event.target as HTMLElement | null;
 		const currentTarget = eventTarget?.closest(
-			'.' + this.options.targets.day
+			'.' + this.options.targets.item
 		) as HTMLElement | null;
 
 		if (!currentTarget) {
 			return;
 		}
 
-		this.navigatePerAdjacentDay(currentTarget);
+		this.navigatePerAdjacentItem(currentTarget);
+
+		if (currentTarget.classList.contains('switch')) {
+			// Clicking on an item to switch the view will always switch to the next smaller view.
+			// Switching to a larger view by clicking on an item does not make a lot of sense.
+			const adjacentView = this.getAdjacentView(this.adapter.getView());
+
+			adjacentView && this.switchViewInternal(adjacentView, currentTarget);
+		}
+
+		const previouslySelectedDate = this.selectedDate;
 
 		this.updateSelectedDate(currentTarget);
 
-		if (this.options.clickEvents.click) {
-			const target = this.buildTargetObject(currentTarget);
-			this.options.clickEvents.click.apply(this, [target]);
+		if (this.options.on.click) {
+			const target = this.aggregateInteractionEventParameters(
+				currentTarget,
+				previouslySelectedDate
+			);
+			this.options.on.click.apply(this, [target]);
 		}
 	}
 
 	/**
-	 * Navigates to another month according to the target element provided.
+	 * Navigates to another page according to the target element provided.
 	 */
-	private navigatePerAdjacentDay(target: HTMLElement) {
-		if (!this.options.adjacentDaysChangeMonth) {
+	private navigatePerAdjacentItem(target: HTMLElement) {
+		if (!this.options.adjacentItemsChangePage) {
 			return;
 		}
 
-		if (target.classList.contains(this.options.classes.lastMonth)) {
-			this.back({withCallbacks: true});
-		} else if (target.classList.contains(this.options.classes.nextMonth)) {
-			this.forward({withCallbacks: true});
+		if (target.classList.contains(this.options.classes.previous)) {
+			this.previousInternal(target);
+		} else if (target.classList.contains(this.options.classes.next)) {
+			this.nextInternal(target);
 		}
 	}
 
@@ -900,17 +696,20 @@ class Clndr {
 			return;
 		}
 
-		this.options.selectedDate = this.getTargetDateString(target);
+		this.selectedDate = this.getTargetDate(target);
 		this.element.querySelectorAll('.' + this.options.classes.selected)
 			.forEach(node => node.classList.remove(this.options.classes.selected));
-		this.element.querySelector('.calendar-day-' + this.options.selectedDate)?.classList
-			.add(this.options.classes.selected);
+
+		if (this.selectedDate) {
+			const id = this.adapter.getIdForItem(this.selectedDate);
+			this.element.querySelector('.' + id)?.classList.add(this.options.classes.selected);
+		}
 	}
 
 	/**
-	 * Handles click event on empty day boxes.
+	 * Handles the click event on empty items.
 	 */
-	private handleEmptyEvent(event: Event) {
+	private handleEmptyClick(event: Event) {
 		const eventTarget = event.target as HTMLElement | null;
 		const currentTarget = eventTarget?.closest(
 			'.' + this.options.targets.empty
@@ -920,16 +719,16 @@ class Clndr {
 			return;
 		}
 
-		if (this.options.clickEvents.click) {
-			const target = this.buildTargetObject(currentTarget);
-			this.options.clickEvents.click.apply(this, [target]);
+		if (this.options.on.click) {
+			const target = this.aggregateInteractionEventParameters(currentTarget);
+			this.options.on.click.apply(this, [target]);
 		}
 
-		if (this.options.adjacentDaysChangeMonth) {
-			if (currentTarget.classList.contains(this.options.classes.lastMonth)) {
-				this.back({withCallbacks: true});
-			} else if (currentTarget.classList.contains(this.options.classes.nextMonth)) {
-				this.forward({withCallbacks: true});
+		if (this.options.adjacentItemsChangePage) {
+			if (currentTarget.classList.contains(this.options.classes.previous)) {
+				this.previousInternal(currentTarget);
+			} else if (currentTarget.classList.contains(this.options.classes.next)) {
+				this.nextInternal(currentTarget);
 			}
 		}
 	}
@@ -937,28 +736,27 @@ class Clndr {
 	/**
 	 * Creates the object to be returned along click events.
 	 */
-	private buildTargetObject(target: HTMLElement): ClndrTarget {
-		const targetWasDay = target.classList.contains(this.options.targets.day);
-		const dateString = this.getTargetDateString(target);
-		const date = dateString ? new Date(dateString) : null;
+	private aggregateInteractionEventParameters(
+		target: HTMLElement,
+		previouslySelectedDate?: Date
+	): ClndrItemEventParameters {
+		const targetWasDay = target.classList.contains(this.options.targets.item);
+		const date = this.getTargetDate(target);
 
 		return {
 			date,
+			view: this.adapter.getView(),
 			events: targetWasDay && date ? this.getEventsOfDate(date) : [],
+			selectedDateChanged: !!date && (
+				!previouslySelectedDate || !isSameDay(date, previouslySelectedDate)
+			),
+			isToday: !!date && this.adapter.isToday(date),
 			element: target,
 		};
 	}
 
-	/**
-	 * Get date string ("YYYY-MM-DD") associated with the given target.
-	 * This method is meant to be called on ".day" elements.
-	 */
-	private getTargetDateString(target: HTMLElement) {
-		const index = target.className.indexOf('calendar-day-');
-
-		return index === -1
-			? undefined
-			: target.className.substring(index + 13, index + 23);
+	private getTargetDate(target: HTMLElement) {
+		return this.adapter.getDateFromClassNames(target.className) || undefined;
 	}
 
 	private getEventsOfDate(date: Date): ClndrEvent[] {
@@ -966,509 +764,359 @@ class Clndr {
 			return [];
 		}
 
-		const targetEndDate = endOfDay(date);
+		const interval = this.adapter.getIntervalForDate(date);
 
-		return this.events.filter(event => {
-			if (this.options.multiDayEvents) {
-				return date
-					&& !isAfter(event._clndrStartDateObject, targetEndDate)
-					&& !isAfter(date, event._clndrEndDateObject);
-			} else {
-				return isSameDay(date, event._clndrStartDateObject);
-			}
-		}).map(event => event.originalEvent);
+		return this.events.filter(event => areIntervalsOverlapping(
+			interval,
+			event.clndrInterval
+		)).map(event => event.originalEvent);
 	}
 
 	/**
 	 * Triggers any applicable events given a change in the calendar's start and end dates.
 	 * @param orig Contains the original start and end dates.
+	 * @param element The event's source element.
 	 */
-	private triggerEvents(orig: ClndrEventOrigin) {
-		const timeOpt = this.options.lengthOfTime;
-		const eventsOpt = this.options.clickEvents;
-		const newInt = {
-			end: this.interval.end,
-			start: this.interval.start,
-		};
+	private triggerEvents(orig: Interval, element?: HTMLElement) {
+		const newInt: Interval = {start: this.interval.start, end: this.interval.end};
 
-		// If any of the change conditions have been hit, trigger the relevant events
-		const nextMonth = isAfter(newInt.start, orig.start)
-			&& (
-				Math.abs(getMonth(newInt.start) - getMonth(orig.start)) === 1
-				|| (getMonth(orig.start) === 11 && getMonth(newInt.start) === 0)
-			);
-		const prevMonth = isBefore(newInt.start, orig.start)
-			&& (
-				Math.abs(getMonth(orig.start) - getMonth(newInt.start)) === 1
-				|| (getMonth(orig.start) === 0 && getMonth(newInt.start) === 11)
-			);
-		const monthChanged = getMonth(newInt.start) !== getMonth(orig.start)
-			|| getYear(newInt.start) !== getYear(orig.start);
-		const nextYear = getYear(newInt.start) - getYear(orig.start) === 1
-			|| getYear(newInt.end) - getYear(orig.end) === 1;
-		const prevYear = getYear(orig.start) - getYear(newInt.start) === 1
-			|| getYear(orig.end) - getYear(newInt.end) === 1;
-		const yearChanged = getYear(newInt.start) !== getYear(orig.start);
-
-		// Only configs with a time period will get the interval change event
-		if (timeOpt.days || timeOpt.months) {
-			const nextInterval = isAfter(newInt.start, orig.start);
-			const prevInterval = isBefore(newInt.start, orig.start);
-			const intervalChanged = nextInterval || prevInterval;
-			const intervalArg: [Date, Date] = [
-				new Date(this.interval.start),
-				new Date(this.interval.end),
-			];
-
-			if (nextInterval && eventsOpt.nextInterval) {
-				eventsOpt.nextInterval.apply(this, intervalArg);
-			}
-
-			if (prevInterval && eventsOpt.previousInterval) {
-				eventsOpt.previousInterval.apply(this, intervalArg);
-			}
-
-			if (intervalChanged && eventsOpt.onIntervalChange) {
-				eventsOpt.onIntervalChange.apply(this, intervalArg);
-			}
-		} else {
-			const monthArg: [Date] = [new Date(this.interval.month)];
-
-			if (nextMonth && eventsOpt.nextMonth) {
-				eventsOpt.nextMonth.apply(this, monthArg);
-			}
-
-			if (prevMonth && eventsOpt.previousMonth) {
-				eventsOpt.previousMonth.apply(this, monthArg);
-			}
-
-			if (monthChanged && eventsOpt.onMonthChange) {
-				eventsOpt.onMonthChange.apply(this, monthArg);
-			}
-
-			if (nextYear && eventsOpt.nextYear) {
-				eventsOpt.nextYear.apply(this, monthArg);
-			}
-
-			if (prevYear && eventsOpt.previousYear) {
-				eventsOpt.previousYear.apply(this, monthArg);
-			}
-
-			if (yearChanged && eventsOpt.onYearChange) {
-				eventsOpt.onYearChange.apply(this, monthArg);
-			}
+		const eventParameters = {
+			interval: this.interval,
+			isBefore: isBefore(newInt.start, orig.start),
+			isAfter: isAfter(newInt.start, orig.start),
+			monthChanged: !isSameMonth(newInt.start, orig.start),
+			yearChanged: !isSameYear(newInt.start, orig.start),
+			element,
 		}
+
+		this.options.on.navigate?.apply(this, [eventParameters]);
 	}
 
-	private addDateObjectToEvents(events: ClndrEvent[]) {
-		if (this.options.multiDayEvents) {
-			return [];
-		}
+	private parseToInternalEvents(events: ClndrEvent[]) {
+		const dateParameter = this.options.dateParameter;
 
-		return events.map((event): InternalClndrEvent => {
-			if (!(event[this.options.dateParameter] instanceof Date)
-				&& typeof event[this.options.dateParameter] !== 'string'
-			) {
-				throw new Error(
-					`event['${this.options.dateParameter}'] is required to be a Date or a string, while ${typeof event[this.options.dateParameter]} was provided`
-				);
-			}
+		return events.map(event => {
+			const start = dateParameter.start && event[dateParameter.start];
+			const end = dateParameter.end && event[dateParameter.end];
 
-			return {
-				_clndrStartDateObject: new Date(event[this.options.dateParameter] as Date | string),
-				_clndrEndDateObject: new Date(event[this.options.dateParameter] as Date | string),
-				originalEvent: event,
-			}
-		});
-	}
-
-	private addMultiDayDateObjectsToEvents(events: ClndrEvent[]) {
-		if (!this.options.multiDayEvents) {
-			return [];
-		}
-
-		const multiEvents = this.options.multiDayEvents;
-		const internalEvents: InternalClndrEvent[] = [];
-
-		events.forEach(event => {
-			const start = multiEvents.startDate && event[multiEvents.startDate];
-			const end = multiEvents.endDate && event[multiEvents.endDate];
-
-			if (!end && !start && multiEvents.singleDay) {
-				if (!(event[multiEvents.singleDay] instanceof Date)
-					&& typeof event[multiEvents.singleDay] !== 'string'
+			if (!end && !start && dateParameter.date) {
+				if (
+					!(event[dateParameter.date] instanceof Date)
+					&& typeof event[dateParameter.date] !== 'string'
+					&& !Number.isInteger(event[dateParameter.date])
 				) {
-					throw new Error(
-						`event['${multiEvents.singleDay}'] is required to be a Date or a string, while ${typeof event[multiEvents.singleDay]} was provided`
+					console.warn(
+						`event['${dateParameter.date}'] is required to be a Date, a string or an integer, while ${typeof event[dateParameter.date]} was provided`,
+						event
 					);
+					return;
 				}
 
-				internalEvents.push({
-					_clndrEndDateObject: new Date(event[multiEvents.singleDay] as Date | string),
-					_clndrStartDateObject: new Date(event[multiEvents.singleDay] as Date | string),
+				return {
+					clndrInterval: {
+						start: new Date(event[dateParameter.date] as Date | string | number),
+						end: endOfDay(new Date(event[dateParameter.date] as Date | string | number)),
+					},
 					originalEvent: event,
-				});
+				};
 			} else if (end || start) {
 				if (
-					start && !(start instanceof Date) && typeof start !== 'string'
-					|| end && !(end instanceof Date) && typeof end !== 'string'
+					start && !(start instanceof Date) && typeof start !== 'string' && !Number.isInteger(start)
+					|| end && !(end instanceof Date) && typeof end !== 'string' && !Number.isInteger(end)
 				) {
-					throw new Error(
-						`event['${multiEvents.startDate}'] and event['${multiEvents.endDate}'] are required to be a Date or a string`
+					console.warn(
+						`event['${dateParameter.start}'] and event['${dateParameter.end}'] are required to be a Date, a string or an integer`,
+						event
 					);
+					return;
 				}
 
-				internalEvents.push({
-					_clndrEndDateObject: new Date((end || start) as Date | string),
-					_clndrStartDateObject: new Date((start || end) as Date | string),
+				return {
+					clndrInterval: {
+						start: new Date((start || end) as Date | string | number),
+						end: endOfDay(new Date((end || start) as Date | string | number)),
+					},
 					originalEvent: event,
-				});
+				};
 			}
-		});
 
-		return internalEvents;
+			console.warn('Invalid event configuration', event);
+		}).filter(event => !!event) as InternalClndrEvent[];
 	}
 
-	private calendarDay(options: Day) {
-		const defaults: Day = {
+	private compileClndrItem(options: ClndrItem) {
+		const defaults: ClndrItem = {
 			date: undefined,
 			events: [],
 			classes: this.options.targets.empty,
 		};
 
-		return Clndr.mergeOptions<Day>(defaults, options);
+		return Clndr.mergeOptions<ClndrItem>(defaults, options);
+	}
+
+	private async setPagination(view: View, date: Date) {
+		this.adapter = new adapters[view]({
+			forceSixRows: this.options.forceSixRows,
+			pageSize: this.options.pagination[view]?.size ?? 1,
+			showAdjacent: this.options.showAdjacent,
+			weekStartsOn: this.options.weekStartsOn,
+		});
+
+		this.interval = this.adapter.initInterval(date);
+
+		if (this.options.constraints) {
+			this.interval = this.initConstraints(this.options.constraints, this.interval);
+		}
+
+		return this.render();
 	}
 
 	/**
-	 * Action to go backward one or more periods.
+	 * Returns the view currently rendered.
 	 */
-	back(options: ClndrNavigationOptions = {}) {
-		const timeOpt = this.options.lengthOfTime;
-		const defaults: ClndrNavigationOptions = {withCallbacks: false};
-		const orig: ClndrEventOrigin = {
-			end: this.interval.end,
-			start: this.interval.start,
-		};
+	getView() {
+		return this.adapter.getView();
+	}
 
-		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
+	/**
+	 * Returns the interval currently rendered.
+	 */
+	getInterval() {
+		return this.interval;
+	}
+
+	/**
+	 * Returns the date currently selected, if the `trackSelectedDate` option is activated.
+	 */
+	getSelectedDate() {
+		return this.selectedDate;
+	}
+
+	/**
+	 * Switch the view while ensuring the provided date is on the page. If no date is provided, the
+	 * start of the current page's interval is used.
+	 */
+	async switchView(view: View, date?: Date | string | number) {
+		return this.switchViewInternal(view, date);
+	}
+
+	private async switchViewInternal(
+		view: View,
+		dateOrTarget?: Date | string | number | HTMLElement
+	) {
+		if (view === this.adapter.getView() || !this.availableViews.includes(view)) {
+			return;
+		}
+
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
+
+		const date = dateOrTarget instanceof HTMLElement
+			? this.getTargetDate(dateOrTarget) ?? this.interval.start
+			: dateOrTarget !== undefined ? new Date(dateOrTarget) : this.interval.start;
+
+		if (this.options.on.switchView) {
+			await this.options.on.switchView.apply(this, [{view}]);
+		}
+
+		return this.setPagination(view, date).then(() => {
+			return this.triggerEvents(
+				orig,
+				dateOrTarget instanceof HTMLElement ? dateOrTarget : undefined
+			);
+		});
+	}
+
+	/**
+	 * Action to go backward one or more pages.
+	 */
+	async previous() {
+		return this.previousInternal();
+	}
+
+	private async previousInternal(element?: HTMLElement) {
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		if (!this.constraints.previous) {
-			return this;
+			return;
 		}
 
-		if (timeOpt.days && timeOpt.interval) {
-			// Shift the interval by days
-			this.interval.start = startOfDay(subDays(this.interval.start, timeOpt.interval));
-			this.interval.end = endOfDay(addDays(this.interval.start, timeOpt.days - 1));
-			this.interval.month = new Date(this.interval.start);
-		} else {
-			// Shift the interval by a month (or several months)
-			this.interval.start = startOfMonth(subMonths(this.interval.start, timeOpt.interval));
-			this.interval.end = endOfMonth(
-				subDays(addMonths(this.interval.start, timeOpt.months || timeOpt.interval), 1)
-			);
-			this.interval.month = new Date(this.interval.start);
-		}
+		this.interval = this.adapter.back(
+			this.interval,
+			this.options.pagination[this.adapter.getView()]?.step
+		);
 
-		this.render();
-
-		if (options.withCallbacks) {
-			this.triggerEvents(orig);
-		}
-
-		return this;
+		return this.render().then(() => this.triggerEvents(orig, element));
 	}
 
 	/**
-	 * Alias of Clndr.back().
+	 * Action to go forward one or more pages.
 	 */
-	previous(options: ClndrNavigationOptions = {}) {
-		return this.back(options);
+	async next() {
+		return this.nextInternal();
 	}
 
-	/**
-	 * Action to go forward one or more periods.
-	 */
-	forward(options: ClndrNavigationOptions = {}) {
-		const timeOpt = this.options.lengthOfTime;
-		const defaults: ClndrNavigationOptions = {withCallbacks: false};
-		const orig: ClndrEventOrigin = {
-			end: this.interval.end,
-			start: this.interval.start,
-		};
-
-		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
+	private async nextInternal(element?: HTMLElement) {
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		if (!this.constraints.next) {
-			return this;
+			return;
 		}
 
-		if (timeOpt.days && timeOpt.interval) {
-			// Shift the interval by days
-			this.interval.start = startOfDay(addDays(this.interval.start, timeOpt.interval));
-			this.interval.end = endOfDay(addDays(this.interval.start, timeOpt.days - 1));
-			this.interval.month = new Date(this.interval.start);
-		} else {
-			// Shift the interval by a month (or several months)
-			this.interval.start = startOfMonth(addMonths(this.interval.start, timeOpt.interval));
-			this.interval.end = endOfMonth(
-				subDays(addMonths(this.interval.start, timeOpt.months || timeOpt.interval), 1)
-			);
-			this.interval.month = new Date(this.interval.start);
-		}
+		this.interval = this.adapter.forward(
+			this.interval,
+			this.options.pagination[this.adapter.getView()]?.step
+		);
 
-		this.render();
-
-		if (options.withCallbacks) {
-			this.triggerEvents(orig);
-		}
-
-		return this;
+		return this.render().then(() => {
+			this.triggerEvents(orig, element);
+		});
 	}
 
 	/**
-	 * Alias of Clndr.forward()
+	 * Navigates backward by one year.
 	 */
-	next(options: ClndrNavigationOptions) {
-		return this.forward(options);
+	async previousYear() {
+		return this.previousYearInternal();
 	}
 
-	/**
-	 * Action to go back one year.
-	 */
-	previousYear(options: ClndrNavigationOptions = {}) {
-		const defaults: ClndrNavigationOptions = {	withCallbacks: false};
-		const orig: ClndrEventOrigin = {
-			end: this.interval.end,
-			start: this.interval.start,
-		};
-
-		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
+	private async previousYearInternal(element?: HTMLElement) {
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
 		if (!this.constraints.previousYear) {
-			return this;
+			return;
 		}
 
-		this.interval.month = subYears(this.interval.month, 1);
-		this.interval.start = subYears(this.interval.start, 1);
-		this.interval.end = subYears(this.interval.end, 1);
+		this.interval = {
+			start: subYears(this.interval.start, 1),
+			end: subYears(this.interval.end, 1),
+		};
 
-		this.render();
+		this.render().then(() => this.triggerEvents(orig, element));
 
-		if (options.withCallbacks) {
-			this.triggerEvents(orig);
-		}
-
-		return this;
+		return;
 	}
 
 	/**
-	 * Action to go forward one year.
+	 * Navigates forward by one year.
 	 */
-	nextYear(options: ClndrNavigationOptions = {}) {
-		const defaults: ClndrNavigationOptions = {withCallbacks: false};
-		const orig: ClndrEventOrigin = {
-			end: this.interval.end,
-			start: this.interval.start,
-		};
-
-		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
-
-		if (!this.constraints.nextYear) {
-			return this;
-		}
-
-		this.interval.month = addYears(this.interval.month, 1);
-		this.interval.start = addYears(this.interval.start, 1);
-		this.interval.end = addYears(this.interval.end, 1);
-
-		this.render();
-
-		if (options.withCallbacks) {
-			this.triggerEvents(orig);
-		}
-
-		return this;
+	async nextYear() {
+		return this.nextYearInternal();
 	}
 
-	today(options: ClndrNavigationOptions = {}) {
-		const timeOpt = this.options.lengthOfTime;
-		const defaults: ClndrNavigationOptions = {withCallbacks: false};
-		const orig: ClndrEventOrigin = {
-			end: this.interval.end,
-			start: this.interval.start,
-		};
+	private async nextYearInternal(element?: HTMLElement) {
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
-		options = Clndr.mergeOptions<ClndrNavigationOptions>(defaults, options);
-
-		// Only used for legacy month view
-		this.interval.month = startOfMonth(new Date());
-
-		if (timeOpt.days) {
-			// If there was a startDate specified, its weekday should be figured out to use that as the
-			// starting point of the interval. If not, go to today.weekday(0).
-			this.interval.start = startOfDay(setDay(
-				new Date(),
-				timeOpt.startDate ? getDay(new Date(timeOpt.startDate)) : 0
-			));
-
-			this.interval.end = endOfDay(addDays(this.interval.start, timeOpt.days - 1));
-		} else {
-			this.interval.start = startOfMonth(new Date());
-			this.interval.end = endOfMonth(
-				subDays(addMonths(this.interval.start, timeOpt.months || timeOpt.interval), 1)
-			);
+		if (!this.constraints.nextYear) {
+			return;
 		}
 
-		// No need to re-render if the month was not changed
+		this.interval = {
+			start: addYears(this.interval.start, 1),
+			end: addYears(this.interval.end, 1),
+		};
+
+		this.render().then(() => this.triggerEvents(orig, element));
+	}
+
+	/**
+	 * Navigates to today.
+	 */
+	async today() {
+		return this.todayInternal();
+	}
+
+	private async todayInternal(element?: HTMLElement) {
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
+
+		this.interval = this.adapter.setDate(new Date());
+
+		// No need to re-render if the page was not changed
 		if (
 			!isSameMonth(this.interval.start, orig.start)
 			|| !isSameMonth(this.interval.end, orig.end)
 		) {
-			this.render();
+			this.render().then(() => this.triggerEvents(orig, element));
 		}
+	}
 
-		// Fire the today event handler regardless of any change
-		if (options.withCallbacks) {
-			if (this.options.clickEvents.today) {
-				this.options.clickEvents.today.apply(this, [new Date(this.interval.month)]);
-			}
+	/**
+	 * Ensures a provided date is on the page.
+	 */
+	async setDate(newDate: Date | string | number) {
+		return this.setDateInternal(newDate);
+	}
 
-			this.triggerEvents(orig);
-		}
+	private async setDateInternal(newDate: Date | string | number, element?: HTMLElement) {
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
+
+		this.interval = this.adapter.setDate(new Date(newDate));
+
+		this.render().then(() => this.triggerEvents(orig, element));
 	}
 
 	/**
 	 * Changes the month being provided a value between 0 and 11.
 	 */
-	setMonth(newMonth: number, options: ClndrNavigationOptions = {}) {
-		const timeOpt = this.options.lengthOfTime;
-		const orig: ClndrEventOrigin = {
-			end: this.interval.end,
-			start: this.interval.start,
-		};
-
-		if (timeOpt.days || timeOpt.months) {
-			console.warn(
-				'You are using a custom date interval. Use Clndr.setIntervalStart(startDate) instead.'
-			);
-			return this;
-		}
-
-		this.interval.month = setMonth(this.interval.month, newMonth);
-		this.interval.start = new Date(startOfMonth(this.interval.month));
-		this.interval.end = endOfMonth(this.interval.start);
-
-		this.render();
-
-		if (options && options.withCallbacks) {
-			this.triggerEvents(orig);
-		}
-
-		return this;
+	async setMonth(newMonth: number) {
+		return this.setMonthInternal(newMonth);
 	}
 
-	setYear(newYear: number, options: ClndrNavigationOptions = {}) {
-		const orig: ClndrEventOrigin = {
-			end: this.interval.end,
-			start: this.interval.start,
-		};
+	private async setMonthInternal(newMonth: number, element?: HTMLElement) {
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
-		this.interval.month = setYear(this.interval.month, newYear);
-		this.interval.end = setYear(this.interval.end, newYear);
-		this.interval.start = setYear(this.interval.start, newYear);
+		this.interval = this.adapter.setMonth(newMonth, this.interval);
 
-		this.render();
-
-		if (options && options.withCallbacks) {
-			this.triggerEvents(orig);
-		}
-
-		return this;
+		this.render().then(() => this.triggerEvents(orig, element));
 	}
 
 	/**
-	 * Sets the start of the time period.
+	 * Changes the current date to a specific year.
 	 */
-	setIntervalStart(newDate: Date | string, options: ClndrNavigationOptions = {}) {
-		const timeOpt = this.options.lengthOfTime;
-		const orig: ClndrEventOrigin = {
-			end: this.interval.end,
-			start: this.interval.start,
-		};
+	async setYear(newYear: number) {
+		return this.setYearInternal(newYear);
+	}
 
-		if (!timeOpt.days && !timeOpt.months) {
-			console.warn(
-				'You are not using a custom date interval. Use Clndr.setMonth(new Month) or Clndr.setYear(newYear) instead.'
-			);
-			return this;
-		}
+	private async setYearInternal(newYear: number, element?: HTMLElement) {
+		const orig: Interval = {start: this.interval.start, end: this.interval.end};
 
-		if (timeOpt.days) {
-			this.interval.start = startOfDay(new Date(newDate));
-			this.interval.end = endOfDay(addDays(this.interval.start, timeOpt.days - 1));
-		} else {
-			this.interval.start = startOfMonth(new Date(newDate));
-			this.interval.end = endOfMonth(
-				subDays(addMonths(this.interval.start, timeOpt.months as number), 1)
-			);
-		}
+		this.interval = this.adapter.setYear(newYear, this.interval);
 
-		this.interval.month = new Date(this.interval.start);
-
-		this.render();
-
-		if (options && options.withCallbacks) {
-			this.triggerEvents(orig);
-		}
-
-		return this;
+		this.render().then(() => this.triggerEvents(orig, element));
 	}
 
 	/**
-	 * Overwrites extras and triggers re-rendering.
+	 * Overwrite the extras. Note that this does NOT trigger re-rendering the calendar.
 	 */
 	setExtras(extras: unknown) {
 		this.options.extras = extras;
-		this.render();
 
 		return this;
 	}
 
 	/**
-	 * Overwrites events and triggers re-rendering.
+	 * Overwrites all calendar events. Note that this does NOT trigger re-rendering the calendar.
 	 */
 	setEvents(events: ClndrEvent[]) {
-		this.events = [
-			...this.addMultiDayDateObjectsToEvents(events),
-			...this.addDateObjectToEvents(events),
-		];
-
-		this.render();
+		this.events = this.parseToInternalEvents(events);
 
 		return this;
 	}
 
 	/**
-	 * Adds additional events and triggers re-rendering.
+	 * Adds additional calendar events.
 	 */
-	addEvents(events: ClndrEvent[], reRender = true) {
+	addEvents(events: ClndrEvent[]) {
 		this.options.events = [...this.options.events, ...events];
-		this.events = [
-			...this.events,
-			...this.addMultiDayDateObjectsToEvents(events),
-			...this.addDateObjectToEvents(events),
-		];
-
-		if (reRender) {
-			this.render();
-		}
+		this.events = [...this.events, ...this.parseToInternalEvents(events)];
 
 		return this;
 	}
 
 	/**
-	 * Removes all events according to a matching function and triggers rendering.
+	 * Removes all events according to a matching function. Note that this does NOT trigger
+	 * re-rendering the calendar.
+	 * @param matchingFn - A function returning `true` for calendar events to be removed, `false`
+	 *   otherwise.
 	 */
 	removeEvents(matchingFn: (event: ClndrEvent) => boolean) {
 		for (let i = this.options.events.length - 1; i >= 0; i--) {
@@ -1478,16 +1126,7 @@ class Clndr {
 			}
 		}
 
-		this.render();
-
 		return this;
-	}
-
-	destroy() {
-		(this.calendarContainer as HTMLElement).innerHTML = '';
-		(this.calendarContainer as HTMLElement).remove();
-
-		this.options = defaults;
 	}
 
 }

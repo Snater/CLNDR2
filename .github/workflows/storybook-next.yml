@@ -1,7 +1,7 @@
-name: Deploy Storybook
+name: Deploy Storybook (next)
 on:
-  release:
-    types: [published]
+  push:
+    branches: [next]
 jobs:
   deploy-storybook:
     runs-on: ubuntu-latest
@@ -20,5 +20,5 @@ jobs:
         username: ${{secrets.FTP_USERNAME}}
         password: ${{secrets.FTP_PASSWORD}}
         local-dir: ./storybook-static/
-        server-dir: ./demos/
+        server-dir: ./next/demos/
         dangerous-clean-slate: true

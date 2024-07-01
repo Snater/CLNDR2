@@ -1,6 +1,7 @@
 /.idea
 /coverage
 /dist
+/docs
 /node_modules
 /storybook-static
 *.tgz
