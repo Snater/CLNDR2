@@ -1,4 +1,4 @@
-M# CLNDR2
+# CLNDR2
 
 [![NPM version][npm-version-image]][npm-url] [![Test status][github-action-image]][github-action-url] [![Coverage Status][test-coverage-image]][test-coverage-url]
 
@@ -8,8 +8,6 @@ It was inspired by awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you i
 > 📄 **Documentation: https://clndr2.snater.com/docs**
 >
 > 📅 **Demos: https://clndr2.snater.com/demos**
-
-Check out the [2.0.0 milestone](https://github.com/Snater/CLNDR2/milestone/1) for plans on the next major release. Development is taking place on the [next](https://github.com/Snater/CLNDR2/tree/next) branch.
 
 ---
 
