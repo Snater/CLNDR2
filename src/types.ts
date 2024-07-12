@@ -100,8 +100,8 @@ export type DefaultOptions = {
 	extras?: unknown
 	/**
 	 * Callback function that formats the day in the header. Default is as specified in the example
-	 * using date-fns' `format`. The function is passed a Date object representing the day, as well as
-	 * a date-fns locale, if provided per the `locale` option.
+	 * using date-fns' `format`. The function is passed a `Date` object representing the day, as well
+	 * as a date-fns locale, if provided per the `locale` option.
 	 * @example
 	 * ```
 	 * formatWeekdayHeader: (day, locale) => {
@@ -393,7 +393,8 @@ export type ItemStatus = 'past'
  */
 export type ClndrTemplateData = {
 	/**
-	 * Date indicating the current page for convenience; This is exactly the same as `interval.start`.
+	 * `Date` indicating the current page for convenience; This is exactly the same as
+	 * `interval.start`.
 	 */
 	date: Date
 	/**
@@ -401,10 +402,10 @@ export type ClndrTemplateData = {
 	 */
 	interval: Interval
 	/**
-	 * When the calendar is configured to display multiple pages at a time per a view's `pagination`
-	 * option, this will contain a Date object for each page referring to the start of each page's
-	 * interval. For rendering the items of each page, the `pages` can be looped over and the
-	 * corresponding items be rendered like this:
+	 * When the calendar is configured to display multiple pages simultaneously per a view's
+	 * `pagination` option, this will contain a `Date` object for each page referring to (the start
+	 * of) each page's interval. For rendering the items of each page, the `pages` can be looped over
+	 * and the corresponding items be rendered like this:
 	 * @example
 	 * ```
 	 * pages.forEach((page, pageIndex) => {
@@ -414,9 +415,9 @@ export type ClndrTemplateData = {
 	 */
 	pages: Date[]
 	/**
-	 * The items of a calendar page. When the calendar is configured to display multiple pages at a
-	 * time per a view's `pagination` options, `items` will be a multidimensional array, one array of
-	 * `ClndrItem` objects per page.
+	 * The items of a calendar page. When the calendar is configured to display multiple pages
+	 * simultaneously per a view's `pagination` options, `items` will be a multidimensional array, one
+	 * array of `ClndrItem` objects per page.
 	 */
 	items: ClndrItem[] | ClndrItem[][]
 	/**
@@ -432,8 +433,8 @@ export type ClndrTemplateData = {
 		nextPage: ClndrEvent[]
 	}
 	/**
-	 * An array of day-of-the-week abbreviations, shifted as configured by the `weekStartsOn`
-	 * parameter, i.e. `['S', 'M', 'T', etc...]`.
+	 * An array of day-of-the-week abbreviations, shifted as configured by the `weekStartsOn` option,
+	 * i.e. `['S', 'M', 'T', etc...]`.
 	 */
 	daysOfTheWeek: string[]
 	/**
@@ -443,7 +444,7 @@ export type ClndrTemplateData = {
 	 */
 	format: (date: Date | string | number, formatStr: string, options: FormatOptions) => string
 	/**
-	 * Anything passed per the `extras` options when creating the calendar.
+	 * Anything supplied per the `extras` option.
 	 */
 	extras: unknown | null
 }
@@ -451,6 +452,8 @@ export type ClndrTemplateData = {
 /**
  * An item displayed on a calendar page. A page consists of one or more items, e.g. a year page
  * consists of 12 items, each representing a month.
+ * Some properties will be undefined if the item is just an empty placeholder item, e.g. on a month
+ * view when the `showAdjacent` option is `false`.
  */
 export type ClndrItem = {
 	/**
@@ -478,8 +481,20 @@ export type ClndrItem = {
 }
 
 export type ClndrItemProperties = {
+	/**
+	 * Whether the item represents "now", e.g. today's day on a month page, or the current month on a
+	 * year page.
+	 */
 	isNow: boolean
+	/**
+	 * Items are considered inactive when they are out of the range specified by the `constraints`
+	 * option.
+	 */
 	isInactive: boolean
+	/**
+	 * Whether an item is not actual part of the current page. Relevant only for the `month` view,
+	 * in case the `showAdjacent` option is activated.
+	 */
 	isAdjacent: boolean
 }
 

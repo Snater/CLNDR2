@@ -1,4 +1,4 @@
-# CLNDR2
+# 📅 CLNDR2
 
 [![NPM version][npm-version-image]][npm-url] [![Test status][github-action-image]][github-action-url] [![Coverage Status][test-coverage-image]][test-coverage-url]
 
@@ -7,7 +7,7 @@ It was inspired by awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you i
 
 > 📄 **Documentation: https://clndr2.snater.com/docs**
 >
-> 📅 **Demos: https://clndr2.snater.com/demos**
+> 🗓️ **Demos: https://clndr2.snater.com/demos**
 
 ---
 
@@ -17,6 +17,7 @@ It was inspired by awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you i
 - [Templating](#templating)
   - [Configuration using CSS Classes](#configuration-using-css-classes)
   - [Template Rendering Engine](#template-rendering-engine)
+  - [Data passed to the Template Function](#data-passed-to-the-template-function)
 - [Calendar Events](#calendar-events)
 - [Interaction Events](#interaction-events)
 - [Configuring Pagination](#configuring-pagination)
@@ -118,7 +119,125 @@ new Clndr(container, {
 });
 ```
 
-The `render` function is passed [a set of parameters](http://clndr2.snater.com/docs/types/types.ClndrTemplateData.html), and it must return the HTML result of the rendering operation.
+### Data passed to the Template Function
+
+The `render` function is passed an object with a set of properties, and it must return the HTML result of the rendering operation. Details about the data passed to the template can be found in the [technical documentation](http://clndr2.snater.com/docs/types/types.ClndrTemplateData.html).
+
+```typescript
+type ClndrTemplateData = {
+  /**
+   * `Date` indicating the current page for convenience; This is exactly the
+   * same as `interval.start`.
+   */
+  date: Date
+
+  /**
+   * Start and end of the current page's interval.
+   */
+  interval: {start: Date, end: Date}
+
+  /**
+   * When the calendar is configured to display multiple pages simultaneously
+   * per a view's `pagination` option, `pages` will contain a `Date` object for
+   * each page referring to (the start of) each page's interval. For rendering
+   * the items of each page, the `pages` can be looped over and the
+   * corresponding items be rendered like this:
+   * pages.forEach((page, pageIndex) => {
+   *   ... items[pageIndex].forEach(item => ...) ...
+   * })
+   */
+  pages: Date[]
+
+  /**
+   * The items of a calendar page, e.g. the reprensentations of the days on a
+   * month page, or of the months on a year page. When the calendar is
+   * configured to display multiple pages simultaneously per a view's
+   * `pagination` options, `items` will be a multidimensional array, one array
+   * of item objects per page.
+   * Some item properties will be undefined if the item is just an empty
+   * placeholder item, e.g. on a month view when the `showAdjacent` option is
+   * `false`.
+   */
+  items: {
+    /**
+     * Start and end of the item.
+     */
+    interval?: {start: Date, end: Date}
+
+    /**
+     * A `Date` object representing the item.
+     */
+    date?: Date
+
+    /**
+     * The calendar events assigned to this item.
+     */
+    events?: {/* Event object passed to `options.events` */}[]
+
+    /**
+     * CSS classes to be applied to the item's HTML element indicating its
+     * status and whether there are events assigned to this item.
+     */
+    classes: string
+
+    /**
+     * Status indicators for the item.
+     */
+    properties?: {
+      /**
+       * Whether the item represents "now", e.g. today' day on a month page, or
+       * the current month on a year page.
+       */
+      isNow: boolean
+      /**
+       * Items are considered inactive when they are out of the range specified
+       * by the `constraints` option.
+       */
+      isInactive: boolean
+      /**
+       * Whether an item is not actual part of the current page. Relevant only
+       * for the `month` view, in case the `showAdjacent` option is activated.
+       */
+      isAdjacent: boolean
+    }
+  } | {/* same as above */}[][]
+
+  /**
+   * The events of the current page as well as the events of the previous and
+   * next page. `events.currentPage` is a multidimensional array if the
+   * pagination size of the current view is greater than 1.
+   * `events.previousPage` and `events.nextPage` may be used to get the events
+   * of adjacent pages if the `showAdjacent` option is turned on. Currently,
+   * that option is relevant for the `month` view only.
+   */
+  events: {
+    currentPage: {/* Event object passed to `options.events` */}[]
+      | {/* Event object passed to `options.events` */}[][]
+    previousPage: {/* Event object passed to `options.events` */}[]
+    nextPage: {/* Event object passed to `options.events` */}[]
+  }
+
+  /**
+   * An array of day-of-the-week abbreviations, shifted as configured by the
+   * `weekStartsOn` option, i.e. `['S', 'M', 'T', etc...]`.
+   */
+  daysOfTheWeek: string[]
+
+  /**
+   * A proxy for date-fns' `format` function being equipped with the locale
+   * provided to the `locale` option.
+   * See date-fns' `format` function: https://date-fns.org/docs/format
+   */
+  format: (
+    date: Date | string | number, formatStr: string, options: FormatOptions
+  ) => string
+
+  /**
+   * Anything supplied per the `extras` option.
+   */
+  extras: unknown | null
+}
+```
 
 ## Calendar Events
 
