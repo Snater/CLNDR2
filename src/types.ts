@@ -269,7 +269,7 @@ export type InteractionEvents = {
 	 * A callback triggered when the calendar is done rendering.
 	 * @param parameters.element - The calendar's root element.
 	 * @param parameters.interval - The interval rendered.
-	 * @param parameters.view - Ths view rendered.
+	 * @param parameters.view - The view rendered.
 	 */
 	afterRender?: (
 		parameters: {element: HTMLElement, interval: Interval, view: View}
@@ -278,35 +278,36 @@ export type InteractionEvents = {
 	 * A callback triggered when the calendar is about to render.
 	 * @param parameters.element - The calendar's root element.
 	 * @param parameters.interval - The interval about to be rendered.
-	 * @param parameters.view - Ths view about to be rendered.
+	 * @param parameters.view - The view about to be rendered.
 	 */
 	beforeRender?: (
 		parameters: {element: HTMLElement, interval: Interval, view: View}
 	) => Promise<void>
 	/**
-	 * A callback triggered whenever a calendar box is clicked.
+	 * A callback triggered whenever a calendar item is clicked. This may be a "valid" calendar item,
+	 * or an empty placeholder item.
 	 */
 	click?: (parameters: ClndrItemEventParameters) => void
 	/**
-	 * Triggered whenever navigating the calendar, which is any operation other than directly clicking
-	 * a calendar box, i.e. clicking the "back" and "forward" buttons, clicking the "today" button
-	 * etc.
+	 * Triggered whenever navigating the calendar, which is any navigation operation other than
+	 * directly clicking a calendar item, i.e. clicking the "back" and "forward" buttons, clicking the
+	 * "today" button etc.
 	 */
 	navigate?: (parameters: NavigationEventParameters) => void
 	/**
 	 * Callback triggered once the calendar has been initialized and rendered.
 	 * @param parameters.element - The calendar's root element.
 	 * @param parameters.interval - The interval that has been rendered initially.
-	 * @param parameters.view - Ths view that has been rendered initially.
+	 * @param parameters.view - The view that has been rendered initially.
 	 */
 	ready?: (
 		parameters: {element: HTMLElement, interval: Interval, view: View}
 	) => void
 	/**
 	 * Callback triggered whenever the view is switched. The callback is triggered before rendering,
-	 * hence any updated to the calendar events done here, will be considered when rendering the new
-	 * view.
-	 * @param parameters.view - Ths view that is switched to.
+	 * hence any update to the calendar events done in this callback, will be considered when
+	 * rendering the new view.
+	 * @param parameters.view - The view that is switched to.
 	 */
 	switchView?: (parameters: {view: View}) => Promise<void>
 }

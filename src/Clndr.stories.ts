@@ -528,18 +528,12 @@ export const MiniCalendarWithClickEvent: Story = {
 					return;
 				}
 
-				let html = '';
-
-				events.forEach(event => {
-					html += `
-						<div class="event">
-							<div class="event-title">${event.title}</div>
-							<div class="event-body">${event.description}</div>
-						</div>
-					`;
-				});
-
-				eventList.innerHTML = html;
+				eventList.innerHTML = events.map(event => (
+					`<div class="event">
+						<div class="event-title">${event.title}</div>
+						<div class="event-body">${event.description}</div>
+					</div>`
+				)).join('');
 
 				eventsContainer.classList.remove('hidden');
 			}),

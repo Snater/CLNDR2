@@ -19,7 +19,7 @@ It was inspired by awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you i
   - [Template Rendering Engine](#template-rendering-engine)
   - [Data passed to the Template Function](#data-passed-to-the-template-function)
 - [Calendar Events](#calendar-events)
-- [Interaction Events](#interaction-events)
+- [Interaction and Render Events](#interaction-and-render-events)
 - [Configuring Pagination](#configuring-pagination)
 - [Switching the View](#switching-the-view)
 - [Asynchronously loading Calendar Events](#asynchronously-loading-calendar-events)
@@ -277,9 +277,23 @@ Generally, the event objects may consist of random properties, yet the calendar 
 
 Just like being passed to the `events` options, the event objects provided to the calendar are passed in their entirety to the template, filtered according to the calendar objects currently rendered. For example, a day calendar item will be populated only with the events that take place on that day. Multi-day events are passed to every single day within their interval.
 
-## Interaction Events
+## Interaction and Render Events
 
-Per the `on` option, [event callbacks](http://clndr2.snater.com/docs/types/types.InteractionEvents.html) may be provided for handling click, navigation or rendering events. An example use case would be displaying the events of the current day in a separate container when the corresponding day is clicked on:
+Per the `on` option, event callbacks may be provided for handling click, navigation or rendering events.
+
+The following event callbacks are supported:
+- `ready`: Triggered once the calendar has been initialized and rendered.
+- `beforeRender`: Triggered when the calendar is about to render.
+- `afterRender`: Triggered when the calendar is done rendering.
+- `click`: Triggered whenever a calendar item is clicked. This may be a "valid" calendar item, or an empty placeholder item.
+- `navigate`: Triggered whenever navigating the calendar, which is any navigation operation other than directly clicking a calendar item, i.e. clicking the "back" and "forward" buttons, clicking the "today" button etc.
+- `switchView`: Triggered whenever the view is switched. The callback is triggered before rendering, hence any update to the calendar events done in this callback, will be considered when rendering the new view.
+
+The callbacks `beforeRender`, `afterRender` and `switchView` are supposed to return a `Promise`. Code execution / rendering will continue as soon as the promise is resolved.
+
+The parameters passed to each callback are documented in the [technical documentation](http://clndr2.snater.com/docs/types/types.InteractionEvents.html).
+
+An example use case for implementing callbacks would be displaying the events of the current day in a separate container when the corresponding day is clicked on:
 
 ```typescript
 const container = document.createElement('div');
@@ -324,18 +338,12 @@ new Clndr(container.querySelector('.clndr') as HTMLElement, {
       }
 
       // Create some HTML with the event data and fill the event list.
-      let html = '';
-
-      events.forEach(event => {
-        html += `
-          <div class="event">
-            <div class="event-title">${event.title}</div>
-            <div class="event-body">${event.description}</div>
-          </div>
-        `;
-      });
-
-       eventList.innerHTML = html;
+      eventList.innerHTML = events.map(event => (
+        `<div class="event">
+          <div class="event-title">${event.title}</div>
+          <div class="event-body">${event.description}</div>
+        </div>`
+      )).join('');
 
       // Show the list of events in case there are events on the day clicked.
       eventsContainer.classList.remove('hidden');
