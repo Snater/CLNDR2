@@ -87,14 +87,14 @@ Here is a simple CLNDR2 month template for EJS, Underscore and lodash. It has go
 </div>
 <div class="clndr-grid">
   <div class="days-of-the-week">
-  <% daysOfTheWeek.forEach(day => { %>
-    <div class="header-day"><%= day %></div>
-  <% }) %>
-    <div class="days">
+    <% daysOfTheWeek.forEach(day => { %>
+      <div class="header-day"><%= day %></div>
+    <% }) %>
+  </div>
+  <div class="days">
     <% items.forEach(day => { %>
       <div class="<%= day.classes %>"><%= day.date.getDate() %></div>
     <% }) %>
-    </div>
   </div>
 </div>
 ```
@@ -107,7 +107,7 @@ Most of these classes may be customized per the `classes` option to avoid potent
 
 ### Template Rendering Engine
 
-Apart from [EJS](https://ejs.co/)/[Underscore](https://underscorejs.org/)/[lodash](https://lodash.com/), CLNDR2 is supposed to work with any templating engine like [handlebars](http://handlebarsjs.com/), [mustache](https://github.com/janl/mustache.js/), [Knockout](https://knockoutjs.com/), etc.
+Apart from [EJS](https://ejs.co/)/[Underscore](https://underscorejs.org/)/[lodash](https://lodash.com/), CLNDR2 is supposed to work with any templating engine.
 
 The basic concept is to provide a `render` function:
 
@@ -117,6 +117,43 @@ const precompiledTemplate = myRenderingEngine.template('...my template HTML stri
 new Clndr(container, {
   render: precompiledTemplate,
 });
+```
+
+In order to use [Handlebars](http://handlebarsjs.com/), a custom helper formatting dates may be defined:
+
+```typescript
+import Clndr from 'clndr2';
+import Handlebars from 'handlebars';
+
+Handlebars.registerHelper(
+  'formatHelper',
+  (format: typeof formatFn, formatString: string, date?: Date) => {
+    return date ? format(date, formatString) : '';
+  }
+);
+
+const template = `
+  <div class="clndr-controls">
+    <div class="clndr-previous-button" role="button">&lsaquo;</div>
+    <div class="month">{{formatHelper format 'MMMM' date}}</div>
+    <div class="clndr-next-button" role="button">&rsaquo;</div>
+  </div>
+  <div class="clndr-grid">
+    <div class="days-of-the-week">
+      {{~#each daysOfTheWeek~}}
+        <div class="header-day">{{this}}</div>
+      {{~/each~}}
+    </div>
+    <div class="days">
+      {{~#each items~}}
+        <div class="{{this.classes}}">
+          {{~formatHelper ../format 'd' this.date~}}
+        </div>
+      {{~/each~}}
+    </div>
+  </div>`;
+
+new Clndr(container, {render: Handlebars.compile(handlebarsTemplate)});
 ```
 
 ### Data passed to the Template Function

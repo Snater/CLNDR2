@@ -1,7 +1,8 @@
 import '@testing-library/jest-dom';
-import {endOfDay, startOfDay} from 'date-fns';
+import {endOfDay, format as formatFn, startOfDay} from 'date-fns';
 import {fireEvent, screen} from '@testing-library/dom';
 import Clndr from '../Clndr';
+import Handlebars from 'handlebars';
 import {de} from 'date-fns/locale';
 import ejs from 'ejs';
 
@@ -13,9 +14,42 @@ describe('Setup', () => {
 		expect(container).not.toBeEmptyDOMElement();
 	});
 
-	test('Pass compiled template to render option', () => {
+	test('Pass compiled EJS template to render option', () => {
 		const template = ejs.compile(defaultTemplate);
 		clndr = new Clndr(container, {render: template});
+
+		expect(container).not.toBeEmptyDOMElement();
+		expect(screen.getByText('January 2024')).toBeInTheDocument();
+	});
+
+	test('Pass compiled Handlebars template to render option', () => {
+		Handlebars.registerHelper(
+			'formatHelper',
+			(format: typeof formatFn, formatString: string, date?: Date) => {
+				return date ? format(date, formatString) : '';
+			}
+		);
+
+		const handlebarsTemplate = `
+			<div>
+				<div class="clndr-previous-button">previous</div>
+				<div>{{formatHelper format 'MM/dd' interval.start}} - {{formatHelper format 'MM/dd' interval.end}}</div>
+				<div>{{formatHelper format 'MMMM' interval.start}} {{formatHelper format 'yyyy' interval.start}}</div>
+				<div class="clndr-next-button">next</div>
+			</div>
+			<div>
+				{{~#each daysOfTheWeek~}}
+					<div class="header-day">{{this}}</div>
+				{{~/each~}}
+			</div>
+			<div>
+				{{~#each items~}}
+					<div class="{{this.classes}}">{{formatHelper ../format 'd' this.date}}</div>
+				{{~/each~}}
+			</div>
+			<div class="clndr-today-button">Today</div>`;
+
+		clndr = new Clndr(container, {render: Handlebars.compile(handlebarsTemplate)});
 
 		expect(container).not.toBeEmptyDOMElement();
 		expect(screen.getByText('January 2024')).toBeInTheDocument();
