@@ -55,6 +55,14 @@ describe('Setup', () => {
 		expect(screen.getByText('January 2024')).toBeInTheDocument();
 	});
 
+	test('date-fns format proxy', () => {
+		clndr = new Clndr(container, {
+			render: vars => vars.format(vars.date, 'MMMM yyyy'),
+		});
+
+		expect(screen.getByText('January 2024')).toBeInTheDocument();
+	});
+
 	test('Basic single-day events', () => {
 		clndr = new Clndr(container, {
 			render: provideRender(),

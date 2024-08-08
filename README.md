@@ -266,7 +266,7 @@ type ClndrTemplateData = {
    * See date-fns' `format` function: https://date-fns.org/docs/format
    */
   format: (
-    date: Date | string | number, formatStr: string, options: FormatOptions
+    date: Date | string | number, formatStr: string, options?: FormatOptions
   ) => string
 
   /**

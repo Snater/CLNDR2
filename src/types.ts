@@ -443,7 +443,7 @@ export type ClndrTemplateData = {
 	 * option.
 	 * @see [date-fns' `format` function](https://date-fns.org/docs/format)
 	 */
-	format: (date: Date | string | number, formatStr: string, options: FormatOptions) => string
+	format: (date: Date | string | number, formatStr: string, options?: FormatOptions) => string
 	/**
 	 * Anything supplied per the `extras` option.
 	 */
