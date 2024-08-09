@@ -34,7 +34,7 @@ describe('Setup', () => {
 			<div>
 				<div class="clndr-previous-button">previous</div>
 				<div>{{formatHelper format 'MM/dd' interval.start}} - {{formatHelper format 'MM/dd' interval.end}}</div>
-				<div>{{formatHelper format 'MMMM' interval.start}} {{formatHelper format 'yyyy' interval.start}}</div>
+				<div>{{formatHelper format 'MMMM yyyy' interval.start}}</div>
 				<div class="clndr-next-button">next</div>
 			</div>
 			<div>

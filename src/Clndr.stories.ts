@@ -288,7 +288,7 @@ const meta: Meta<ClndrOptions> = {
 				<div class="clndr-control-button">
 					<span class="clndr-previous-button" role="button">previous</span>
 				</div>
-				<div class="month"><%= format(date, 'MMMM') %> <%= date.getFullYear() %></div>
+				<div class="month"><%= format(date, 'MMMM yyyy') %></div>
 				<div class="clndr-control-button">
 					<span class="clndr-next-button" role="button">next</span>
 				</div>
@@ -410,7 +410,7 @@ export const FullCalendar: Story = {
 		render: data => ejs.render(`
 			<div class="clndr-controls">
 				<div class="clndr-previous-button" role="button">&lt;</div>
-				<div class="current-month"><%= format(date, 'MMMM') %> <%= date.getFullYear() %></div>
+				<div class="current-month"><%= format(date, 'MMMM yyyy') %></div>
 				<div class="clndr-next-button" role="button">&gt;</div>
 			</div>
 			<div class="clndr-content">

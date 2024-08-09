@@ -7,7 +7,7 @@ globalThis.defaultTemplate = `
 	<div>
 		<div class="clndr-previous-button">previous</div>
 		<div><%= format(interval.start, 'MM/dd') %> - <%= format(interval.end, 'MM/dd') %></div>
-		<div><%= format(interval.start, 'MMMM') %> <%= interval.start.getFullYear() %></div>
+		<div><%= format(interval.start, 'MMMM yyyy') %></div>
 		<div class="clndr-next-button">next</div>
 	</div>
 	<div>
