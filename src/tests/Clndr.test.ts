@@ -3,8 +3,10 @@ import {endOfDay, format as formatFn, startOfDay} from 'date-fns';
 import {fireEvent, screen} from '@testing-library/dom';
 import Clndr from '../Clndr';
 import Handlebars from 'handlebars';
+import Mustache from 'mustache';
 import {de} from 'date-fns/locale';
 import ejs from 'ejs';
+import type {ClndrTemplateData} from '../';
 
 describe('Setup', () => {
 
@@ -56,6 +58,57 @@ describe('Setup', () => {
 	});
 
 	test('date-fns format proxy', () => {
+		clndr = new Clndr(container, {
+			render: vars => vars.format(vars.date, 'MMMM yyyy'),
+		});
+
+		expect(screen.getByText('January 2024')).toBeInTheDocument();
+	});
+
+	test('Pass compiled Mustache template to render option', () => {
+		const mustacheTemplate = `
+			<div>
+				<div class="clndr-previous-button">previous</div>
+				<div>{{heading1}}</div>
+				<div>{{heading2}}</div>
+				<div class="clndr-next-button">next</div>
+			</div>
+			<div>
+				{{#daysOfTheWeek}}
+					<div class="header-day">{{.}}</div>
+				{{/daysOfTheWeek}}
+			</div>
+			<div>
+				{{#items}}
+					<div class="{{this.classes}}">{{day}}</div>
+				{{/items}}
+			</div>
+			<div class="clndr-today-button">Today</div>`;
+
+		clndr = new Clndr(container, {
+			render: (
+				vars: ClndrTemplateData & {
+					day?: () => string,
+					heading1?: string,
+					heading2?: string
+				}
+			) => {
+				const format = vars.format;
+				vars.heading1 = `${format(vars.interval.start, 'MM/dd')} - ${format(vars.interval.end, 'MM/dd')}`;
+				vars.heading2 = format(vars.interval.start, 'MMMM yyyy');
+				vars.day = function() {
+					return this.date?.getDate().toString() || '';
+				}
+
+				return Mustache.render(mustacheTemplate, vars);
+			},
+		});
+
+		expect(container).not.toBeEmptyDOMElement();
+		expect(screen.getByText('January 2024')).toBeInTheDocument();
+	});
+
+	test('Date-fns format proxy', () => {
 		clndr = new Clndr(container, {
 			render: vars => vars.format(vars.date, 'MMMM yyyy'),
 		});

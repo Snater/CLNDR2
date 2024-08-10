@@ -15,8 +15,11 @@ It was inspired by awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you i
 - [Dependencies](#dependencies)
 - [Installation](#installation)
 - [Templating](#templating)
+  - [Template Rendering Engine Examples](#template-rendering-engine-examples)
+    - [EJS/Underscore/lodash](#ejsunderscorelodash) 
+    - [Handlebars](#handlebars) 
+    - [Mustache](#mustache)
   - [Configuration using CSS Classes](#configuration-using-css-classes)
-  - [Template Rendering Engine](#template-rendering-engine)
   - [Data passed to the Template Function](#data-passed-to-the-template-function)
 - [Calendar Events](#calendar-events)
 - [Interaction and Render Events](#interaction-and-render-events)
@@ -77,36 +80,6 @@ npm i clndr2
 
 ## Templating
 
-Here is a simple CLNDR2 month template for EJS, Underscore and lodash. It has got a controls section for navigating, and a grid section rendering the days of the month.
-
-```html
-<div class="clndr-controls">
-  <div class="clndr-previous-button" role="button">&lsaquo;</div>
-  <div class="month"><%= format(date, 'MMMM') %></div>
-  <div class="clndr-next-button" role="button">&rsaquo;</div>
-</div>
-<div class="clndr-grid">
-  <div class="days-of-the-week">
-    <% daysOfTheWeek.forEach(day => { %>
-      <div class="header-day"><%= day %></div>
-    <% }) %>
-  </div>
-  <div class="days">
-    <% items.forEach(day => { %>
-      <div class="<%= day.classes %>"><%= day.date.getDate() %></div>
-    <% }) %>
-  </div>
-</div>
-```
-
-### Configuration using CSS Classes
-
-Applying `day.classes` in the example, the calendar item will receive multiple CSS classes that are used by the calendar to determine the status of the calendar item as well as any action to be triggered when clicking on the item; That is, for example, whether the calendar item is supposed to be selected or whether the view is supposed to switch. Thus, click events will only work if `item.classes` (`day.classes` as used in the example) is included in your item element's `class` attribute as seen above.
-
-Most of these classes may be customized per the `classes` option to avoid potential class naming conflicts with your CSS.
-
-### Template Rendering Engine
-
 Apart from [EJS](https://ejs.co/)/[Underscore](https://underscorejs.org/)/[lodash](https://lodash.com/), CLNDR2 is supposed to work with any templating engine.
 
 The basic concept is to provide a `render` function:
@@ -118,6 +91,44 @@ new Clndr(container, {
   render: precompiledTemplate,
 });
 ```
+
+### Template Rendering Engine Examples
+
+#### EJS/Underscore/lodash
+
+Here is a simple CLNDR2 month template for EJS, Underscore and lodash. It has got a controls section for navigating, and a grid section rendering the days of the month.
+
+```html
+<script id="template" type="text/template">
+  <div class="clndr-controls">
+    <div class="clndr-previous-button" role="button">&lsaquo;</div>
+    <div class="month"><%= format(date, 'MMMM') %></div>
+    <div class="clndr-next-button" role="button">&rsaquo;</div>
+  </div>
+  <div class="clndr-grid">
+    <div class="days-of-the-week">
+      <% daysOfTheWeek.forEach(day => { %>
+        <div class="header-day"><%= day %></div>
+      <% }) %>
+    </div>
+    <div class="days">
+      <% items.forEach(day => { %>
+        <div class="<%= day.classes %>"><%= day.date.getDate() %></div>
+      <% }) %>
+    </div>
+  </div>
+</script>
+```
+
+The template may be compiled and passed to the `render` option:
+
+```typescript
+const template = ejs.compile(document.querySelector('#template').innerHTML);
+
+new Clndr(container, {render: template});
+```
+
+#### Handlebars
 
 In order to use [Handlebars](http://handlebarsjs.com/), a custom helper formatting dates may be defined:
 
@@ -155,6 +166,56 @@ const template = `
 
 new Clndr(container, {render: Handlebars.compile(handlebarsTemplate)});
 ```
+
+#### Mustache
+
+For using [Mustache](https://mustache.github.io/) templates, the template parameters can be extended for preparing the data to be filled into the template:
+
+```typescript
+import Clndr from 'clndr2';
+import Mustache from 'mustache';
+
+const template = `
+  <div class="clndr-controls">
+    <div class="clndr-previous-button" role="button">&lsaquo;</div>
+    <div class="month">{{heading}}</div>
+    <div class="clndr-next-button" role="button">&rsaquo;</div>
+  </div>
+  <div class="clndr-grid">
+    <div class="days-of-the-week">
+      {{#daysOfTheWeek}}
+        <div class="header-day">{{.}}</div>
+      {{/daysOfTheWeek}}
+    </div>
+    <div class="days">
+      {{#items}}
+        <div class="{{this.classes}}">{{day}}</div>
+      {{/items}}
+    </div>
+  </div>`;
+
+new Clndr(container, {
+  render: (
+    vars: ClndrTemplateData & {
+      day?: () => string,
+      heading?: string,
+    }
+  ) => {
+    vars.heading = vars.format(date, 'MMMM');
+    vars.day = function() {
+      return this.date?.getDate().toString() || '';
+    }
+
+    return Mustache.render(mustacheTemplate, vars);
+  },
+});
+```
+
+### Configuration using CSS Classes
+
+Applying `day.classes`/`this.classes` in the examples, the calendar item will receive multiple CSS classes that are used by the calendar to determine the status of the calendar item as well as any action to be triggered when clicking on the item; That is, for example, whether the calendar item is supposed to be selected or whether the view is supposed to switch. Thus, click events will only work if `item.classes` (`day.classes`/`this.classes` as used in the examples) is included in your item element's `class` attribute as seen above.
+
+Most of these classes may be customized per the `classes` option to avoid potential class naming conflicts with your CSS.
 
 ### Data passed to the Template Function
 
