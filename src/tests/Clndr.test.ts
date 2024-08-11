@@ -6,6 +6,7 @@ import Handlebars from 'handlebars';
 import Mustache from 'mustache';
 import {de} from 'date-fns/locale';
 import ejs from 'ejs';
+import pug from 'pug';
 import type {ClndrTemplateData} from '../';
 
 describe('Setup', () => {
@@ -103,6 +104,28 @@ describe('Setup', () => {
 				return Mustache.render(mustacheTemplate, vars);
 			},
 		});
+
+		expect(container).not.toBeEmptyDOMElement();
+		expect(screen.getByText('January 2024')).toBeInTheDocument();
+	});
+
+	test('Pass compiled Pug template to render option', () => {
+		const pugTemplate = `
+div
+	div(class='clndr-previous-button') previous
+	div= format(interval.start, 'MM/dd') + ' - ' + format(interval.end, 'MM/dd') 
+	div= format(interval.start, 'MMMM yyyy')
+	div(class='clndr-next-button') next
+div
+	each dayOfTheWeek in daysOfTheWeek
+		div(class='header-day')= dayOfTheWeek
+div
+	each day in items
+		div(class=day.classes)= day.date ? day.date.getDate() : ''
+div(class='clndr-today-button') Today
+`;
+
+		clndr = new Clndr(container, {render: pug.compile(pugTemplate)});
 
 		expect(container).not.toBeEmptyDOMElement();
 		expect(screen.getByText('January 2024')).toBeInTheDocument();

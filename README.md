@@ -19,6 +19,7 @@ It was inspired by awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you i
     - [EJS/Underscore/lodash](#ejsunderscorelodash) 
     - [Handlebars](#handlebars) 
     - [Mustache](#mustache)
+    - [Pug](#pug)
   - [Configuration using CSS Classes](#configuration-using-css-classes)
   - [Data passed to the Template Function](#data-passed-to-the-template-function)
 - [Calendar Events](#calendar-events)
@@ -209,6 +210,30 @@ new Clndr(container, {
     return Mustache.render(mustacheTemplate, vars);
   },
 });
+```
+
+#### Pug
+
+Like EJS, [Pug](https://pugjs.org/) supports using JavaScript in the template:
+
+```typescript
+import Clndr from 'clndr2';
+import pug from 'pug';
+
+const template = `
+div
+  div(class='clndr-previous-button' role='button') &lsaquo;
+  div= format(date, 'MMMM')
+  div(class='clndr-next-button' role='button') &rsaquo;
+div(class='clndr-grid')
+  div(class='days-of-the-week')
+    each dayOfTheWeek in daysOfTheWeek
+      div(class='header-day')= dayOfTheWeek
+  div(class='days')
+    each day in items
+      div(class=day.classes)= day.date ? day.date.getDate() : ''`;
+
+new Clndr(container, {render: pug.compile(template)});
 ```
 
 ### Configuration using CSS Classes
