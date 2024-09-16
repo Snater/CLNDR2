@@ -410,7 +410,10 @@ class Clndr {
 
 		if(!properties.isInactive) {
 			const adjacentView = this.getAdjacentView(this.adapter.getView());
-			adjacentView && classes.push(this.options.classes.switch);
+
+			if (adjacentView) {
+				classes.push(this.options.classes.switch);
+			}
 		}
 
 		if (this.selectedDate && isWithinInterval(this.selectedDate, itemInterval)) {
@@ -652,7 +655,9 @@ class Clndr {
 			// Switching to a larger view by clicking on an item does not make a lot of sense.
 			const adjacentView = this.getAdjacentView(this.adapter.getView());
 
-			adjacentView && this.switchViewInternal(adjacentView, currentTarget);
+			if (adjacentView) {
+				this.switchViewInternal(adjacentView, currentTarget);
+			}
 		}
 
 		const previouslySelectedDate = this.selectedDate;
