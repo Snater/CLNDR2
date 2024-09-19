@@ -159,6 +159,7 @@ class Clndr {
 	 */
 	private readonly constraints: NavigationConstraints;
 	private readonly daysOfTheWeek: DaysOfTheWeek;
+	private readonly eventHandler: (event: Event) => void;
 	private interval: Interval;
 	private options: Omit<DefaultOptions, 'render'> & Pick<ClndrOptions, 'render'>
 	private calendarContainer: HTMLElement;
@@ -230,9 +231,11 @@ class Clndr {
 		this.element.innerHTML = '<div class="clndr"></div>';
 		this.calendarContainer = this.element.querySelector('.clndr') as HTMLElement;
 
+		this.eventHandler = this.handleEvent.bind(this);
+
 		this.element.addEventListener(
 			this.options.useTouchEvents ? 'touchstart' : 'click',
-			this.handleEvent.bind(this)
+			this.eventHandler
 		);
 
 		this.render().then(() => {
@@ -1132,6 +1135,17 @@ class Clndr {
 		}
 
 		return this;
+	}
+
+	/**
+	 * Detaches the event handler and empties the element the calendar was initialized on.
+	 */
+	destroy() {
+		this.element.removeEventListener(
+			this.options.useTouchEvents ? 'touchstart' : 'click',
+			this.eventHandler
+		);
+		this.element.innerHTML = '';
 	}
 
 }

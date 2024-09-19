@@ -520,7 +520,7 @@ export const MiniCalendarWithClickEvent: Story = {
 					throw new Error('HTML not properly initialized');
 				}
 
-				const events = target.events;
+				const events = target.events as {title: string, description: string}[];
 
 				if (events.length === 0) {
 					eventsContainer.classList.add('hidden');

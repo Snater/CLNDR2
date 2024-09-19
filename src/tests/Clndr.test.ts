@@ -381,6 +381,60 @@ div(class='clndr-today-button') Today
 		});
 	});
 
+	test('Not leaking event handlers after destruction', async () => {
+		const handleClick = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			on: {
+				click: handleClick,
+			},
+		});
+
+		await user.click(screen.getByText('18'));
+
+		clndr.destroy();
+
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			on: {
+				click: handleClick,
+			},
+		})
+
+		await user.click(screen.getByText('18'));
+
+		expect(handleClick).toHaveBeenCalledTimes(2);
+	});
+
+	test('Not leaking event handlers after destruction when using touch events', async () => {
+		const handleClick = jest.fn();
+
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			on: {
+				click: handleClick,
+			},
+			useTouchEvents: true,
+		});
+
+		fireEvent.touchStart(screen.getByText('18'));
+
+		clndr.destroy();
+
+		clndr = new Clndr(container, {
+			render: provideRender(),
+			on: {
+				click: handleClick,
+			},
+			useTouchEvents: true,
+		})
+
+		fireEvent.touchStart(screen.getByText('18'));
+
+		expect(handleClick).toHaveBeenCalledTimes(2);
+	});
+
 });
 
 describe('Navigation', () => {

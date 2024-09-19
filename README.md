@@ -5,7 +5,7 @@
 CLNDR2 is a straightforward framework-agnostic front-end calendar widget operating on HTML templates powered by the template rendering engine of your choice.<br />
 It was inspired by awesome [CLNDR](https://github.com/kylestetz/CLNDR). If you intend to migrate from CLNDR to CLNDR2, check out the [migration notes](#key-differences-to-clndr).
 
-> 📄 **Documentation: https://clndr2.snater.com/docs**
+> 📄 **Code Documentation: https://clndr2.snater.com/docs**
 >
 > 🗓️ **Demos: https://clndr2.snater.com/demos**
 
@@ -727,9 +727,19 @@ export default class Clndr extends Component<ClndrOptions, object> {
     }
   }
 
+  componentWillUnmount() {
+    this.clndr?.destroy();
+    this.clndr = undefined;
+  }
+
   componentDidUpdate() {
     if (this.elementRef.current) {
-      this.clndr = new ClndrClass(this.elementRef.current, this.props);
+      const selectedDate = this.clndr?.getSelectedDate();
+      this.clndr?.destroy();
+      this.clndr = new ClndrClass(
+        this.elementRef.current,
+        {...this.props, selectedDate}
+      );
     }
   }
 }
@@ -739,7 +749,7 @@ Using the adapter, the calendar options can be passed as props to the `Clndr` co
 
 ```tsx
 function MyComponent() {
-  const clndrRef = React.createRef<Clndr>();
+  const clndrRef = React.useRef<Clndr>(null);
 
   const forward = useCallback(() => {
     clndrRef.current?.clndr?.next();
