@@ -1,5 +1,5 @@
 import Clndr, {ClndrTemplateData} from '../../';
-import {UserEvent} from '@testing-library/user-event/index';
+import {UserEvent} from '@testing-library/user-event/';
 
 declare global {
 	// Using "var" is necessary for the variables to show up on globalThis as per

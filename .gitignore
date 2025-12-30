@@ -4,5 +4,6 @@
 /docs
 /node_modules
 /storybook-static
+*.log
 *.tgz
 .DS_Store

@@ -1,11 +1,11 @@
 import './Clndr.stories.less';
-import {Meta, StoryObj} from '@storybook/html';
+import {Meta, StoryObj} from '@storybook/html-vite';
 import {addDays, addMonths, format} from 'date-fns';
 import {de, enUS, es, fr} from 'date-fns/locale';
 import Clndr from './Clndr';
-import {action} from '@storybook/addon-actions';
+import {action} from 'storybook/actions';
 import ejs from 'ejs';
-import {fn} from '@storybook/test';
+import {fn} from 'storybook/test';
 
 import type {ClndrEvent, ClndrOptions, Interval, View} from './types';
 

@@ -1,4 +1,4 @@
-import {Preview} from '@storybook/html';
+import {Preview} from '@storybook/html-vite';
 
 const preview: Preview = {
 	parameters: {
